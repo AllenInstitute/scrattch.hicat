@@ -52,15 +52,15 @@ get_cl_sums <- function(mat, cl)
     tb=xtabs(~cl+cell, data=tmp.df)
     tb = Matrix(tb, sparse=TRUE)
     tmp=tcrossprod(mat[,colnames(tb)], tb)
-    cl.sums = as.matrix(cl.sums)
-    return(cl.means)
+    cl.sums = as.matrix(tmp)
+    return(cl.sums)
   }
 
 get_cl_means <- function(mat, cl)
   {
     cl.sums = get_cl_sums(mat, cl)
     cl.size = table(cl)
-    cl.means = as.matrix(t(t(cl.sums)/cl.size[colnames(cl.sums)]))
+    cl.means = as.matrix(t(t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
     return(cl.means)
   }
 
@@ -88,4 +88,34 @@ calc_tau <- function(m, byRow=TRUE)
   tau = rowSums(1 - m)/(ncol(m) - 1)
   tau[is.na(tau)]=0
   return(tau)
+}
+
+
+sample_cells <- function(cl,max.cl.size, weights=NULL)
+{
+  
+  sampled.cells = unlist(tapply(names(cl),cl, function(x){
+    if(length(x) > max.cl.size){
+      if(!is.null(weights)){
+        x= sample(x, max.cl.size, prob= weights[x])
+      }
+      else{
+        x= sample(x, max.cl.size)
+      }
+    }
+    x
+  },simplify=FALSE))
+}
+  
+
+sample_cells_by_genecounts <- function(cl, norm.dat, max.cl.size=200)
+{
+  if(is.matrix(norm.dat)){
+    cell.gene.counts= colSums(norm.dat[,select.cells]>0)
+  }
+  else{
+    cell.gene.counts= Matrix::colSums(norm.dat[,select.cells]>0)
+  }
+  cell.weights = cell.gene.counts - min(cell.gene.counts)+200
+  sample_cells(cl, weights=cell.weights, max.cl.size=max.cl.size)  
 }

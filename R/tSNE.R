@@ -1,4 +1,4 @@
-run_tSNE <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL,...)
+plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL,...)
   {
     library(Rtsne)
     if(is.null(tsne.result)){
@@ -21,22 +21,22 @@ run_tSNE <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL,...)
     cex=0.15
     cl.col = setNames(as.character(cl.df$cluster_color),cl.df$cluster_label)
     shape = setNames(1:length(levels(tsne.df$cl_label)) %% 20 + 1,levels(tsne.df$cl_label))
-    p=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
-    p = p+ scale_color_manual(values=as.vector(cl.col[levels(tsne.df$cl_label)]))+ scale_shape_manual(values=as.vector(shape[levels(tsne.df$cl_label)]))
+    g=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
+    g = g+ scale_color_manual(values=as.vector(cl.col[levels(tsne.df$cl_label)]))+ scale_shape_manual(values=as.vector(shape[levels(tsne.df$cl_label)]))
     for(i in 1:nrow(cl.center)){
-      p = p +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=2,color="black")
+      g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=2,color="black")
     }
-    p = p +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),ncol=5)
-    p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"),legend.position="bottom")
+    g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),ncol=5)
+    g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"),legend.position="bottom")
     
-    return(list(tsne.df=tsne.df, p=p))    
+    return(list(tsne.df=tsne.df, g=g))    
   }
 
 
 
 
 ###meta is discretized. 
-plotTSNEMeta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE)
+plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE)
   {
     tsne.df$meta = as.factor(meta)
     if(is.null(meta.col)){
@@ -53,7 +53,7 @@ plotTSNEMeta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE)
   }
 
 
-plotTSNEGene <- function(tsne.df, norm.dat, genes)
+plot_tsne_gene <- function(tsne.df, norm.dat, genes)
   {
     plots=list()
     cex=0.15

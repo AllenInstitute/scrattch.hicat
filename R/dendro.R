@@ -1,17 +1,30 @@
-library(dendextend)
-build_dend <- function(cl.dat, l.rank, l.color,collapse.height=0.02)
+build_dend <- function(cl.dat, l.rank, l.color,collapse.height=0.02, nboot=100)
   {
+    require(dendextend)
     cl.cor = cor(cl.dat)
     cl.hc = hclust(as.dist(1-cl.cor),method="average")      
+  
     dend = as.dendrogram(cl.hc)
+    dend=unbranch_by_length(dend, collapse.height)
+    dend =reorder_dend(dend,l.rank)
+    dend = collapse_branch(dend, 0.005)    
     dend = dend %>% set("labels_cex", 0.7)
     tmp=cl.hc$labels[cl.hc$order]
     dend = dend %>% set("labels_col", l.color[tmp])
     dend = dend %>% set("leaves_pch", 19) %>% set("leaves_cex", 0.5) %>% set("leaves_col", l.color[tmp])
-    dend=unbranch_by_length(dend, collapse.height)
-    dend =reorder_dend(dend,l.rank)
-    dend = collapse_branch(dend, 0.005)    
-    return(list(dend=dend, cl.cor=cl.cor))
+    conf=NULL
+    if(nboot > 0){
+      require(pvclust)
+      result <- pvclust::pvclust(cl.dat, method.dist = "cor" ,method.hclust = "average", nboot=nboot)
+      dend = label_dend(dend)$dend
+      label=get_nodes_attr(dend,"label", include_leaves = FALSE)
+      label=label[!is.na(label)]
+      bp=as.integer(result$edges$bp * 100)
+      au=as.integer(result$edges$au * 100)
+      conf = data.frame(label,bp, au)
+      dend = dend %>% pvclust_show_signif_gradient(result, signif_type = "bp", signif_col_fun=colorRampPalette(c("white","black"))) %>% pvclust_show_signif(result, signif_type="bp", signif_value=c(2,1))
+    }
+    return(list(dend=dend, cl.cor=cl.cor, conf=conf))
   }
 
 
@@ -91,7 +104,7 @@ label_dend <- function(dend,n=1)
         n = tmp[[2]]
       }
     }
-    return(list(dend, n))
+    return(list(dend=dend, n))
   }
 
 
@@ -140,14 +153,12 @@ plot_dend <- function(dend, dendro_data=NULL,node_size=1,r=c(-0.1,1))
       node_data$node_color="black"
     }
     ggplot() + 
-      geom_text(data = node_data, aes(x = x, y = y, label = label,color=node_color),size=node_size,vjust = 1) +
-        geom_segment(data = segment_data,
-                     aes(x=x,xend=xend,y=y,yend=yend), color="gray50") +
-                       geom_text(data = label_data, aes(x = x, y = -0.01, label = label, color = col),size=node_size,angle = 90, hjust = 1) +
-                           scale_color_identity() +
-                             theme_dendro() +
-                                scale_y_continuous(limits = r)
-    
+    geom_text(data = node_data, aes(x = x, y = y, label = label,color=node_color),size=node_size,vjust = 1) +
+    geom_segment(data = segment_data, aes(x=x,xend=xend,y=y,yend=yend), color="gray50") +
+    geom_text(data = label_data, aes(x = x, y = -0.01, label = label, color = col),size=node_size,angle = 90, hjust = 1) +
+    scale_color_identity() +
+    theme_dendro() +
+    scale_y_continuous(limits = r)
   }
 
 

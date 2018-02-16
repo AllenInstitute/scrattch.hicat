@@ -1,5 +1,13 @@
-
-collect_co_matrix <- function(cl.files,all.cells)
+#' Title
+#'
+#' @param result.files 
+#' @param all.cells 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+collect_co_matrix <- function(result.files,all.cells)
   {
     subsample.cl=list()
     co.matrix= matrix(0, nrow=length(all.cells),ncol=length(all.cells))
@@ -7,6 +15,7 @@ collect_co_matrix <- function(cl.files,all.cells)
     row.names(co.matrix)=row.names(pr.matrix)=colnames(co.matrix)=colnames(pr.matrix)=all.cells
     for(f in cl.files){
       tmp=load(f)
+      cl=result$cl
       cl = cl[intersect(names(cl),all.cells)]
       pr.matrix[names(cl),names(cl)]=   pr.matrix[names(cl),names(cl)] + 1
       for(x in unique(cl)){
@@ -16,11 +25,21 @@ collect_co_matrix <- function(cl.files,all.cells)
       subsample.cl[[f]]= cl
     }
     co.ratio = co.matrix/pr.matrix
-    return(list(co.ratio,subsample.cl))
+    return(list(co.ratio=co.ratio,cl.list=subsample.cl))
   }
 
 
-
+#' Title
+#'
+#' @param norm.dat 
+#' @param result.files 
+#' @param all.cells 
+#' @param max.cl.size 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 collect_co_matrix_sparseM <- function(norm.dat,result.files,all.cells,max.cl.size=1000)
   {
     select.cells=c()
@@ -31,7 +50,7 @@ collect_co_matrix_sparseM <- function(norm.dat,result.files,all.cells,max.cl.siz
       cl= result$cl
       test.cells = setdiff(all.cells, names(cl))
       markers=unique(result$markers)
-      map.df = map.by.cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
+      map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
       test.cl = setNames(map.df$pred.cl, row.names(map.df))
       all.cl = c(cl, test.cl)[all.cells]
       cl.size=table(all.cl)
@@ -74,30 +93,39 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
   }
 
 
-split_co_matrix <- function(cl, select.cl,...)
+
+
+
+#' Title
+#'
+#' @param co.ratio cell cell co-clustering matrix
+#' @param cl.list  The list of subsampled clustering results. 
+#' @param norm.dat The log2 transformed normalzied expression matrix 
+#' @param select.cells Cells to be clustered
+#' @param all.col Color bars for plotting heatmap. Default NULL
+#' @param diff.th The difference of co-clustering probablities for splitting a cluster. 
+#' @param prefix Default NULL. 
+#' @param method Clustering methods. Default "auto"
+#' @param verbose Default FALSE
+#' @param result Pre-computed clustering results used for further splitting. Default NULL. 
+#' @param min.cells Minimal number of cells in a cluster. Default 4
+#' @param ... Other parameters passed to merge_cl
+#'
+#' @return A list with cluster membership, and top pairwise marker genes. 
+#' @export
+#'
+#' @examples
+iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE,result=NULL,min.cells=4,...)
   {
-    cl = setNames(as.integer(as.character(cl)),names(cl))
-    n.cl=max(cl)
-    new.cl=cl
-    for(i in select.cl){
-      tmp.cells=names(cl)[cl==i]
-      tmp.cl= recursive_split(select.cells=tmp.cells,prefix=paste0("cl",".",i), ...)
-      if(!is.null(tmp.cl)){
-        new.cl[names(tmp.cl)] = tmp.cl + n.cl
-        n.cl = max(new.cl)
-      }
+    if(verbose){
+      print(prefix)
     }
-    cl=new.cl
-    cl = setNames(as.factor(cl), names(cl))
-    cl = setNames(as.integer(cl),names(cl))
-    return(cl)
-  }
-
-
-recursive_split <- function(co.ratio, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, min.cells=4,method="auto", de.param=de_param(),verbose=FALSE,cl=NULL)
-  {
-    print(prefix)
-    if(is.null(cl)){
+    if(!is.null(result)){
+      markers=result$markers
+      cl = setNames(as.integer(as.character(result$cl)),names(result$cl))
+    }
+    else{
+      markers=NULL
       if(length(select.cells)  < 2 * min.cells){
         return(NULL)
       }
@@ -111,18 +139,16 @@ recursive_split <- function(co.ratio, norm.dat, select.cells=colnames(co.ratio),
             norm.dat = norm.dat[,select.cells]
           }
           select.method="ward"
-          print("Use ward")
         }
       }
       else{
         select.method = method
       }
       if(select.method=="ward"){
-        tmp = init_co(co.ratio, select.cells, min.cells=min.cells, th = diff.th,method=select.method)
-        if(is.null(tmp)){
+        tmp.cl = init_cut(co.ratio, select.cells, cl.list, min.cells=min.cells, th = diff.th,method=select.method)
+        if(is.null(tmp.cl)){
           return(NULL)
         }
-        tmp.cl = tmp$cl
       }
       else{###louvain
         adj.mat=co.ratio[select.cells, select.cells]
@@ -140,10 +166,12 @@ recursive_split <- function(co.ratio, norm.dat, select.cells=colnames(co.ratio),
       if(length(unique(tmp.cl))==1){
         return(NULL)
       }
-      print(table(tmp.cl))
+      if(verbose){
+        print(table(tmp.cl))
+      }
       cell.cl.co.ratio =get_cell.cl.co.ratio(co.ratio, tmp.cl)
-      tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, min.cells=min.cells, max.cl.size=300,de.param= de.param)
-      cat("Merge result:", names(tmp),"\n")
+  
+      tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, min.cells=min.cells, ...)
       if(is.null(tmp) | !is.list(tmp)) return(NULL)
       if (length(unique(tmp$cl))==1) return(NULL)
       tmp.cl= tmp$cl
@@ -152,39 +180,46 @@ recursive_split <- function(co.ratio, norm.dat, select.cells=colnames(co.ratio),
       if(length(unique(tmp.cl))==1) {
         return(NULL)
       }
-      cl = tmp.cl[select.cells]
-      print(table(cl))
+      cl = tmp.cl
+      markers=tmp$markers
+      if(verbose){
+        print(table(cl))
+        tmp = display_cl(cl, norm.dat, prefix, col=all.col[,select.cells], max.cl.size=200,min.cells=min.cells, markers=markers)
+        tmp.cl = tmp$cl
+        tmp.cells = names(tmp.cl)
+        tmp.cells = tmp.cells[order(tmp.cl)]
+        sep = tmp.cl[tmp.cells]
+        sep = which(sep[-1]!=sep[-length(sep)])
+        pdf(paste0(prefix, ".co.pdf"))
+        heatmap.3(as.matrix(co.ratio[tmp.cells, tmp.cells]), col = blue.red(100), trace="none", ColSideColors=all.col[,tmp.cells], Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
+        dev.off()
+      }
     }
+    cell.cl.co.ratio = get_cl_means(co.ratio, cl)
     n.cl=max(cl)
     new.cl=cl
     for(i in sort(unique(cl))){
       tmp.cells=names(cl)[cl==i]            
-      tmp.cl= recursive_split(co.ratio=co.ratio, norm.dat=norm.dat, select.cells=tmp.cells,prefix=paste0(prefix,".",i),all.col=all.col, diff.th =diff.th, min.cells=min.cells, method=method, counts=counts, use.voom=use.voom, verbose=verbose,...)
-      if(!is.null(tmp.cl)){
-        new.cl[names(tmp.cl)] = tmp.cl + n.cl
-        n.cl = max(new.cl)
+      if(sum(cell.cl.co.ratio[tmp.cells, as.character(i)] < 0.5) < min.cells){
+        next
       }
+      result= iter_consensus_clust(co.ratio=co.ratio, cl.list=cl.list, norm.dat=norm.dat, select.cells=tmp.cells,prefix=paste0(prefix,".",i),all.col=all.col, diff.th =diff.th, min.cells=min.cells, method=method, de.param = de.param, verbose=verbose)
+      if(is.null(result)){
+        next
+      }
+      tmp.cl= result$cl
+      new.cl[names(tmp.cl)] = tmp.cl + n.cl
+      n.cl = max(new.cl)
+      markers=union(markers, result$markers)
     }
     cl=new.cl
     cl = setNames(as.integer(as.factor(cl)), names(cl))
-    if(verbose){
-      tmp = display_cl(cl, norm.dat, prefix, col=all.col[,select.cells], max.cl.size=200,min.cells=min.cells, de.param= de.param())
-      tmp.cl = tmp$cl
-      tmp.cells = names(tmp.cl)
-      tmp.cells = tmp.cells[order(tmp.cl)]
-      sep = tmp.cl[tmp.cells]
-      sep = which(sep[-1]!=sep[-length(sep)])
-      pdf(paste0(prefix, ".co.pdf"))
-      heatmap.3(as.matrix(co.ratio[tmp.cells, tmp.cells]), col = blue.red(100), trace="none", ColSideColors=all.col[,tmp.cells], Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
-      dev.off()
-    }
-    print("Finish")
-    return(cl)
+    return(list(cl=cl, markers=markers))
   }
 
 merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25){
   cell.cl.co.ratio = get_cell.cl.co.ratio(co.ratio,cl)
-  cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,])))
+  cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,,drop=F])))
   co.within= diag(cl.co.ratio)
   co.df <- as.data.frame(as.table(cl.co.ratio),stringsAsFactors=FALSE)
   co.df = co.df[co.df[,1]<co.df[,2]& co.df[,3]>0.1,]
@@ -197,6 +232,7 @@ merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25){
   for(i in 1:nrow(co.df)){
     cl[cl==co.df[i,2]]=co.df[i,1]
   }
+  cl = setNames(as.integer(as.character(cl)), names(cl))
   return(cl)
 }
 
@@ -213,7 +249,7 @@ get_cl_co_stats <- function(co.ratio, cl)
 
     cell.cl.confusion <- unlist(sapply(1:ncol(cell.cl.co.ratio),function(i){
       select.cells=names(cl)[cl==colnames(cell.cl.co.ratio)[i]]
-      cell.cl.co.ratio=setNames(rowMaxs(cell.cl.co.ratio[select.cells, -i])/cell.cl.co.ratio[select.cells, i,drop=F], select.cells)
+      cell.cl.co.ratio=setNames(rowMaxs(cell.cl.co.ratio[select.cells, -i,drop=FALSE])/cell.cl.co.ratio[select.cells, i,drop=F], select.cells)
     },simplify=F))
     cell.cl.confusion = cell.cl.confusion[names(cl)]
     cl.confusion = setNames(sapply(1:nrow(cl.co.ratio),function(i){
@@ -223,7 +259,27 @@ get_cl_co_stats <- function(co.ratio, cl)
   }
 
 
-init_co <- function(co.ratio, select.cells, min.cells=4, th = 0.3,method="ward",verbose=FALSE)
+init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,method="ward",verbose=FALSE)
+{
+  avg.cl.num = mean(sapply(cl.list, function(cl){
+    sum(table(cl[select.cells]) >= min.cells)
+  }))
+  tmp.dat = co.ratio[select.cells, select.cells]
+  hc=hclust(as.dist(1-as.matrix(crossprod(tmp.dat))), method="ward")
+  tmp.cl = cutree(hc, pmax(avg.cl.num+1,2))
+  tmp.cl=reassign_co_ratio(co.ratio, tmp.cl, min.cells=min.cells, niter=1, tol.th=1)$cl
+  if(length(unique(tmp.cl))==1){
+    return(NULL)    
+  }
+  tmp.cl=merge_cl_by_co(tmp.cl, tmp.dat, diff.th=th)
+  if(length(unique(tmp.cl))==1){
+    return(NULL)    
+  }
+  return(cl=tmp.cl)
+}
+
+
+init_cut.old <- function(co.ratio, select.cells, cl.list=NULL, min.cells=4, th = 0.3,method="ward",verbose=FALSE)
   {
     tmp.dat = as.matrix(co.ratio[select.cells, select.cells])
     hc = hclust(as.dist(1-tmp.dat),method=method)
@@ -252,14 +308,13 @@ init_co <- function(co.ratio, select.cells, min.cells=4, th = 0.3,method="ward",
     if(length(unique(tmp.cl))==1){
       return(NULL)    
     }
-    if(length(unique(tmp.cl))>1){
-      tmp <- do.call("cbind",tapply(names(tmp.cl), tmp.cl, function(x){
-        rowMeans(tmp.dat[,x,drop=F])
-      }))
-      cl.hc = hclust(dist(t(tmp)),method="average")
-      return(list(cl=tmp.cl, cl.hc=cl.hc, hc=hc))
-    }
-    return(NULL)    
+    tmp <- do.call("cbind",tapply(names(tmp.cl), tmp.cl, function(x){
+      rowMeans(tmp.dat[,x,drop=F])
+    }))
+    cl.hc = hclust(dist(t(tmp)),method="average")
+    cl = setNames(factor(as.character(tmp.cl), levels=cl.hc$labels[cl.hc$order]),names(tmp.cl))
+    cl = setNames(as.integer(cl),names(cl))
+    return(cl)
   }
  
 cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
@@ -280,13 +335,14 @@ cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
     return(cl)
   }
 
-reassign_co_ratio <- function(co.ratio, cl, co.stats=NULL,confusion.th=0.4,min.cells=4)
+reassign_co_ratio <- function(co.ratio, cl, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02)
   {
     if(is.null(co.stats)){
       co.stats = get_cl_co_stats(co.ratio, cl)
     }
     correct = 0
-    while(1){
+    iter.num = 0
+    while(iter.num < niter){
       cell.cl.co.ratio = co.stats$cell.cl.co.ratio
       cell.confusion = co.stats$cell.cl.confusion
       cl.confusion = co.stats$cl.confusion
@@ -296,7 +352,11 @@ reassign_co_ratio <- function(co.ratio, cl, co.stats=NULL,confusion.th=0.4,min.c
         break
       }
       correct = sum(cl==pred.cl)
-      print(correct/length(cl))
+      correct.frac= correct/length(cl)
+      if(1 - correct.frac < tol.th){
+        break
+      }
+      #print(correct.frac)
       tmp.cells = names(pred.cl)[pred.cl!=cl[names(pred.cl)]]
       cl[tmp.cells]=pred.cl[tmp.cells]
       cl.size = table(cl)
@@ -306,13 +366,29 @@ reassign_co_ratio <- function(co.ratio, cl, co.stats=NULL,confusion.th=0.4,min.c
       rm.cl = cl.small[cl.confusion[cl.small] > confusion.th| cl.size[cl.small]< min.cells]
       tmp.cells = names(cl)[cl %in% rm.cl]
       tmp.dat = cell.cl.co.ratio[tmp.cells,setdiff(unique(cl),rm.cl),drop=F]
-      pred.cl <- setNames(colnames(tmp.dat)[apply(tmp.dat, 1, which.max)], row.names(tmp.dat))
+      pred.cl = setNames(colnames(tmp.dat)[apply(tmp.dat, 1, which.max)], row.names(tmp.dat))
       cl[tmp.cells] = pred.cl[tmp.cells]
       ###Recompute co stats
       co.stats = get_cl_co_stats(co.ratio, cl)
+      iter.num = iter.num + 1 
     }
     return(list(cl=cl, co.stats=co.stats))
   }
 
 
+plot_co_matrix <- function(co.ratio, cl, max.cl.size=100)
+{
+  select.cells = names(cl)
+  select.cells = sample_cells(cl, max.cl.size)
+  tom  = crossprod(co.ratio[select.cells, select.cells])
+  row.names(tom)=colnames(tom)=select.cells
+  ###
+  all.hc = hclust(as.dist(1-tom),method="average")
+  ord1 = all.hc$labels[all.hc$order]
+  ord1 = ord1[ord1%in% select.cells]
+  ord = ord1[order(cl[ord1])]
+  sep = cl[ord]
+  sep=which(sep[-1]!=sep[-length(sep)])
+  heatmap.3(co.ratio[ord,ord], col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
+}
 

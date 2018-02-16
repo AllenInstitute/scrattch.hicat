@@ -1,4 +1,4 @@
-score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method="average",max.cl.size=NULL,de.param=de_param()){
+score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method="average",min.cells=4, de.param=de_param(), max.cl.size=NULL){
     if(length(gene.mod)==0){
       return(NULL)
     }
@@ -35,18 +35,10 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
         }
         tmp.cl = tmp$cl
       }
-      else if(method=="mclust"){
-        require(mclust)
-        tmp = Mclust(t(tmp.dat), G=2)
-        if(!is.na(tmp[[1]])){
-          tmp.cl = tmp$classification
-        }
-        else{
-          return(list(c(0,0),NULL))
-        }
+      else{
+        stop(paste("Unknown method",method))
       }
-      
-      tmp = de_score(as.matrix(norm.dat[,names(tmp.cl)]), cl=tmp.cl, select.cells=names(tmp.cl), ...)
+      tmp = de_score(as.matrix(norm.dat[,names(tmp.cl)]), cl=tmp.cl, min.cells=min.cells, de.param = de.param)
       de.genes = tmp[[2]]
       de.genes = de.genes[sapply(de.genes, length)>1]
       if(length(de.genes) > 0){
@@ -64,7 +56,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
 
 
 
-filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10,min.cells=10, min.padj=40, de.param = de_param(), max.cl.size=NULL,rm.eigen=NULL, rm.th = 0.6, maxSize=200, prefix="cl", max.mod=NULL)
+filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10,min.cells=10, min.deScore=40, de.param = de_param(), max.cl.size=NULL,rm.eigen=NULL, rm.th = 0.6, maxSize=200, prefix="cl", max.mod=NULL)
   {
     eigen = get_eigen(gene.mod, norm.dat,select.cells)[[1]]
     if(!is.null(rm.eigen)){
@@ -104,35 +96,27 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10,m
     print("Score modules")
     mod.score = setNames(rep(0, length(gene.mod)), names(gene.mod))
     not.selected=1:length(gene.mod)
+    
     for(m in method){
-      tmp=score_gene_mod(norm.dat, select.cells, gene.mod=gene.mod[not.selected],eigen = eigen[select.cells,not.selected,drop=F], min.cells=min.cells, method=method, de.param=de.param,max.cl.size=max.cl.size)
+      tmp=score_gene_mod(norm.dat, select.cells, gene.mod=gene.mod[not.selected],min.cells=min.cells, eigen = eigen[select.cells,not.selected,drop=F], method=m, de.param=de.param,max.cl.size=max.cl.size)
       x = do.call("cbind", sapply(tmp, function(x)x[[1]],simplify=F))
-      tmp= x["sc",] > min.padj 
-      mod.score[not.selected[tmp]]= x["sc",tmp]
+      tmp = x["sc",] > mod.score[not.selected]
+      mod.score[not.selected[tmp]] = x["sc",tmp]
+      tmp= x["sc",] > min.deScore 
       not.selected = not.selected[!tmp]
-      print(mod.score[mod.score>0,drop=F])
     }
-    select.mod = mod.score > 0
-    if(sum(select.mod)>0){
+    ord = order(mod.score,decreasing=T)
+    gene.mod = gene.mod[ord]
+    mod.score = mod.score[ord]
+    eigen = eigen[,ord,drop=F]
+    select.mod = head(which(mod.score > min.deScore), max.mod)
+    if(length(select.mod)==0){
+      select.mod = head(which(mod.score > min.deScore/2),2)
+    }
+    if(length(select.mod)>0){
       gene.mod = gene.mod[select.mod]
-      eigen=eigen[,select.mod,drop=F]
-      mod.score=mod.score[select.mod]
-      ord = order(mod.score,decreasing=T)
-      if(!is.null(max.mod)){
-        ord = head(ord, max.mod)
-      }
-      gene.mod = gene.mod[ord]
-      mod.score = mod.score[ord,drop=F]
-      eigen = eigen[,ord,drop=F]
-     
-      for(x in 1:length(gene.mod)){
-        g = gene.mod[[x]]
-        if(length(g) > maxSize){
-          kME=cor(as.matrix(t(norm.dat[g,select.cells])), eigen[select.cells,x])
-          g = head(g[order(abs(kME),decreasing=T)], maxSize)
-          gene.mod[[x]] <- g
-        }
-      }
+      mod.score = mod.score[select.mod]
+      eigen = eigen[,select.mod, drop=F]
       return(list(gene.mod=gene.mod,eigen=eigen, gene.mod.val=mod.score))
     }
     return(NULL)
@@ -194,78 +178,19 @@ get_eigen <- function(gene.mod, norm.dat, select.cells, prefix=NULL,method="ward
   }
 
 
-
-####Extraced from WGCNA to reduce package dependency
-adjacency <- function (datExpr, selectCols = NULL, type = "unsigned", power = if (type == "distance") 1 else 6, corFnc = "cor", corOptions = "use = 'p'", distFnc = "dist", distOptions = "method = 'euclidean'") 
-{
-  intType = charmatch(type, .adjacencyTypes)
-  if (is.na(intType)) 
-    stop(paste("Unrecognized 'type'. Recognized values are", 
-               paste(.adjacencyTypes, collapse = ", ")))
-  if (intType < 4) {
-    if (is.null(selectCols)) {
-      corExpr = parse(text = paste(corFnc, "(datExpr ", 
-                        prepComma(corOptions), ")"))
-      cor_mat = eval(corExpr)
-    }
-    else {
-      corExpr = parse(text = paste(corFnc, "(datExpr, datExpr[, selectCols] ", 
-                        prepComma(corOptions), ")"))
-      cor_mat = eval(corExpr)
-    }
-  }
-  else {
-    if (!is.null(selectCols)) 
-      stop("The argument 'selectCols' cannot be used for distance adjacency.")
-        corExpr = parse(text = paste(distFnc, "(t(datExpr) ", 
-                          prepComma(distOptions), ")"))
-    d = eval(corExpr)
-    if (any(d < 0)) 
-      warning("Function WGCNA::adjacency: Distance function returned (some) negative values.")
-    cor_mat = 1 - as.matrix((d/max(d, na.rm = TRUE))^2)
-  }
-  if (intType == 1) {
-    cor_mat = abs(cor_mat)
-  }
-  else if (intType == 2) {
-    cor_mat = (1 + cor_mat)/2
-  }
-  else if (intType == 3) {
-    cor_mat[cor_mat < 0] = 0
-  }
-  cor_mat^power
-}
-
-MyTOM <- function(adj)
-{
-  require(Matrix)
-  adj[adj < sparse.cutoff] = 0
-  adj = Matrix(adj, sparse=T)
-  print("matrix multiplication")
-  olap= crossprod(adj)
-  print("normalize")
-  adj.counts = rowSums(adj)-1
-  nsize = nrow(adj)
-  tmp1 = matrix(rep(adj.counts, ncol(olap)), nrow=length(adj.counts))
-  N = pmin(tmp1, t(tmp1))
-  TOM = (olap - adj)/(N + 1 - adj)
-  diag(TOM)=1
-  TOM
-}
-
-
 rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
   {
-    dat =norm.dat[select.genes,sampled.cells]
-    adj=adjacency(t(dat), power = softPower,type=type)
+    require(WGCNA)
+    dat = norm.dat[select.genes,sampled.cells]
+    adj = WGCNA::adjacency(t(dat), power = softPower,type=type)
     adj[is.na(adj)]=0
-    TOM = TOMsimilarity(adj,TOMType=type)
+    TOM = WGCNA::TOMsimilarity(adj,TOMType=type)
     dissTOM = as.matrix(1-TOM)
     row.names(dissTOM)= colnames(dissTOM) = row.names(dat)
     rm(dat)
     gc()
     geneTree = flashClust(as.dist(dissTOM), method = "average")
-    dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOM, cutHeight=cutHeight,
+    dynamicMods = dynamicTreeCut::cutreeDynamic(dendro = geneTree, distM = dissTOM, cutHeight=cutHeight,
       deepSplit = 2, pamRespectsDendro = FALSE,minClusterSize = minModuleSize)
     gene.mod = split(row.names(dissTOM), dynamicMods)
     gene.mod = gene.mod[setdiff(names(gene.mod),"0")]

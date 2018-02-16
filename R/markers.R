@@ -1,7 +1,7 @@
-select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, de.df=NULL, method="limma", low.th=1,de.param = de_param())                           
+select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)                           
   {
     if(is.null(de.genes)){
-      de.genes=de_score(norm.dat, cl, de.df=de.df, method=method, low.th=low.th, de.param = de.param)[[2]]
+      de.genes=de_score(norm.dat, cl, ...)[[2]]
     }
     pairs = names(de.genes)
     pairs.df = gsub("cl","", do.call("rbind",strsplit(pairs, "_")))
@@ -79,56 +79,6 @@ get_gene_score <- function(de.genes,top.n=50, max.num=1000,bin.th=4)
     })
     row.names(up.gene.score)=row.names(down.gene.score)= all.genes
     return(list(up.gene.score=up.gene.score, down.gene.score=down.gene.score))
-  }
-
-selectMarkers.v3 <- function(norm.dat, cl, de.df, n.markers=20, de.genes=NULL,top.n=50,max.num=1000,...)
-  {
-    if(is.null(de.genes)){
-      de.genes=de_score(norm.dat, cl, de.df=de.df, ...)[[2]]
-    }
-    ###first find one vs all genes
-    pairs =do.call("rbind",strsplit(gsub("cl","",names(de.genes)), "_"))
-    pairs =pairs[pairs[,1]%in% levels(cl) & pairs[,2] %in% levels(cl),]
-    row.names(pairs)= names(de.genes)
-    cl.markers=list()
-    tmp=get_gene_score(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
-    up.gene.score=tmp$up.gene.score
-    down.gene.score=tmp$down.gene.score
-    de.genes.list=list()
-    for(x in unique(cl)){
-      up.pairs= which(pairs[,1]==x)
-      down.pairs = which(pairs[,2]==x)
-      tmp.gene.score= cbind(up.gene.score[,up.pairs,drop=F], down.gene.score[,down.pairs,drop=F])
-      all.genes= row.names(tmp.gene.score)
-      final.genes = all.genes[head(order(rowSums(tmp.gene.score)),n.markers)]
-      if(length(final.genes)>0){
-        for(g in final.genes){
-          select.pair = colnames(tmp.gene.score)[tmp.gene.score[g,] < max.num]
-          if(length(select.pair)>0){
-            for(p in select.pair){
-              if(p==""){
-                cat("cl",x, "p",p, "g",g, "\n")
-              }
-              de.genes.list[[p]]=union(de.genes.list[[p]],g)
-            }
-          }
-        }
-      }
-      cl.markers[[x]]= final.genes
-    }
-    de.genes.num = sapply(de.genes.list, length)
-    de.genes.num[setdiff(names(de.genes),names(de.genes.num))]=0
-    add.genes = n.markers - de.genes.num
-    unresolved.pairs = names(add.genes)[add.genes > 0]
-    if(length(unresolved.pairs) > 0){
-      gene.score = pmin(up.gene.score, down.gene.score)[,unresolved.pairs,drop=F]
-      tmp=selectMarkersPair(norm.dat, add.genes= add.genes[unresolved.pairs],de.genes= de.genes, gene.score=gene.score, rm.genes=unlist(cl.markers),top.n=top.n)
-      for(p in names(tmp)){
-        de.genes.list[[p]]=union(de.genes.list[[p]], tmp[[p]])
-      }
-    }
-    markers=unique(unlist(de.genes.list))
-    return(list(markers=markers, de.genes.list=de.genes.list, de.genes=de.genes, up.gene.score=up.gene.score, down.gene.score=down.gene.score))
   }
 
 
@@ -221,8 +171,7 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,up.gene.scor
   }
 
 
-
-selectNMarkers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num = 1,rm.genes=NULL)
+select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num = 1,rm.genes=NULL)
   {
    add.up = add.down=setNames(rep(pair.num, length(de.genes)), names(de.genes))
    if(!is.null(default.markers)){
@@ -233,7 +182,7 @@ selectNMarkers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL, d
    }
    add.up = add.up[add.up>0, drop=F]
    add.down = add.down[add.down>0, drop=F]
-   result = selectMarkersPairDirection(add.up,add.down,de.genes=de.genes, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers),top.n=50,max.num=2000)
+   result = select_markers_pair_direction(add.up,add.down,de.genes=de.genes, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers),top.n=50,max.num=2000)
    up.genes = up.default
    down.genes=down.default
    for(x in names(result$up.genes)){
