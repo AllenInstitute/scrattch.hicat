@@ -207,7 +207,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
     if(length(unique(cl))>1){
       de.genes = merge.result$de.genes
       markers= merge.result$markers
-      cl.dat = do.call("cbind",as.list(tapply(names(cl),cl, function(x)rowMeans(norm.dat[markers,x,drop=F]))))
+      cl.dat = get_cl_means(norm.dat[markers,], cl[sample_cells(cl, max.cl.size)])
       cl.hc = hclust(dist(t(cl.dat)),method="average")
       cl = setNames(factor(as.character(cl), levels= colnames(cl.dat)[cl.hc$order]), names(cl))
       if(verbose & !is.null(prefix)){
