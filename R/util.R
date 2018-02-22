@@ -110,12 +110,13 @@ sample_cells <- function(cl,max.cl.size, weights=NULL)
 
 sample_cells_by_genecounts <- function(cl, norm.dat, max.cl.size=200)
 {
+  select.cells=names(cl)
   if(is.matrix(norm.dat)){
     cell.gene.counts= colSums(norm.dat[,select.cells]>0)
   }
   else{
     cell.gene.counts= Matrix::colSums(norm.dat[,select.cells]>0)
   }
-  cell.weights = cell.gene.counts - min(cell.gene.counts)+200
+  cell.weights = cell.gene.counts - min(cell.gene.counts)+1
   sample_cells(cl, weights=cell.weights, max.cl.size=max.cl.size)  
 }

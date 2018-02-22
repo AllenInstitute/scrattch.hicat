@@ -1,7 +1,7 @@
 select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)                           
   {
     if(is.null(de.genes)){
-      de.genes=de_score(norm.dat, cl, ...)[[2]]
+      de.genes=de_score(norm.dat, cl, ...)
     }
     pairs = names(de.genes)
     pairs.df = gsub("cl","", do.call("rbind",strsplit(pairs, "_")))

@@ -1,4 +1,4 @@
-plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL,...)
+plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL, show.legend=FALSE, cex=0.15, ...)
   {
     library(Rtsne)
     if(is.null(tsne.result)){
@@ -18,7 +18,6 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL,.
       #c(x=median(tsne.df[center,1]), y= median(tsne.df[center,2]))
     }))
     row.names(cl.center)= cl.df[row.names(cl.center), "cluster_label"]
-    cex=0.15
     cl.col = setNames(as.character(cl.df$cluster_color),cl.df$cluster_label)
     shape = setNames(1:length(levels(tsne.df$cl_label)) %% 20 + 1,levels(tsne.df$cl_label))
     g=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
@@ -26,7 +25,9 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL,.
     for(i in 1:nrow(cl.center)){
       g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=2,color="black")
     }
-    g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),ncol=5)
+    if(show_legend){
+      g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),ncol=5)
+    }
     g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"),legend.position="bottom")
     
     return(list(tsne.df=tsne.df, g=g))    
@@ -36,13 +37,13 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL,.
 
 
 ###meta is discretized. 
-plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE)
+plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.15)
   {
     tsne.df$meta = as.factor(meta)
     if(is.null(meta.col)){
       meta.col = setNames(jet.colors(length()))
     }
-    cex=0.15
+
     p=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=meta),size=cex)
     p = p+ scale_color_manual(values=as.vector(meta.col[levels(tsne.df$meta)]))
     p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
@@ -53,10 +54,9 @@ plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE)
   }
 
 
-plot_tsne_gene <- function(tsne.df, norm.dat, genes)
+plot_tsne_gene <- function(tsne.df, norm.dat, genes,cex=0.15)
   {
     plots=list()
-    cex=0.15
     for(g in genes){
       tsne.df$expr = norm.dat[g,row.names(tsne.df)]
       p=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=expr),size=cex)

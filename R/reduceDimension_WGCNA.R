@@ -38,8 +38,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
       else{
         stop(paste("Unknown method",method))
       }
-      tmp = de_score(as.matrix(norm.dat[,names(tmp.cl)]), cl=tmp.cl, min.cells=min.cells, de.param = de.param)
-      de.genes = tmp[[2]]
+      de.genes = de_score(as.matrix(norm.dat[,names(tmp.cl)]), cl=tmp.cl, min.cells=min.cells, de.param = de.param)
       de.genes = de.genes[sapply(de.genes, length)>1]
       if(length(de.genes) > 0){
         sc =max(sapply(de.genes, function(x)x$score))
@@ -180,11 +179,10 @@ get_eigen <- function(gene.mod, norm.dat, select.cells, prefix=NULL,method="ward
 
 rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
   {
-    require(WGCNA)
     dat = norm.dat[select.genes,sampled.cells]
-    adj = WGCNA::adjacency(t(dat), power = softPower,type=type)
+    adj = adjacency(t(dat), power = softPower,type=type)
     adj[is.na(adj)]=0
-    TOM = WGCNA::TOMsimilarity(adj,TOMType=type)
+    TOM = TOMsimilarity(adj,TOMType=type)
     dissTOM = as.matrix(1-TOM)
     row.names(dissTOM)= colnames(dissTOM) = row.names(dat)
     rm(dat)

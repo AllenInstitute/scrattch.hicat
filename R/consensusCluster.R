@@ -29,6 +29,46 @@ collect_co_matrix <- function(result.files,all.cells)
   }
 
 
+sample_cl_list <- function(cl.list, max.cl.size=500)
+  {
+    select.cells=c()
+    for(cl in cl.list){
+      cl.size=table(cl)
+      more.cl = cl[setdiff(names(cl), select.cells)]
+      more.size = table(more.cl)
+      add.cells= unlist(lapply(names(more.size), function(x){
+        sample(names(more.cl)[more.cl==x], min(more.size[[x]],max.cl.size))
+      }))
+      select.cells= c(select.cells, add.cells)
+    }
+    return(select.cells)
+  }
+
+collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.size=1000)
+  {
+    select.cells=c()
+    cl.list=list()
+    for(f in result.files){
+      print(f)
+      tmp=load(f)
+      cl= result$cl
+      test.cells = setdiff(all.cells, names(cl))
+      markers=unique(result$markers)
+      map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
+      test.cl = setNames(map.df$pred.cl, row.names(map.df))
+      all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
+      cl.list[[f]] = all.cl
+    }
+    select.cells= sample_cl_list(cl.list, max.cl.size=max.cl.size)
+    cl.comb = do.call("rbind", sapply(cl.list, function(cl){
+      tmp.df= data.frame(cell=select.cells, cl=all.cl[select.cells])
+      tb=xtabs(~cl+cell, data=tmp.df)
+      tb = Matrix(tb, sparse=TRUE)
+    },simplify=F))
+    cl.comb = t(cl.comb)
+    return(list(cl.list=cl.list, cl.mat = cl.comb))
+  }
+
 #' Title
 #'
 #' @param norm.dat 
@@ -43,41 +83,15 @@ collect_co_matrix <- function(result.files,all.cells)
 collect_co_matrix_sparseM <- function(norm.dat,result.files,all.cells,max.cl.size=1000)
   {
     select.cells=c()
-    cl.list=list()
-    for(f in result.files){
-      print(f)
-      tmp=load(f)
-      cl= result$cl
-      test.cells = setdiff(all.cells, names(cl))
-      markers=unique(result$markers)
-      map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
-      test.cl = setNames(map.df$pred.cl, row.names(map.df))
-      all.cl = c(cl, test.cl)[all.cells]
-      cl.size=table(all.cl)
-      cl.size[cl.size > max.cl.size]=max.cl.size
-      sampled.size = table(all.cl[select.cells])
-      sampled.size[setdiff(names(cl.size), names(sampled.size))]= 0
-      more.cells= cl.size - sampled.size[names(cl.size)]
-      more.cells=more.cells[more.cells >0]
-      more.cl = all.cl[setdiff(names(all.cl), select.cells)]
-      add.cells= unlist(lapply(names(more.cells), function(cl){
-        sample(names(more.cl)[more.cl==cl], more.cells[cl])
-      }))
-      select.cells= c(select.cells, add.cells)
-      cl.list[[f]] = all.cl
-    }
-    cl.comb = do.call("rbind", sapply(cl.list, function(cl){
-      tmp.df= data.frame(cell=select.cells, cl=all.cl[select.cells])
-      tb=xtabs(~cl+cell, data=tmp.df)
-      tb = Matrix(tb, sparse=TRUE)
-    },simplify=F))
-    cl.comb = t(cl.comb)
-    save(cl.comb, file="cl.comb.rda")
+    
+    tmp = collect_subsample_cl_matrix(norm.dat,result.files,all.cells, max.cl.size=max.cl.size)
+    cl.list = tmp$cl.list
+    cl.comb = tmp$cl.comb
     co.ratio = crossprod(t(cl.comb))
     co.ratio@x = co.ratio@x/length(result.files)
     return(list(co.ratio=co.ratio, cl.comb=cl.comb, cl.list=cl.list))
   }
-    
+
 
 
 merge_co_matrix <- function(co.ratio1, co.ratio2)
@@ -169,7 +183,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
       if(verbose){
         print(table(tmp.cl))
       }
-      cell.cl.co.ratio =get_cell.cl.co.ratio(co.ratio, tmp.cl)
+      cell.cl.co.ratio =get_cell.cl.co.ratio(tmp.cl, co.ratio)
   
       tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, min.cells=min.cells, ...)
       if(is.null(tmp) | !is.list(tmp)) return(NULL)
@@ -218,7 +232,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
   }
 
 merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25){
-  cell.cl.co.ratio = get_cell.cl.co.ratio(co.ratio,cl)
+  cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio)
   cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,,drop=F])))
   co.within= diag(cl.co.ratio)
   co.df <- as.data.frame(as.table(cl.co.ratio),stringsAsFactors=FALSE)
@@ -235,16 +249,35 @@ merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25){
   cl = setNames(as.integer(as.character(cl)), names(cl))
   return(cl)
 }
-
-get_cell.cl.co.ratio <- function(co.ratio,cl)
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param cl 
+##' @param co.ratio 
+##' @param cl.comb 
+##' @return 
+##' @author Zizhen Yao
+get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.comb=NULL)
   {
-    return(get_cl_means(co.ratio, cl))
+    if(!is.null(co.ratio)){
+      cell.cl.co.ratio=get_cl_means(co.ratio, cl)
+      return(cell.cl.co.ratio)    
+    }
+    if(!is.null(cl.comb)){
+      tmp = cl.comb %*% get_cl_sums(t(cl.comb), cl)
+      tmp = tmp / Matrix::rowSums(cl.comb)
+      cl.size = table(cl)
+      cell.cl.co.ratio=as.matrix(t(t(tmp)/as.vector(cl.size[colnames(tmp)])))
+      return(cell.cl.co.ratio)
+    }
+    stop("Either co.ratio or cl.comb should not be NULL")
   }
 
     
-get_cl_co_stats <- function(co.ratio, cl)
+get_cl_co_stats <- function(cl, co.ratio=NULL, cl.comb=NULL)
   {
-    cell.cl.co.ratio= get_cell.cl.co.ratio(co.ratio,cl)
+    cell.cl.co.ratio= get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.comb=cl.comb)
     cl.co.ratio <- get_cl_means(t(cell.cl.co.ratio), cl)
 
     cell.cl.confusion <- unlist(sapply(1:ncol(cell.cl.co.ratio),function(i){
@@ -267,7 +300,7 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
   tmp.dat = co.ratio[select.cells, select.cells]
   hc=hclust(as.dist(1-as.matrix(crossprod(tmp.dat))), method="ward")
   tmp.cl = cutree(hc, pmax(avg.cl.num+1,2))
-  tmp.cl=reassign_co_ratio(co.ratio, tmp.cl, min.cells=min.cells, niter=1, tol.th=1)$cl
+  tmp.cl=refine_cl(tmp.cl, co.ratio=co.ratio, min.cells=min.cells, niter=1, tol.th=1)$cl
   if(length(unique(tmp.cl))==1){
     return(NULL)    
   }
@@ -298,13 +331,8 @@ init_cut.old <- function(co.ratio, select.cells, cl.list=NULL, min.cells=4, th =
     if(length(unique(tmp.cl))==1){
       return(NULL)    
     }
-    ###reassign each cells to the clusters, if it prefer to co-cluster with another cluster much better. 
-    cell.cl.co.ratio= get_cell.cl.co.ratio(tmp.dat, tmp.cl)
-    tmp.cl2=setNames(apply(cell.cl.co.ratio, 1, which.max),row.names(cell.cl.co.ratio))
-    org.co.score = get_pair_matrix(cell.cl.co.ratio, names(tmp.cl), as.character(tmp.cl))
-    select = tmp.cl!=tmp.cl2[names(tmp.cl)]  & rowMaxs(cell.cl.co.ratio) - org.co.score  > 0.1
-    tmp.cl[select] = tmp.cl2[select]
-    tmp.cl = setNames(as.integer(as.factor(tmp.cl)),names(tmp.cl))
+    ###reassign each cells to the clusters, if it prefer to co-cluster with another cluster much better.
+    tmp.cl=refine_cl(tmp.cl, co.ratio=co.ratio, min.cells=min.cells, niter=1, tol.th=1)$cl
     if(length(unique(tmp.cl))==1){
       return(NULL)    
     }
@@ -335,10 +363,10 @@ cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
     return(cl)
   }
 
-reassign_co_ratio <- function(co.ratio, cl, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02)
+refine_cl <- function(cl, co.ratio=NULL, cl.comb=NULL, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02)
   {
     if(is.null(co.stats)){
-      co.stats = get_cl_co_stats(co.ratio, cl)
+      co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.comb=cl.comb)
     }
     correct = 0
     iter.num = 0
@@ -353,10 +381,10 @@ reassign_co_ratio <- function(co.ratio, cl, co.stats=NULL,confusion.th=0.4,min.c
       }
       correct = sum(cl==pred.cl)
       correct.frac= correct/length(cl)
+      print(correct.frac)
       if(1 - correct.frac < tol.th){
         break
       }
-      #print(correct.frac)
       tmp.cells = names(pred.cl)[pred.cl!=cl[names(pred.cl)]]
       cl[tmp.cells]=pred.cl[tmp.cells]
       cl.size = table(cl)
@@ -369,7 +397,7 @@ reassign_co_ratio <- function(co.ratio, cl, co.stats=NULL,confusion.th=0.4,min.c
       pred.cl = setNames(colnames(tmp.dat)[apply(tmp.dat, 1, which.max)], row.names(tmp.dat))
       cl[tmp.cells] = pred.cl[tmp.cells]
       ###Recompute co stats
-      co.stats = get_cl_co_stats(co.ratio, cl)
+      co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.comb=cl.comb)
       iter.num = iter.num + 1 
     }
     return(list(cl=cl, co.stats=co.stats))

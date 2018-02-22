@@ -5,10 +5,10 @@ Authors@R: c(
   person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")))
-Description: Clustering of data from a matrix using iterative Jaccard-Louvain and/or WGCNA.
+Description: Iteractive clustering of single cell RNASeq dataset. 
 Depends: R (>= 3.4.0)
-License: What license is it under?
+License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true
-Imports: ggplot2,limma, matrixStats, Matrix, WGCNA, igraph, FNN, dendextend, pvclust, Rtsne, grid
+Imports: ggplot2,limma, matrixStats, Matrix, dynamicTreeCut, Rphenograph, dendextend, pvclust, Rtsne, grid
 RoxygenNote: 6.0.1

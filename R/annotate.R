@@ -91,6 +91,8 @@ compare_annotate<- function(cl, ref.cl, ref.cl.df, reorder=TRUE)
   }
   cl.df$cluster_label = cl_label
   row.names(cl.df) = levels(cl)
+  cl.size = table(cl)
+  cl.df$size = cl.size[row.names(cl.df)]
   ###plot the mapping
   tb.df = as.data.frame(tb)
   tb.df = tb.df[tb.df$Freq > 0,]

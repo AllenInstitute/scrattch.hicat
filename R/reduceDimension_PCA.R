@@ -36,12 +36,6 @@ rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cel
   if(length(sampled.cells)< length(select.cells)){
     rot  =  pca$rotatio[,tmp]
     tmp.dat = norm.dat[row.names(rot), select.cells]
-    if(is.matrix(tmp.dat)){
-      tmp.dat = tmp.dat - rowMeans(tmp.dat)
-    }
-    else{
-      tmp.dat = tmp.dat - Matrix::rowMeans(tmp.dat)
-    }
     rd.dat = as.matrix(t(tmp.dat)  %*% rot)
   }
   else{

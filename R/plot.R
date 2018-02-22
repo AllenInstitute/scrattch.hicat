@@ -1,5 +1,6 @@
 plot_cl_heatmap <- function(norm.dat, cl, markers, prefix,hc=NULL, gene.hc=NULL,centered=FALSE,labels=names(cl),sorted=FALSE,by.cl=TRUE,ColSideColors=NULL,maxValue=5,min.sep=4,main="")
   {
+    select.cells=names(cl)
     tmp.dat = as.matrix(norm.dat[markers,select.cells,drop=F])
     if(!is.null(ColSideColors)){
       ColSideColors=ColSideColors[, select.cells,drop=F]
@@ -50,7 +51,7 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix,hc=NULL, gene.hc=NULL,
     dev.off()        
   }
     
-display_cl<- function(cl, norm.dat,prefix, col=NULL, max.cl.size=NULL,markers=NULL,main="",...)
+display_cl<- function(cl, norm.dat,prefix=NULL, col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",...)
   {
     select.cells=names(cl)        
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -67,15 +68,12 @@ display_cl<- function(cl, norm.dat,prefix, col=NULL, max.cl.size=NULL,markers=NU
     }
     tmp.dat = as.matrix(norm.dat[,names(cl)])
     if(is.null(markers)){
-      tmp = select_markers(tmp.dat,cl, ...)
+      tmp = select_markers(tmp.dat,cl, de.genes=de.genes, ...)
       markers = tmp$markers
       de.genes=tmp$de.genes
-      if(!is.null(prefix) & !is.null(markers)){
-        markers = plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, by.cl=TRUE,min.sep=10,main=main)
-      }
     }
-    else{
-      markers = plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, by.cl=TRUE,min.sep=10,main=main)
+    if(!is.null(prefix) & !is.null(markers)){
+      plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, by.cl=TRUE,min.sep=10,main=main)
     }
     return(list(markers=markers,de.genes=de.genes))
   }
