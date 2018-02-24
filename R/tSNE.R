@@ -25,10 +25,14 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL, 
     for(i in 1:nrow(cl.center)){
       g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=2,color="black")
     }
-    if(show_legend){
+    g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
+    if(show.legend){
       g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),ncol=5)
+      g = g + theme(legend.position="bottom")
     }
-    g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"),legend.position="bottom")
+    else{
+      g = g + theme(legend.position="none")
+    }
     
     return(list(tsne.df=tsne.df, g=g))    
   }

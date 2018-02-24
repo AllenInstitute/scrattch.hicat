@@ -1,13 +1,10 @@
-build_dend <- function(cl.dat, l.rank, l.color,collapse.height=0.02, nboot=100)
+build_dend <- function(cl.dat, l.rank, l.color, nboot=100)
   {
     require(dendextend)
     cl.cor = cor(cl.dat)
     cl.hc = hclust(as.dist(1-cl.cor),method="average")      
   
     dend = as.dendrogram(cl.hc)
-    dend=unbranch_by_length(dend, collapse.height)
-    dend =reorder_dend(dend,l.rank)
-    dend = collapse_branch(dend, 0.005)    
     dend = dend %>% set("labels_cex", 0.7)
     tmp=cl.hc$labels[cl.hc$order]
     dend = dend %>% set("labels_col", l.color[tmp])
@@ -24,6 +21,8 @@ build_dend <- function(cl.dat, l.rank, l.color,collapse.height=0.02, nboot=100)
       conf = data.frame(label,bp, au)
       dend = dend %>% pvclust_show_signif_gradient(result, signif_type = "bp", signif_col_fun=colorRampPalette(c("white","black"))) %>% pvclust_show_signif(result, signif_type="bp", signif_value=c(2,1))
     }
+    dend =reorder_dend(dend,l.rank)
+    dend = collapse_branch(dend, 10^-10)    
     return(list(dend=dend, cl.cor=cl.cor, conf=conf))
   }
 
