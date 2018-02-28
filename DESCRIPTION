@@ -3,10 +3,10 @@ Title: Iterative clustering of transcriptomic data
 Version: 0.0.1
 Authors@R: c(
   person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
-  person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
-  person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")))
+  person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
+  person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")))
 Description: Iteractive clustering of single cell RNASeq dataset. 
-Depends: R (>= 3.4.0)
+Depends: R (>= 3.3.0)
 License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true

@@ -379,7 +379,7 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
           closest.pair = which.max(tmp$Freq)
           x = tmp[closest.pair,1]
           y=  tmp[closest.pair,2]
-          cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
+          #cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
           cl[cl==x]= y
           cl.rd[as.character(y),]= cl.rd[as.character(y),] + cl.rd[as.character(x),]
           cl.rd = cl.rd[row.names(cl.rd)!=x,,drop=F]
@@ -463,7 +463,7 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
       for(i in 1:nrow(to.merge)){
         p = to.merge[i,]
         if(i == 1 | sc[i] < de.param$de.score.th /2  & length(intersect(p, merged))==0){
-          cat("Merge ",p[1], p[2], sc[i],"\n")                   
+          #cat("Merge ",p[1], p[2], sc[i],"\n")                   
           cl[cl==p[2]] = p[1]
           rm.pairs = row.names(pairs)[pairs[,1]%in% p | pairs[,2]%in% p]
           de.genes = de.genes[setdiff(names(de.genes),rm.pairs)]
@@ -531,7 +531,7 @@ merge_cl.new <- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param()
           closest.pair = which.max(tmp$Freq)
           x = tmp[closest.pair,1]
           y=  tmp[closest.pair,2]
-          cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
+          #cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
           cl[cl==x]= y
           cl.rd[as.character(y),]= cl.rd[as.character(y),] + cl.rd[as.character(x),]
           cl.rd = cl.rd[row.names(cl.rd)!=x,,drop=F]
@@ -609,7 +609,7 @@ merge_cl.new <- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param()
       for(i in 1:nrow(to.merge)){
         p = to.merge[i,]
         if(i == 1 | sc[i] < de.param$de.score.th /2  & length(intersect(p, merged))==0){
-          cat("Merge ",p[1], p[2], sc[i],"\n")                   
+          #cat("Merge ",p[1], p[2], sc[i],"\n")                   
           cl[cl==p[2]] = p[1]
           rm.pairs = row.names(pairs)[pairs[,1]%in% p | pairs[,2]%in% p]
           de.genes = de.genes[setdiff(names(de.genes),rm.pairs)]

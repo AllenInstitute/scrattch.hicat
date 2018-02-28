@@ -179,10 +179,10 @@ get_eigen <- function(gene.mod, norm.dat, select.cells, prefix=NULL,method="ward
 
 rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
   {
-    dat = norm.dat[select.genes,sampled.cells]
+    dat = as.matrix(norm.dat[select.genes,sampled.cells])
     adj = adjacency(t(dat), power = softPower,type=type)
     adj[is.na(adj)]=0
-    TOM = TOMsimilarity(adj,TOMType=type)
+    TOM = TOMsimilarity(adj,TOMType=type,verbose=0)
     dissTOM = as.matrix(1-TOM)
     row.names(dissTOM)= colnames(dissTOM) = row.names(dat)
     rm(dat)
