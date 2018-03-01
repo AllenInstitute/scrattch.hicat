@@ -1,7 +1,6 @@
 library(limma)
 
 
-
 #' Set differential expression (DE) threshold for genes and clusters. 
 #'
 #' @param padj.th Threshold on adjusted Pvalue for limma. Default vaue is 0.01. 

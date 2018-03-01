@@ -1,6 +1,7 @@
+library(ggplot2)
 plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL, show.legend=FALSE, cex=0.15, ...)
   {
-    library(Rtsne)
+    require(Rtsne)
     if(is.null(tsne.result)){
       tsne.result = Rtsne(t(norm.dat[select.genes,names(cl)]),...)$Y
       row.names(tsne.result)=names(cl)

@@ -10,5 +10,6 @@ Depends: R (>= 3.3.0)
 License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true
-Imports: ggplot2,limma, matrixStats, Matrix, dynamicTreeCut, Rphenograph, dendextend, pvclust, Rtsne, grid
+Imports: limma, matrixStats, Matrix, Rphenograph, dendextend, ggplot2
+Suggests: dynamicTreeCut, flashClust, pvclust, Rtsne, grid
 RoxygenNote: 6.0.1

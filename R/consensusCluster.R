@@ -13,7 +13,7 @@ collect_co_matrix <- function(result.files,all.cells)
     co.matrix= matrix(0, nrow=length(all.cells),ncol=length(all.cells))
     pr.matrix = matrix(0, nrow=length(all.cells),ncol=length(all.cells))
     row.names(co.matrix)=row.names(pr.matrix)=colnames(co.matrix)=colnames(pr.matrix)=all.cells
-    for(f in cl.files){
+    for(f in result.files){
       tmp=load(f)
       cl=result$cl
       cl = cl[intersect(names(cl),all.cells)]
@@ -44,7 +44,7 @@ sample_cl_list <- function(cl.list, max.cl.size=500)
     return(select.cells)
   }
 
-collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.size=1000)
+collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.size=NULL)
   {
     select.cells=c()
     cl.list=list()
@@ -59,14 +59,19 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
       all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
       cl.list[[f]] = all.cl
     }
-    select.cells= sample_cl_list(cl.list, max.cl.size=max.cl.size)
-    cl.comb = do.call("rbind", sapply(cl.list, function(cl){
-      tmp.df= data.frame(cell=select.cells, cl=all.cl[select.cells])
+    if(!is.null(max.cl.size)){
+      select.cells= sample_cl_list(cl.list, max.cl.size=max.cl.size)
+    }
+    else{
+      select.cells= all.cells
+    }
+    cl.mat = do.call("rbind", sapply(cl.list, function(cl){
+      tmp.df= data.frame(cell=select.cells, cl=cl[select.cells])
       tb=xtabs(~cl+cell, data=tmp.df)
       tb = Matrix(tb, sparse=TRUE)
     },simplify=F))
-    cl.comb = t(cl.comb)
-    return(list(cl.list=cl.list, cl.mat = cl.comb))
+    cl.mat = t(cl.mat)
+    return(list(cl.list=cl.list, cl.mat = cl.mat))
   }
 
 #' Title
@@ -82,14 +87,12 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
 #' @examples
 collect_co_matrix_sparseM <- function(norm.dat,result.files,all.cells,max.cl.size=1000)
   {
-    select.cells=c()
-    
     tmp = collect_subsample_cl_matrix(norm.dat,result.files,all.cells, max.cl.size=max.cl.size)
     cl.list = tmp$cl.list
-    cl.comb = tmp$cl.comb
-    co.ratio = crossprod(t(cl.comb))
+    cl.mat = tmp$cl.mat
+    co.ratio = crossprod(t(cl.mat))
     co.ratio@x = co.ratio@x/length(result.files)
-    return(list(co.ratio=co.ratio, cl.comb=cl.comb, cl.list=cl.list))
+    return(list(co.ratio=co.ratio, cl.mat=cl.mat, cl.list=cl.list))
   }
 
 
@@ -131,6 +134,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #' @examples
 iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE,result=NULL,min.cells=4,...)
   {
+    require(igraph)
     if(verbose){
       print(prefix)
     }
@@ -231,7 +235,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
     return(list(cl=cl, markers=markers))
   }
 
-merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25){
+merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25, verbose=0){
   cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio)
   cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,,drop=F])))
   co.within= diag(cl.co.ratio)
@@ -242,7 +246,9 @@ merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25){
   co.df$diff = pmax(co.df$within1, co.df$within2) - co.df[,3]
   co.df = co.df[co.df$diff  < diff.th,]
   co.df = co.df[order(co.df[,1],decreasing=T),]
-  print(co.df)
+  if(verbose > 0){
+    print(co.df)
+  }
   for(i in 1:nrow(co.df)){
     cl[cl==co.df[i,2]]=co.df[i,1]
   }
@@ -255,29 +261,29 @@ merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25){
 ##' @title 
 ##' @param cl 
 ##' @param co.ratio 
-##' @param cl.comb 
+##' @param cl.mat 
 ##' @return 
 ##' @author Zizhen Yao
-get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.comb=NULL)
+get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
   {
     if(!is.null(co.ratio)){
       cell.cl.co.ratio=get_cl_means(co.ratio, cl)
       return(cell.cl.co.ratio)    
     }
-    if(!is.null(cl.comb)){
-      tmp = cl.comb %*% get_cl_sums(t(cl.comb), cl)
-      tmp = tmp / Matrix::rowSums(cl.comb)
+    if(!is.null(cl.mat)){
+      tmp = cl.mat %*% get_cl_sums(t(cl.mat), cl)
+      tmp = tmp / Matrix::rowSums(cl.mat)
       cl.size = table(cl)
       cell.cl.co.ratio=as.matrix(t(t(tmp)/as.vector(cl.size[colnames(tmp)])))
       return(cell.cl.co.ratio)
     }
-    stop("Either co.ratio or cl.comb should not be NULL")
+    stop("Either co.ratio or cl.mat should not be NULL")
   }
 
     
-get_cl_co_stats <- function(cl, co.ratio=NULL, cl.comb=NULL)
+get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
   {
-    cell.cl.co.ratio= get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.comb=cl.comb)
+    cell.cl.co.ratio= get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.mat=cl.mat)
     cl.co.ratio <- get_cl_means(t(cell.cl.co.ratio), cl)
 
     cell.cl.confusion <- unlist(sapply(1:ncol(cell.cl.co.ratio),function(i){
@@ -363,10 +369,10 @@ cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
     return(cl)
   }
 
-refine_cl <- function(cl, co.ratio=NULL, cl.comb=NULL, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02)
+refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02)
   {
     if(is.null(co.stats)){
-      co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.comb=cl.comb)
+      co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.mat=cl.mat)
     }
     correct = 0
     iter.num = 0
@@ -397,7 +403,7 @@ refine_cl <- function(cl, co.ratio=NULL, cl.comb=NULL, co.stats=NULL,confusion.t
       pred.cl = setNames(colnames(tmp.dat)[apply(tmp.dat, 1, which.max)], row.names(tmp.dat))
       cl[tmp.cells] = pred.cl[tmp.cells]
       ###Recompute co stats
-      co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.comb=cl.comb)
+      co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.mat=cl.mat)
       iter.num = iter.num + 1 
     }
     return(list(cl=cl, co.stats=co.stats))

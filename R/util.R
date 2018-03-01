@@ -48,10 +48,11 @@ convert_pair_matrix <- function(pair.num, l=NULL,directed=FALSE)
 
 get_cl_sums <- function(mat, cl)
   {
+    require(Matrix)
     tmp.df= data.frame(cell=names(cl), cl=cl)
     tb=xtabs(~cl+cell, data=tmp.df)
     tb = Matrix(tb, sparse=TRUE)
-    tmp=tcrossprod(mat[,colnames(tb)], tb)
+    tmp=Matrix::tcrossprod(mat[,colnames(tb)], tb)
     cl.sums = as.matrix(tmp)
     return(cl.sums)
   }

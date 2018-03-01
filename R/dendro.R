@@ -1,6 +1,6 @@
+require(dendextend)
 build_dend <- function(cl.dat, l.rank, l.color, nboot=100)
   {
-    require(dendextend)
     cl.cor = cor(cl.dat)
     cl.hc = hclust(as.dist(1-cl.cor),method="average")      
   

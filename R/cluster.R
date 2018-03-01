@@ -1,3 +1,7 @@
+library(Matrix)
+library(matrixStats)
+library(Rphenograph)
+
 jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 blue.red <-colorRampPalette(c("blue", "white", "red"))
 
@@ -330,13 +334,16 @@ reorder_cl <- function(cl, dat)
 #' @export
 #'
 #' @examples
-merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), type=c("undirectional","directional"), max.cl.size=300,de.method="limma",return.markers=TRUE)
+merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), type=c("undirectional","directional"), max.cl.size=300,de.method="limma",de.genes=NULL, return.markers=TRUE, verbose=0)
   {
     cl = setNames(as.integer(as.character(cl)), names(cl))
-    de.genes=list()
     de.df=list()
     select.cells = names(cl)
     pairs=NULL
+    if(!is.null(de.genes)){
+      pairs=do.call("rbind",strsplit(names(de.genes), "_"))
+      row.names(pairs)=names(de.genes)
+    }
     if(is.matrix(norm.dat)){
       cell.gene.counts= colSums(norm.dat[,select.cells]>0)
     }
@@ -371,7 +378,9 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
           closest.pair = which.max(tmp$Freq)
           x = tmp[closest.pair,1]
           y=  tmp[closest.pair,2]
-          #cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
+          if(verbose > 0){
+            cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
+          }
           cl[cl==x]= y
           cl.rd[as.character(y),]= cl.rd[as.character(y),] + cl.rd[as.character(x),]
           cl.rd = cl.rd[row.names(cl.rd)!=x,,drop=F]
@@ -386,13 +395,12 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
       
       ####if the number of clusters is fewer than 10, compute all pairs. If no clusters are significant, quit
       if(length(cl.size) < 10 & length(de.genes)==0){
-        de.genes = de_score(tmp.dat, cl=cl[tmp.cells], min.cells=min.cells, de.param= de.param, method=de.method)
+        de.genes = de_score(tmp.dat, cl=cl[tmp.cells], min.cells=min.cells, de.param= de.param, method=de.method, de.genes=de.genes)
         sc = sapply(de.genes, function(x){
           if(length(x)>0){x$score}
           else{0}
         })
         merge.pairs=do.call("rbind",strsplit(names(de.genes), "_"))
-        merge.pairs = gsub("cl","", merge.pairs)
         row.names(merge.pairs)=names(de.genes)
         pairs = merge.pairs
       }
@@ -455,7 +463,9 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
       for(i in 1:nrow(to.merge)){
         p = to.merge[i,]
         if(i == 1 | sc[i] < de.param$de.score.th /2  & length(intersect(p, merged))==0){
-          #cat("Merge ",p[1], p[2], sc[i],"\n")                   
+          if(verbose > 0){
+            cat("Merge ",p[1], p[2], sc[i],"\n")
+          }
           cl[cl==p[2]] = p[1]
           rm.pairs = row.names(pairs)[pairs[,1]%in% p | pairs[,2]%in% p]
           de.genes = de.genes[setdiff(names(de.genes),rm.pairs)]
@@ -467,10 +477,13 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
     if(length(unique(cl))<2){
       return(NULL)
     }
-    print(table(cl))
+    if(verbose > 0){
+      print(table(cl))
+    }
+    markers = NULL
     if(return.markers){
       de.genes = de_score(as.matrix(norm.dat[,tmp.cells]), cl[tmp.cells], de.genes=de.genes, de.param=de.param)
-      markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=20)$markers
+      markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=50)$markers
     }
     sc = sapply(de.genes, function(x){
       if(length(x)>0){x$score}
@@ -544,7 +557,6 @@ merge_cl.new <- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param()
           else{0}
         })
         merge.pairs=do.call("rbind",strsplit(names(de.genes), "_"))
-        merge.pairs = gsub("cl","", merge.pairs)
         row.names(merge.pairs)=names(de.genes)
         pairs = merge.pairs
       }
@@ -615,7 +627,7 @@ merge_cl.new <- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param()
     }
     print(table(cl))
     de.genes = de_score(as.matrix(norm.dat[,tmp.cells]), cl[tmp.cells], de.genes=de.genes, de.param=de.param)
-    markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=20)$markers
+    markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=50)$markers
     sc = sapply(de.genes, function(x){
       if(length(x)>0){x$score}
       else{0}
