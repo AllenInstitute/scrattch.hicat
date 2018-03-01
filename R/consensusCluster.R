@@ -1,3 +1,4 @@
+library(Matrix)
 #' Title
 #'
 #' @param result.files 

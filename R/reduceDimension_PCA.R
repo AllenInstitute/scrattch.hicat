@@ -1,5 +1,6 @@
 rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cells, max.pca=10, w=NULL)
 {
+  require(Matrix)
   if(is.null(w)){
     pca = prcomp(t(as.matrix(norm.dat[select.genes,sampled.cells])),tol=0.01)
     pca.importance = summary(pca)$importance
@@ -36,7 +37,7 @@ rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cel
   if(length(sampled.cells)< length(select.cells)){
     rot  =  pca$rotatio[,tmp]
     tmp.dat = norm.dat[row.names(rot), select.cells]
-    rd.dat = as.matrix(t(tmp.dat)  %*% rot)
+    rd.dat = as.matrix(Matrix::t(tmp.dat)  %*% rot)
   }
   else{
     rd.dat=pca$x[,tmp,drop=F]
