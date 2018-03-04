@@ -133,7 +133,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #' @export
 #'
 #' @examples
-iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE,result=NULL,min.cells=4,...)
+iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE,result=NULL, min.cells=4,...)
   {
     require(igraph)
     if(verbose){
@@ -190,7 +190,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
       }
       cell.cl.co.ratio =get_cell.cl.co.ratio(tmp.cl, co.ratio)
   
-      tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, min.cells=min.cells, ...)
+      tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, min.cells=min.cells, verbose=verbose, ...)
       if(is.null(tmp) | !is.list(tmp)) return(NULL)
       if (length(unique(tmp$cl))==1) return(NULL)
       tmp.cl= tmp$cl
@@ -203,26 +203,20 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
       markers=tmp$markers
       if(verbose){
         print(table(cl))
-        tmp = display_cl(cl, norm.dat, prefix, col=all.col[,select.cells], max.cl.size=200,min.cells=min.cells, markers=markers)
-        tmp.cl = tmp$cl
-        tmp.cells = names(tmp.cl)
-        tmp.cells = tmp.cells[order(tmp.cl)]
-        sep = tmp.cl[tmp.cells]
-        sep = which(sep[-1]!=sep[-length(sep)])
-        pdf(paste0(prefix, ".co.pdf"))
-        heatmap.3(as.matrix(co.ratio[tmp.cells, tmp.cells]), col = blue.red(100), trace="none", ColSideColors=all.col[,tmp.cells], Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
-        dev.off()
+        display_cl_markers_co.ratio(unique(cl), cl, norm.dat=norm.dat, co.ratio=co.ratio, prefix=prefix,  all.col=all.col, markers=markers)
       }
     }
     cell.cl.co.ratio = get_cl_means(co.ratio, cl)
     n.cl=max(cl)
     new.cl=cl
     for(i in sort(unique(cl))){
-      tmp.cells=names(cl)[cl==i]            
-      if(sum(cell.cl.co.ratio[tmp.cells, as.character(i)] < 0.5) < min.cells){
+      tmp.prefix= paste0(prefix, ".", i)
+      tmp.cells=names(cl)[cl==i]
+      uncertain.cells=sum(cell.cl.co.ratio[tmp.cells, as.character(i)] < 1 - diff.th)
+      if(uncertain.cells < min.cells){
         next
       }
-      result= iter_consensus_clust(co.ratio=co.ratio, cl.list=cl.list, norm.dat=norm.dat, select.cells=tmp.cells,prefix=paste0(prefix,".",i),all.col=all.col, diff.th =diff.th, min.cells=min.cells, method=method, de.param = de.param, verbose=verbose)
+      result= iter_consensus_clust(co.ratio=co.ratio, cl.list=cl.list, norm.dat=norm.dat, select.cells=tmp.cells,prefix=tmp.prefix, all.col=all.col, diff.th =diff.th, min.cells=min.cells, method=method, de.param = de.param, verbose=verbose)
       if(is.null(result)){
         next
       }
@@ -306,7 +300,7 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
   }))
   tmp.dat = co.ratio[select.cells, select.cells]
   hc=hclust(as.dist(1-as.matrix(crossprod(tmp.dat))), method="ward")
-  tmp.cl = cutree(hc, pmax(avg.cl.num+1,2))
+  tmp.cl = cutree(hc, ceiling(avg.cl.num)+2)
   tmp.cl=refine_cl(tmp.cl, co.ratio=co.ratio, min.cells=min.cells, niter=1, tol.th=1)$cl
   if(length(unique(tmp.cl))==1){
     return(NULL)    
@@ -370,7 +364,7 @@ cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
     return(cl)
   }
 
-refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02)
+refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02, verbose=0)
   {
     if(is.null(co.stats)){
       co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.mat=cl.mat)
@@ -388,7 +382,9 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th
       }
       correct = sum(cl==pred.cl)
       correct.frac= correct/length(cl)
-      print(correct.frac)
+      if(verbose){
+        print(correct.frac)
+      }
       if(1 - correct.frac < tol.th){
         break
       }
@@ -424,6 +420,6 @@ plot_co_matrix <- function(co.ratio, cl, max.cl.size=100)
   ord = ord1[order(cl[ord1])]
   sep = cl[ord]
   sep=which(sep[-1]!=sep[-length(sep)])
-  heatmap.3(co.ratio[ord,ord], col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
+  heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
 }
 

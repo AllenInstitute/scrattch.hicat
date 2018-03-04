@@ -41,6 +41,7 @@ DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, cl.pres
   select.cl = unique(c(pairs[,1],pairs[,2]))
   cl = cl[cl%in% select.cl]
   cl.means = as.data.frame(get_cl_means(norm.dat, cl))
+  norm.dat = as.matrix(norm.dat[,names(cl)])
   if(length(low.th)==1){
     low.th =setNames(rep(low.th, nrow(norm.dat)),row.names(norm.dat))      
   }

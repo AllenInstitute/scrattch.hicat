@@ -121,3 +121,10 @@ sample_cells_by_genecounts <- function(cl, norm.dat, max.cl.size=200)
   cell.weights = cell.gene.counts - min(cell.gene.counts)+1
   sample_cells(cl, weights=cell.weights, max.cl.size=max.cl.size)  
 }
+
+translate_pair_name <- function(pairs, id.map)
+{
+  pairs.df = do.call("rbind", strsplit(pairs,"_"))
+  new.pairs  = paste(id.map[as.character(pairs.df[,1])], id.map[as.character(pairs.df[,2])],sep="_")
+  return(new.pairs)
+}

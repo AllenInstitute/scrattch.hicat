@@ -44,11 +44,14 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix,hc=NULL, gene.hc=NULL,
       sep=which(sep[-1]!=sep[-length(sep)])
       sep = c(sep[1], sep[which(sep[-1] - sep[-length(sep)] >=min.sep)+1])
       heatmap.3(tmp.dat[,ord],Rowv=as.dendrogram(gene.hc), Colv=NULL, col=col, trace="none", dendrogram="none", cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors[,ord],breaks=breaks,colsep=sep, sepcolor="black",main=main)
+      cells.order=colnames(tmp.dat)[ord]
     }
     else{
       heatmap.3(tmp.dat,Rowv=as.dendrogram(gene.hc), Colv=as.dendrogram(hc), col=col, trace="none", dendrogram=dendro, cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors,breaks=breaks,main=main)
+      cells.order=colnames(tmp.dat)[hc$order]
     }
-    dev.off()        
+    dev.off()
+    return(cells.order)
   }
     
 display_cl<- function(cl, norm.dat,prefix=NULL, col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",...)
@@ -72,17 +75,20 @@ display_cl<- function(cl, norm.dat,prefix=NULL, col=NULL, max.cl.size=NULL,marke
       markers = tmp$markers
       de.genes=tmp$de.genes
     }
+    cells_order=NULL
     if(!is.null(prefix) & !is.null(markers)){
-      plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, by.cl=TRUE,min.sep=10,main=main)
+      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, by.cl=TRUE,min.sep=10,main=main)
     }
-    return(list(markers=markers,de.genes=de.genes))
+    return(list(markers=markers,de.genes=de.genes, cells_order= cells_order))
   }
 
 
-display_cl_markers_co.ratio <- function(select.cl, all.cl, norm.dat, co.ratio, prefix,  all.col, max.cl.size=100, ...)
+display_cl_markers_co.ratio <- function(select.cl, all.cl, norm.dat, co.ratio, prefix,  all.col, max.cl.size=100, markers=NULL,...)
 {
   cells = names(all.cl)[all.cl %in% select.cl]
-  tmp.cl =droplevels(all.cl[cells])
+  if(is.factor(all.cl)){
+    tmp.cl =droplevels(all.cl[cells])
+  }
   if(!is.null(max.cl.size)){
     cells = unlist(tapply(names(tmp.cl),tmp.cl, function(x){sample(x, pmin(max.cl.size, length(x)))},simplify=F))
   }

@@ -180,7 +180,7 @@ get_eigen <- function(gene.mod, norm.dat, select.cells, prefix=NULL,method="ward
 rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
   {
     require(dynamicTreeCut)
-    require(flashClust)
+    require(fastcluster)
     dat = as.matrix(norm.dat[select.genes,sampled.cells])
     adj = adjacency(t(dat), power = softPower,type=type)
     adj[is.na(adj)]=0
@@ -189,7 +189,7 @@ rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.
     row.names(dissTOM)= colnames(dissTOM) = row.names(dat)
     rm(dat)
     gc()
-    geneTree = flashClust(as.dist(dissTOM), method = "average")
+    geneTree = hclust(as.dist(dissTOM), method = "average")
     dynamicMods = dynamicTreeCut::cutreeDynamic(dendro = geneTree, distM = dissTOM, cutHeight=cutHeight,
       deepSplit = 2, pamRespectsDendro = FALSE,minClusterSize = minModuleSize)
     gene.mod = split(row.names(dissTOM), dynamicMods)

@@ -23,38 +23,10 @@ map_by_cor <- function(train.dat, train.cl, test.dat,method="median")
 
 predict_annotate_cor <- function(cl, ref.markers, ref.cl, ref.cl.df,norm.dat)
   {
-    tmp = mapByCor(norm.dat[ref.markers,names(ref.cl)], ref.cl, norm.dat[ref.markers,names(cl)])
-    pred.score= tmp$pred.score
-    pred.cl= tmp$pred.cl
-    ###compare predicted cluster member with the new clustering result 
-    tb = table(cl, pred.cl)
-    ###Reorder clusters
-    tmp = apply(tb, 1, which.max)
-    cl = setNames(factor(as.character(cl), levels=row.names(tb)[order(tmp)]), names(cl))
-    levels(cl)=1:length(levels(cl))
-    ###Assign the best matching old cluster to each new cluster. 
-    tb=table(cl,pred.cl=pred.cl[names(cl)])
-    tmp = colnames(tb)[apply(tb, 1, which.max)]
-    
-    cl.df = data.frame(pred.cl=tmp)
-    match.id = match(cl.df$pred.cl, row.names(ref.cl.df))
-    cl.df = cbind(cl.df, ref.cl.df[match.id,])
-    
-    ###plot the mapping
-    tb.df = as.data.frame(tb)
-    tb.df = tb.df[tb.df$Freq > 0,]
-    library(ggplot2)
-    tb.df$pred.prob=0
-    select.cells=names(cl)
-    for(i in 1:nrow(tb.df)){
-      tmp.cells=select.cells[cl== as.character(tb.df[i, 1])]
-      tb.df[i,"pred.prob"] = mean(pred.score[tmp.cells, as.character(tb.df[i,2])])
-    }
-    
-    g= ggplot(tb.df, aes(x=cl, y=pred.cl)) + geom_point(aes(size=sqrt(Freq),color=pred.prob))
-    g = g+ theme(axis.text.x=element_text(angle=90,size=7),axis.text.y=element_text(size=6)) + scale_color_gradient(low="white",high="darkblue")
-    g= g+scale_size(range=c(0,3))
-    return(list(cl=cl, cl.df=cl.df,g = g,tb.df=tb.df))
+    common.cells= intersect(names(ref.cl),colnames(norm.dat))
+    tmp = map_by_cor(norm.dat[ref.markers,common.cells], ref.cl[common.cells], norm.dat[ref.markers,names(cl)])
+    pred.cl= setNames(factor(as.character(tmp$pred.df$pred.cl),levels=row.names(ref.cl.df)), row.names(tmp$pred.df))
+    compare_annotate(cl, pred.cl, ref.cl.df)
   }
 
 ###cluster annotation ref.cl.df must include "cluster_label" column
@@ -104,7 +76,7 @@ compare_annotate<- function(cl, ref.cl, ref.cl.df, reorder=TRUE)
   }
   tb.df$ref.cl.label = factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels=ref.cl.df$cluster_label)
   g= ggplot(tb.df, aes(x=cl, y=ref.cl.label)) + geom_point(aes(size=sqrt(Freq),color=jaccard))
-  g = g+ theme(axis.text.x=element_text(angle=90,size=7),axis.text.y=element_text(size=6)) + scale_color_gradient(low="white",high="darkblue")
+  g = g+ theme(axis.text.x=element_text(angle=90,size=7),axis.text.y=element_text(size=6)) + scale_color_gradient(low="yellow",high="darkblue")
   g= g+scale_size(range=c(0,3))
   return(list(cl=cl, cl.df=cl.df,g = g,tb.df=tb.df,cl.id.map=cl.id.map))
 }
