@@ -135,7 +135,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
       ###Ignore vg.padj.th for WGCNA, choose top "maxGgenes" for analysis
       select.genes = row.names(vg)[which(vg$loess.padj < 1)]
       select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
-      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=tmp.cells, min.cells=min.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)
+      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=tmp.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)
     }
     else{
        ###If most genes are differentially expressed, then use absolute dispersion value
@@ -395,7 +395,7 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
       
       ####if the number of clusters is fewer than 10, compute all pairs. If no clusters are significant, quit
       if(length(cl.size) < 10 & length(de.genes)==0){
-        de.genes = de_score(tmp.dat, cl=cl[tmp.cells], min.cells=min.cells, de.param= de.param, method=de.method, de.genes=de.genes)
+        de.genes = de_score(tmp.dat, cl=cl[tmp.cells], de.param= de.param, method=de.method, de.genes=de.genes)
         sc = sapply(de.genes, function(x){
           if(length(x)>0){x$score}
           else{0}
@@ -430,7 +430,7 @@ merge_cl<- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param(), typ
         #####Check pairs already known but not yet merged yet.
         new.pairs = setdiff(row.names(merge.pairs),names(de.genes))
         pairs = rbind(pairs, merge.pairs[new.pairs,,drop=F])
-        tmp.de.genes =de_score_pairs(tmp.dat, cl=cl[tmp.cells], pairs=merge.pairs[new.pairs,,drop=F], min.cells=min.cells, de.param= de.param, method=de.method)$de.genes
+        tmp.de.genes =de_score_pairs(tmp.dat, cl=cl[tmp.cells], pairs=merge.pairs[new.pairs,,drop=F], de.param= de.param, method=de.method)$de.genes
         de.genes[names(tmp.de.genes)] = tmp.de.genes
         sc = sapply(de.genes[row.names(merge.pairs)], function(x){
           if(length(x)>0){x$score}
@@ -551,7 +551,7 @@ merge_cl.new <- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param()
       
       ####if the number of clusters is fewer than 10, compute all pairs. If no clusters are significant, quit
       if(length(cl.size) < 10 & length(de.genes)==0){
-        de.genes = de_score(tmp.dat, cl=cl[tmp.cells], min.cells=min.cells, de.param= de.param, method=de.method)
+        de.genes = de_score(tmp.dat, cl=cl[tmp.cells], de.param= de.param, method=de.method)
         sc = sapply(de.genes, function(x){
           if(length(x)>0){x$score}
           else{0}
@@ -584,7 +584,7 @@ merge_cl.new <- function(norm.dat, cl, rd.dat, min.cells=4,de.param = de_param()
         #####Check pairs already known but not yet merged yet. For efficiency, check the top 20 nearest pairs only 
         new.pairs = head(row.names(merge.pairs)[!row.names(merge.pairs) %in% names(de.genes)], 20)
         pairs = rbind(pairs, merge.pairs[new.pairs,,drop=F])
-        tmp.de.genes = de_score_pairs(tmp.dat, cl=cl[tmp.cells], pairs=merge.pairs[new.pairs,,drop=F], min.cells=min.cells, de.param= de.param, method=de.method)$de.genes
+        tmp.de.genes = de_score_pairs(tmp.dat, cl=cl[tmp.cells], pairs=merge.pairs[new.pairs,,drop=F], de.param= de.param, method=de.method)$de.genes
         de.genes[names(tmp.de.genes)] = tmp.de.genes
       }
       order.pairs = row.names(merge.pairs)[row.names(merge.pairs) %in% names(de.genes),]

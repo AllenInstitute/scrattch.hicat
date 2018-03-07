@@ -1,4 +1,4 @@
-score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method="average",min.cells=4, de.param=de_param(), max.cl.size=NULL){
+score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method="average", de.param=de_param(), max.cl.size=NULL){
     if(length(gene.mod)==0){
       return(NULL)
     }
@@ -38,7 +38,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
       else{
         stop(paste("Unknown method",method))
       }
-      de.genes = de_score(as.matrix(norm.dat[,names(tmp.cl)]), cl=tmp.cl, min.cells=min.cells, de.param = de.param)
+      de.genes = de_score(as.matrix(norm.dat[,names(tmp.cl)]), cl=tmp.cl, de.param = de.param)
       de.genes = de.genes[sapply(de.genes, length)>1]
       if(length(de.genes) > 0){
         sc =max(sapply(de.genes, function(x)x$score))
@@ -55,7 +55,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
 
 
 
-filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10,min.cells=10, min.deScore=40, de.param = de_param(), max.cl.size=NULL,rm.eigen=NULL, rm.th = 0.6, maxSize=200, prefix="cl", max.mod=NULL)
+filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, min.deScore=40, de.param = de_param(), max.cl.size=NULL,rm.eigen=NULL, rm.th = 0.6, maxSize=200, prefix="cl", max.mod=NULL)
   {
     eigen = get_eigen(gene.mod, norm.dat,select.cells)[[1]]
     if(!is.null(rm.eigen)){
@@ -97,7 +97,7 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10,m
     not.selected=1:length(gene.mod)
     
     for(m in method){
-      tmp=score_gene_mod(norm.dat, select.cells, gene.mod=gene.mod[not.selected],min.cells=min.cells, eigen = eigen[select.cells,not.selected,drop=F], method=m, de.param=de.param,max.cl.size=max.cl.size)
+      tmp=score_gene_mod(norm.dat, select.cells, gene.mod=gene.mod[not.selected], eigen = eigen[select.cells,not.selected,drop=F], method=m, de.param=de.param,max.cl.size=max.cl.size)
       x = do.call("cbind", sapply(tmp, function(x)x[[1]],simplify=F))
       tmp = x["sc",] > mod.score[not.selected]
       mod.score[not.selected[tmp]] = x["sc",tmp]
@@ -179,12 +179,12 @@ get_eigen <- function(gene.mod, norm.dat, select.cells, prefix=NULL,method="ward
 
 rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
   {
-    require(dynamicTreeCut)
+    require(WGCNA)
     require(fastcluster)
     dat = as.matrix(norm.dat[select.genes,sampled.cells])
     adj = adjacency(t(dat), power = softPower,type=type)
     adj[is.na(adj)]=0
-    TOM = TOMsimilarity(adj,TOMType=type,verbose=0)
+    TOM = TOMsimilarity(adj,TOMType=type)
     dissTOM = as.matrix(1-TOM)
     row.names(dissTOM)= colnames(dissTOM) = row.names(dat)
     rm(dat)

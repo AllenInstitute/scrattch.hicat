@@ -12,7 +12,7 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)
       c(head(tmp$up.genes,n.markers), head(tmp$down.genes,n.markers))
     },simplify=F)
     markers = intersect(unlist(de.markers),row.names(norm.dat))
-    return(list(markers=markers, de.genes=de.genes))
+    return(list(markers=markers, de.genes=de.genes[select.pairs]))
   }
 
 markers_max_tau <- function(cl.dat, th=0.5, tau.th=0.7,n.markers=3)

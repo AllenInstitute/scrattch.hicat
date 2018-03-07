@@ -83,18 +83,18 @@ display_cl<- function(cl, norm.dat,prefix=NULL, col=NULL, max.cl.size=NULL,marke
   }
 
 
-display_cl_markers_co.ratio <- function(select.cl, all.cl, norm.dat, co.ratio, prefix,  all.col, max.cl.size=100, markers=NULL,...)
+display_cl_markers_co.ratio <- function(select.cl, cl, norm.dat, co.ratio, prefix,  all.col, max.cl.size=100, markers=NULL,...)
 {
-  cells = names(all.cl)[all.cl %in% select.cl]
-  if(is.factor(all.cl)){
-    tmp.cl =droplevels(all.cl[cells])
+  cells = names(cl)[cl %in% select.cl]
+  if(is.factor(cl)){
+    cl =droplevels(cl[cells])
   }
   if(!is.null(max.cl.size)){
-    cells = unlist(tapply(names(tmp.cl),tmp.cl, function(x){sample(x, pmin(max.cl.size, length(x)))},simplify=F))
+    cells = sample_cells(cl, max.cl.size)
   }
-  cl = tmp.cl[cells]
+  cl = cl[cells]
   if(is.null(markers)){
-    markers= display_cl(norm.dat[, cells],tmp.cl, prefix=NULL,...)
+    markers= display_cl(norm.dat[, cells],cl, prefix=NULL,...)
   }
   hc = hclust(as.dist(1-as.matrix(co.ratio[cells, cells])),method="average")
   ord = order(cl, order(hc$order))

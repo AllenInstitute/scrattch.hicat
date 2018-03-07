@@ -15,9 +15,9 @@ library(limma)
 #' @export
 #'
 #' @examples
-de_param <- function(low.th=1, padj.th=0.01, lfc.th=1, q1.th=0.5, q2.th=NULL,q.diff.th=0.7, de.score.th=100)
+de_param <- function(low.th=1, padj.th=0.01, lfc.th=1, q1.th=0.5, q2.th=NULL,q.diff.th=0.7, de.score.th=100, min.cells=4)
 {
-  list(low.th=low.th, padj.th=padj.th, lfc.th=lfc.th, q1.th=q1.th, q2.th=q2.th, q.diff.th = q.diff.th, de.score.th=de.score.th)
+  list(low.th=low.th, padj.th=padj.th, lfc.th=lfc.th, q1.th=q1.th, q2.th=q2.th, q.diff.th = q.diff.th, de.score.th=de.score.th, min.cells=min.cells)
 }
 
 
@@ -101,7 +101,7 @@ DE_genes_pw <- function(norm.dat,cl, ...)
 }
 
 
-de_pair <- function(df,  de.param=de_param())
+de_pair <- function(df,  de.param=de_param(), cl.size1=NULL, cl.size2=NULL)
   {
     df = df[order(df$pval,-abs(df$lfc)),]
     select=with(df, which(padj < de.param$padj.th & abs(lfc)>de.param$lfc.th))
@@ -118,7 +118,13 @@ de_pair <- function(df,  de.param=de_param())
     }
     if(!is.null(de.param$q1.th)){
       up = with(df[up,,drop=F], up[q1 > de.param$q1.th])
+      if(!is.null(cl.size1)){
+        up = with(df[up,,drop=F], up[q1 * cl.size1 >= de.param$min.cells])
+      }
       down = with(df[down,,drop=F], down[q2 > de.param$q1.th])
+      if(!is.null(cl.size2)){
+        down = with(df[down,,drop=F], down[q2 * cl.size2 >= de.param$min.cells])
+      }
     }
     if(!is.null(de.param$q2.th)){
       up = with(df[up,,drop=F], up[q2 < de.param$q2.th])
@@ -166,7 +172,7 @@ de_pair <- function(df,  de.param=de_param())
 #' @export
 #'
 #' @examples
-de_score <- function(norm.dat, cl, min.cells=4, de.param= de_param(),  method="limma", de.genes=NULL)
+de_score <- function(norm.dat, cl,  de.param= de_param(),  method="limma", de.genes=NULL)
 {
    if(is.factor(cl)){
      cl = droplevels(cl)
@@ -179,19 +185,21 @@ de_score <- function(norm.dat, cl, min.cells=4, de.param= de_param(),  method="l
    if(!is.null(de.genes)){
      pairs = pairs[!row.names(pairs) %in% names(de.genes),,drop=F]
    }
-   de.result=de_score_pairs(norm.dat, cl=cl, pairs=pairs, min.cells= min.cells, de.param= de.param, method=method)
+   de.result=de_score_pairs(norm.dat, cl=cl, pairs=pairs, de.param= de.param, method=method)
    de.genes=c(de.genes, de.result$de.genes)
    return(de.genes)
 }
 
-de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, min.cells=4, de.param=de_param(), method="limma")
+de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, de.param=de_param(), method="limma")
 {
   select.cl = unique(c(pairs[,1],pairs[,2]))
   cl = cl[cl %in% select.cl]
+  norm.dat = as.matrix(norm.dat[,names(cl)])
   if(is.factor(cl)){cl = droplevels(cl)}
   cl.size = table(cl)
   cl.n = names(cl.size)
-  cl.small = cl.n[cl.size < min.cells]
+
+  cl.small = cl.n[cl.size < de.param$min.cells]
   cl.big =  setdiff(cl.n,cl.small)
   select.pair = pairs[,1] %in% cl.big & pairs[,2] %in% cl.big
   de.genes=list()
@@ -202,7 +210,7 @@ de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, min.cells=4, de.para
     if(length(low.th)==1){
       low.th =setNames(rep(low.th, nrow(norm.dat)),row.names(norm.dat))      
     }
-    select.genes= row.names(norm.dat)[rowSums(norm.dat[,select.cells] >= low.th[row.names(norm.dat)]) >= min.cells]
+    select.genes= row.names(norm.dat)[rowSums(norm.dat[,select.cells] >= low.th[row.names(norm.dat)]) >= de.param$min.cells]
     if(is.null(de.df)){
       de.df = DE_genes_pairs(norm.dat[select.genes,select.cells], cl[select.cells], pairs[select.pair,,drop=F], low.th=low.th, method=method)
     }
@@ -211,7 +219,14 @@ de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, min.cells=4, de.para
         return(list())
       }
       df = de.df[[x]]
-      de_pair(df, de.param = de.param)
+      if(!is.null(de.param$min.cells)){
+        cl.size1 = cl.size[as.character(pairs[x,1])]
+        cl.size2 = cl.size[as.character(pairs[x,2])]
+      }
+      else{
+        cl.size1 = cl.size2 = NULL
+      }
+      de_pair(df, de.param = de.param, cl.size1, cl.size2)
     },simplify=F)
   }
   else{

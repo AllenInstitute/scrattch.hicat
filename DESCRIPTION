@@ -1,6 +1,6 @@
 Package: iterclust
 Title: Iterative clustering of transcriptomic data
-Version: 0.0.1
+Version: 0.0.7
 Authors@R: c(
   person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
@@ -11,5 +11,5 @@ License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true
 Imports: limma, matrixStats, Matrix, Rphenograph, dendextend, ggplot2
-Suggests: dynamicTreeCut, fastcluster, pvclust, Rtsne, grid
+Suggests: WGCNA, pvclust, Rtsne, grid
 RoxygenNote: 6.0.1
