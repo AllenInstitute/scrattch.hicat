@@ -1,31 +1,32 @@
-require(dendextend)
-
 pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp", "au"), signif_col_fun = colorRampPalette(c("black", 
     "darkred", "red")), ...) 
 {
-    signif_type <- match.arg(signif_type)
-    pvalue_per_node <- pvclust_obj$edges[[signif_type]]
-    ord <- rank(get_branches_heights(dend, sort = FALSE))
-    pvalue_per_node <- pvalue_per_node[ord]
-    signif_col <- signif_col_fun(100)
-    pvalue_by_all_nodes <- rep(NA, nnodes(dend))
-    ss_leaf <- which_leaf(dend)
-    pvalue_by_all_nodes[!ss_leaf] <- pvalue_per_node
-    pvalue_by_all_nodes <- na_locf(pvalue_by_all_nodes)
-    the_cols <- signif_col[round(pvalue_by_all_nodes * 100)]
-    assign_values_to_branches_edgePar(dend, the_cols, "col")
-    assign_values_to_branches_edgePar(dend, pvalue_by_all_nodes, "conf")
+  signif_type <- match.arg(signif_type)
+  pvalue_per_node <- pvclust_obj$edges[[signif_type]]
+  ord <- rank(get_branches_heights(dend, sort = FALSE))
+  pvalue_per_node <- pvalue_per_node[ord]
+  signif_col <- signif_col_fun(100)
+  pvalue_by_all_nodes <- rep(NA, nnodes(dend))
+  ss_leaf <- which_leaf(dend)
+  pvalue_by_all_nodes[!ss_leaf] <- pvalue_per_node
+  pvalue_by_all_nodes <- na_locf(pvalue_by_all_nodes)
+  the_cols <- signif_col[round(pvalue_by_all_nodes * 100)]
+  signif_lwd = seq(0.5,2,length.out=100)
+  the_lwds = signif_lwd[round(pvalue_by_all_nodes * 100)]
+  dend= dend %>% assign_values_to_branches_edgePar(the_cols, "col") %>% assign_values_to_branches_edgePar(the_lwds, "lwd") %>% assign_values_to_branches_edgePar(pvalue_by_all_nodes, "conf") 
 }
 
-build_dend <- function(cl.dat, l.rank, l.color, nboot=100)
+build_dend <- function(cl.dat, l.rank=NULL, l.color=NULL, nboot=100)
   {
     cl.cor = cor(cl.dat)
+    pvclust.result=NULL
     if(nboot > 0){
       require(pvclust)
-      result <- pvclust::pvclust(cl.dat, method.dist = "cor" ,method.hclust = "average", nboot=nboot)
-      dend = as.dendrogram(result$hclust)
+      pvclust.result <- pvclust::pvclust(cl.dat, method.dist = "cor" ,method.hclust = "average", nboot=nboot)
+      dend = as.dendrogram(pvclust.result$hclust)
       dend = label_dend(dend)$dend
-      dend = dend %>% pvclust_show_signif_gradient(result, signif_type = "bp", signif_col_fun=colorRampPalette(c("white","black"))) %>% pvclust_show_signif(result, signif_type="bp", signif_value=c(2,1))
+      dend = dend %>% pvclust_show_signif_gradient(pvclust.result, signif_type = "bp", signif_col_fun=colorRampPalette(c("white","gray","darkred","black")))
+      #%>% pvclust_show_signif(pvclust.result, signif_type="bp", signif_value=c(2,1))
     }
     else{
       cl.hc = hclust(as.dist(1-cl.cor),method="average")      
@@ -33,11 +34,61 @@ build_dend <- function(cl.dat, l.rank, l.color, nboot=100)
     }
     dend = dend %>% set("labels_cex", 0.7)
     dend = dend %>% set("labels_col", l.color[labels(dend)])
-    dend = dend %>% set("leaves_pch", 19) %>% set("leaves_cex", 0.5) %>% set("leaves_col", l.color[labels(dend)])
-    conf=NULL
-    dend =reorder_dend(dend,l.rank)
-    dend = collapse_branch(dend, 10^-10)    
-    return(list(dend=dend, cl.cor=cl.cor, conf=conf))
+    dend = dend %>% set("leaves_pch", 19) %>% set("leaves_cex", 0.5)
+    if(!is.null(l.color)){
+      dend = dend %>% set("leaves_col", l.color[labels(dend)])
+    }
+    if(!is.null(l.rank)){
+      dend =reorder_dend(dend,l.rank)
+      dend = collapse_branch(dend, 10^-10)
+    }
+    return(list(dend=dend, cl.cor=cl.cor, pvclust.result=pvclust.result))
+  }
+
+
+unbranch_by_conf  <- function(dend, conf.th)
+  {
+    if(length(dend)>1){
+      conf = c()
+      for(i in 1:length(dend)){
+        if(is.null(attr(dend[[i]],"edgePar"))){
+          conf[i]=1
+        }
+        else{
+          conf[i] = attr(dend[[i]],"edgePar")$conf
+        }
+        dend[[i]]=unbranch_by_conf(dend[[i]],conf.th)
+      }
+      select = conf < conf.th
+      select.children = which(select )
+      if(length(select.children)>0){
+        unchanged = which(!select)
+        new_dend = dend[unchanged]
+        names(new_dend)= unchanged
+        for(i in select.children){
+          if(length(dend[[i]])>1){
+            for(j in 1:length(dend[[i]])){  ###make sure that no more than 100 chidren
+              ind = sprintf("%02d",j)
+              attr(dend[[i]][[j]], "edgePar") = attr(dend[[i]], "edgePar")
+              new_dend[[paste(i,ind,sep=".")]] = dend[[i]][[j]]
+            }
+          }
+          else{
+            new_dend[[as.character(i)]]= dend[[i]]
+          }
+        }
+        new_dend = new_dend[order(as.integer(names(new_dend)))]
+        #cat("Unbranch", attr(dend, "label"), ":", names(new_dend),"\n")
+        class(new_dend)= 'dendrogram'
+        attr(new_dend, "height")  = attr(dend, "height")
+        attr(new_dend, "members") = attr(dend, "members")
+        attr(new_dend, "midpoint")= attr(dend, "midpoint")
+        attr(new_dend, "edgePar") = attr(dend, "edgePar")
+        attr(new_dend, "label") = attr(end, "label")
+        dend= new_dend
+      }
+    }
+    return(dend)
   }
 
 
@@ -73,8 +124,6 @@ unbranch_by_length <- function(dend, length.th)
       }
       child.h = get_childrens_heights(dend)
       h = attr(dend, "height")
-      print(h)
-      print(h-child.h)
       select=h - child.h < length.th
       select.children = which(select )
       if(length(select.children)>0){
@@ -92,7 +141,6 @@ unbranch_by_length <- function(dend, length.th)
             new_dend[[as.character(i)]]= dend[[i]]
           }
         }
-        print(names(new_dend))
         new_dend = new_dend[order(as.integer(names(new_dend)))]
         class(new_dend)= 'dendrogram'
         attr(new_dend, "height")  = attr(dend, "height")
@@ -105,15 +153,16 @@ unbranch_by_length <- function(dend, length.th)
     return(dend)
   }
 
-unbranch_by_conf  <- function(dend, conf.th)
+
+cutree_dend <- function(dend, h)
   {
     if(length(dend)>1){
-      conf = c()
       for(i in 1:length(dend)){
-        dend[[i]]=unbranch_by_length(dend[[i]],conf.th)
-        conf[i] = attr(dend[[i]],"edgePar")$conf
+        dend[[i]]=cutree_dend(dend[[i]],length.th)
       }
-      select = conf < conf.th
+      child.h = get_childrens_heights(dend)
+      select= child.h < h
+      
       select.children = which(select )
       if(length(select.children)>0){
         unchanged = which(!select)
@@ -130,7 +179,6 @@ unbranch_by_conf  <- function(dend, conf.th)
             new_dend[[as.character(i)]]= dend[[i]]
           }
         }
-        print(names(new_dend))
         new_dend = new_dend[order(as.integer(names(new_dend)))]
         class(new_dend)= 'dendrogram'
         attr(new_dend, "height")  = attr(dend, "height")
@@ -142,6 +190,8 @@ unbranch_by_conf  <- function(dend, conf.th)
     }
     return(dend)
   }
+
+
 
 
 label_dend <- function(dend,n=1)
@@ -245,5 +295,7 @@ dend_lca <- function(dend, l1, l2, l=rep(attr(dend,"label"),length(l1)))
     }
     return(l)
   }
+
+
 
 

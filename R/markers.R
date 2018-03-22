@@ -195,181 +195,66 @@ select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL,
  }
 
 
-selectMarkersPairGroup <- function(norm.dat,cl, g1,g2,de.genes,top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
+group_specific_markers <- function(cl.g, norm.dat, cl, de.param, n.markers=5, cl.present.counts=NULL)
   {
-    pairs = do.call("rbind",strsplit(names(de.genes), "_"))
-    pairs = gsub("cl", "",pairs)
-    row.names(pairs)= names(de.genes)
-    up.pairs = row.names(pairs)[pairs[,1] %in% g1 & pairs[,2] %in% g2]
-    down.pairs = row.names(pairs)[pairs[,1] %in% g2 & pairs[,2] %in% g1]
-    select.pairs = c(up.pairs, down.pairs)
-    if(is.null(up.gene.score)){
-      tmp=get_gene_score(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
-      up.gene.score=tmp$up.gene.score
-      down.gene.score=tmp$down.gene.score
-      
-      row.names(down.gene.score)= all.genes
+    cl= droplevels(cl)
+    select.cells = names(cl)[cl %in% cl.g]
+    not.select.cells = setdiff(names(cl), select.cells)
+    if(is.null(cl.present.counts)){
+      fg = rowSums(norm.dat[,select.cells]> de.param$low.th)/length(select.cells)
+      bg = rowSums(norm.dat[,not.select.cells]> de.param$low.th)/length(not.select.cells)
     }
-    all.genes = row.names(up.gene.score)
-    tmp.up.gene.score = cbind(up.gene.score[,up.pairs,drop=F], down.gene.score[,down.pairs,drop=F])
-    tmp.down.gene.score = cbind(down.gene.score[,up.pairs,drop=F], up.gene.score[,down.pairs,drop=F])
-    
-    up.genes = row.names(tmp.up.gene.score)[head(order(rowSums(tmp.up.gene.score)), n.markers)]
-    down.genes = row.names(tmp.down.gene.score)[head(order(rowSums(tmp.down.gene.score)), n.markers)]
-        
-    up.num = colSums(tmp.up.gene.score[up.genes,,drop=F] < max.num)
-    down.num = colSums(tmp.down.gene.score[down.genes,,drop=F] < max.num)
-    total.num = up.num + down.num
-    add.genes = setNames(rep(n.markers, ncol(tmp.up.gene.score)), colnames(tmp.up.gene.score)) - total.num
-    add.genes = add.genes[add.genes > 0]
-    
-    up.genes = up.genes[rowMins(tmp.up.gene.score[up.genes,,drop=F]) < max.num]
-    down.genes = down.genes[rowMins(tmp.down.gene.score[down.genes,,drop=F]) < max.num]
-    genes = union(up.genes, down.genes)
-    if(length(add.genes)>0){
-      tmp=selectMarkersPair(norm.dat, add.genes= add.genes,de.genes= de.genes, gene.score=pmin(tmp.up.gene.score, tmp.down.gene.score), rm.genes=c(up.genes, down.genes),top.n=top.n)
-      genes=union(genes, unlist(tmp))
+    else{
+      fg = rowSums(cl.present.counts[,cl.g,drop=F])
+      bg = rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
+      bg.freq= bg/length(not.select.cells)
+      fg.freq = fg/length(select.cells)
     }
-    return(genes)
+    tau = (fg.freq - bg.freq)/pmax(bg.freq,fg.freq)
+    ratio = fg/(fg+bg)
+    g = names(fg.freq)[fg.freq > de.param$q1.th & tau > de.param$q.diff.th]
+    g = g[order(tau[g]+ ratio[g]/4 + fg.freq[g]/5,decreasing=T)]
+    select.g = c(g[tau[g]> 0.95], head(g, n.markers))
+    g = g[g %in% select.g]
+    if(length(g > 0)){
+      df=data.frame(g=g,specificity=round(tau[g],digits=2), fg.freq=round(fg.freq[g],digits=2), bg.freq = round(bg.freq[g],digits=2), fg.counts=fg[g],bg.counts=bg[g])
+      return(df)
+    }
+    return(NULL)
   }
 
-findNodeSpecificMarkers <- function(dend,norm.dat, cl, cl.df, n.markers=10,de.genes=NULL,up.gene.score=NULL, down.gene.score=NULL,top.n=50,max.num=2000)
-{
-  m=list()
-  g1 = row.names(cl.df)[cl.df$cluster_label %in% labels(dend)]
-  g2=  setdiff(levels(cl), g1)
-  all.genes = row.names(up.gene.score)
-  pairs = do.call("rbind",strsplit(colnames(up.gene.score), "_"))
-  row.names(pairs)= colnames(up.gene.score)
-  up.pairs = row.names(pairs)[pairs[,1] %in% g1 & pairs[,2] %in% g2]
-  down.pairs = row.names(pairs)[pairs[,1] %in% g2 & pairs[,2] %in% g1]
-  if(length(up.pairs)>0 & length(down.pairs)>0){
-    tmp.up.gene.score = cbind(up.gene.score[,up.pairs,drop=F], down.gene.score[,down.pairs,drop=F])
-    tmp.down.gene.score = cbind(down.gene.score[,up.pairs,drop=F], up.gene.score[,down.pairs,drop=F])
-    up.genes = row.names(tmp.up.gene.score)[head(order(rowSums(tmp.up.gene.score)), n.markers)]
-    up.genes = up.genes[rowSums(tmp.up.gene.score[up.genes,,drop=F] < max.num) > 0]
-    if(length(up.genes)>0){
-      up.num = colSums(tmp.up.gene.score[up.genes,,drop=F] < max.num)
-      markers=up.genes
-      m[[attr(dend,"label")]]=markers
-    }
-  }
-  if(length(dend)>1){
-    for(i in 1:length(dend)){
-      m=c(m,findNodeSpecificMarkers(dend[[i]],norm.dat, cl, cl.df, de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,top.n=top.n, max.num=max.num, n.markers=n.markers))
-    }
-  }
-  return(m)
-}
 
-findDendMarkers <- function(dend,norm.dat, cl, cl.df,de.genes,up.gene.score=NULL, down.gene.score=NULL,...)
+within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
   {
-    require(dendextend)
-    require(randomForest)
-    print(dend)
-    if(length(dend)>1){
-      cl.g = sapply(1:length(dend),function(i){
-        g = row.names(cl.df)[cl.df$cluster_label %in% (dend[[i]] %>% labels)]
-      },simplify=F)
-      
-      markers = c()
-      for(i in 1:(length(cl.g)-1)){
-        for(j in (i+1):length(cl.g)){
-          g = selectMarkersPairGroup(norm.dat,cl, cl.g[[i]],cl.g[[j]],de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,...)
-          markers=union(markers, g)          
-        }
-      }
-      
-      tmp.cl = setNames(rep(1:length(cl.g),sapply(cl.g,length)),unlist(cl.g))
-      select.cells = names(cl)[cl %in% names(tmp.cl)]
-      select.cells = unlist(tapply(select.cells, cl[select.cells],function(x)sample(x,min(length(x), 50))))
-      tmp.cl = setNames(tmp.cl[as.character(cl[select.cells])],select.cells)
-      ###if too few genes selected, add more genes
-      if(length(markers)< 4){
-        de.df= DE.genes.pw(norm.dat[,select.cells], paste0("cl",tmp.cl))
-        markers = selectMarkers(norm.dat, tmp.cl, de.df, n.markers=10, q=0.4, q.b=0.7)$markers
-      }
-      
-      rf = randomForest(t(norm.dat[markers,select.cells]),factor(tmp.cl))
-      w = importance(rf)
-      attr(dend, "markers")=w[,1]
-      for(i in 1:length(dend)){
-        dend[[i]] = findDendMarkers(dend[[i]], norm.dat, cl, cl.df,de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,...)
-      }
-    }
-    return(dend)
-  }
-
-findDendMarkersSpecficity <- function(dend,norm.dat, cl, cl.label)
-{
-  if(length(dend)>1){
-    cl.g = sapply(1:length(dend),function(i){
-      g = names(cl.label)[cl.label %in% (dend[[i]] %>% labels)]
-    },simplify=F)
-    markers=names(sort(attr(dend, "markers"),decreasing=T))
-    cl.g.mean = sapply(cl.g, function(x){
-      tmp.cells = names(cl)[cl %in% x]
-      rowMeans(norm.dat[markers,tmp.cells])
-    })
-    colnames(cl.g.mean)=1:ncol(cl.g.mean)
-    cl.g.mean.diff1 = cl.g.mean - rowMaxs(cl.g.mean)
-    cl.g.mean.diff2 = cl.g.mean - rowMins(cl.g.mean)
-    cl.g.list = lapply(colnames(cl.g.mean), function(x){row.names(cl.g.mean)[cl.g.mean.diff1[,x] > -1 & cl.g.mean.diff2[,x] > 1]})
-    names(cl.g.list) = sapply(1:length(dend),function(i){attr(dend[[i]],"label")})
-    attr(dend, "markers.byCl")= cl.g.list
-    for(i in 1:length(dend)){
-      dend[[i]] = findDendMarkersSpecficity(dend[[i]],norm.dat, cl, cl.label)
-    }
-  }
-  return(dend)
-}
-  
-
-
-mapDendMarkers <- function(dend.list, map.dat,select.cells,th=0.5)
-  {
-    map.gene.num <- matrix(0, nrow=ncol(map.dat), ncol= length(dend.list))
-    row.names(map.gene.num)= colnames(map.dat)
-    colnames(map.gene.num)=names(dend.list)
-    for(x in names(dend.list)){
-      node = dend.list[[x]]
-      if(length(node)>1){
-        for(i in 1:length(node)){
-          l = attr(node[[i]], "label")
-          print(l)
-          tmp.genes= intersect(attr(node, "markers.byCl")[[i]],row.names(map.dat))
-          map.gene.num[select.cells, l] = colSums(map.dat[tmp.genes,select.cells]>th)
-        }
-      }
-    }
-    return(map.gene.num)
-  }
-
-getNodeSpecificMarkers <- function(dend.list, norm.dat, cl,cl.df,...)
-  {    
-    do.call("rbind",sapply(names(dend.list), function(x){
-      print(x)
-      cl.g = row.names(cl.df)[cl.df$cluster_label %in% labels(dend.list[[x]])]      
-      df=getGroupSpecificMarkers(cl.g, norm.dat, cl,...)
+    cl = droplevels(cl[cl %in% cl.g])
+    df = do.call("rbind", sapply(cl.g, function(x){
+      df=group_specific_markers(x, norm.dat, cl,...)
       if(!is.null(df)){
         df$cl = x
+        df
       }
-      df
+      else{
+        NULL
+      }
     },simplify=F))
+    return(df)
   }
 
 
-getNodeVsSiblingMarkers <- function(dend.list, norm.dat, cl,cl.df,...)
+
+node_vs_sibling_markers <- function(dend.list, norm.dat, cl,cl.df,...)
   {    
     do.call("rbind",sapply(names(dend.list), function(x){
       dend = dend.list[[x]]
-      all.cl =  droplevels(cl[cl %in% row.names(cl.df)[cl.df$cluster_label %in% labels(dend)]])
+      print(labels(dend)) 
+      all.cl =  droplevels(cl[cl %in% labels(dend)])
       if(length(dend)>1){
         do.call("rbind",sapply(1:length(dend),function(i){          
-          cl.g = row.names(cl.df)[cl.df$cluster_label %in% labels(dend[[i]])]
-          df=getGroupSpecificMarkers(cl.g, norm.dat, all.cl,...)
+          cl.g =  labels(dend[[i]])
+          df=group_specific_markers(cl.g, norm.dat, all.cl,...)
           if(!is.null(df)){
-            df$cl = attr(dend[[i]],"label")
+            df$node = attr(dend[[i]],"label")
+            df$parent = attr(dend,"label")
           }
           df
         },simplify=F))
@@ -380,30 +265,17 @@ getNodeVsSiblingMarkers <- function(dend.list, norm.dat, cl,cl.df,...)
     },simplify=F))
   }
 
-getGroupSpecificMarkers <- function(cl.g, norm.dat, cl,cl.present.counts=NULL,low.th=1,q1.th=0.5, q.diff.th=0.7,n.markers=5)
-  {
-    cl= droplevels(cl)
-    select.cells = names(cl)[cl %in% cl.g]
-    not.select.cells = setdiff(names(cl), select.cells)
-    if(is.null(cl.present.counts)){
-      fg = rowSums(norm.dat[,select.cells]> low.th)/length(select.cells)
-      bg = rowSums(norm.dat[,not.select.cells]> low.th)/length(not.select.cells)
-    }
-    else{
-      fg = rowSums(cl.present.counts[,cl.g,drop=F])
-      bg = rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
-      bg.freq= bg/length(not.select.cells)
-      fg.freq = fg/length(select.cells)
-    }
-    tau = (fg.freq - bg.freq)/pmax(bg.freq,fg.freq)
-    g = names(fg.freq)[fg.freq > q1.th & tau > q.diff.th]
-    g = g[order(tau[g]+fg.freq[g],decreasing=T)]
-    g = head(g, n.markers)
-    if(length(g > 0)){
-      df=data.frame(g=g,specifity=tau[g], fg.freq=fg.freq[g],bg.freq = bg.freq[g], fg.counts=fg[g],bg.counts=bg[g])
-      return(df)
-    }
-    return(NULL)
-  }
 
+node_specific_markers <- function(dend.list, norm.dat, cl,cl.df,...)
+  {    
+    do.call("rbind",sapply(names(dend.list), function(x){
+      print(x)
+      cl.g = row.names(cl.df)[cl.df$cluster_label %in% labels(dend.list[[x]])]      
+      df=group_specific_markers(cl.g, norm.dat, cl,...)
+      if(!is.null(df)){
+        df$cl = x
+      }
+      df
+    },simplify=F))
+  }
 

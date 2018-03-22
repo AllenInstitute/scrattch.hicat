@@ -35,11 +35,11 @@ compare_annotate<- function(cl, ref.cl, ref.cl.df, reorder=TRUE)
   common.cells=intersect(names(cl),names(ref.cl))
   ###compare predicted cluster member with the new clustering result 
   tb = table(cl[common.cells], ref.cl[common.cells])
-  ###Reorder clusters
-  tmp = apply(tb, 1, which.max)
-  cl = setNames(factor(as.character(cl), levels=row.names(tb)[order(tmp)]), names(cl))
   cl.id.map=NULL
+  ###Reorder clusters
   if(reorder){
+    tmp = apply(tb, 1, which.max)
+    cl = setNames(factor(as.character(cl), levels=row.names(tb)[order(tmp)]), names(cl))
     cl.id.map <- data.frame(new=1:length(levels(cl)),old=levels(cl))
     levels(cl)=1:length(levels(cl))
   }
@@ -76,10 +76,26 @@ compare_annotate<- function(cl, ref.cl, ref.cl.df, reorder=TRUE)
   }
   tb.df$ref.cl.label = factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels=ref.cl.df$cluster_label)
   g= ggplot(tb.df, aes(x=cl, y=ref.cl.label)) + geom_point(aes(size=sqrt(Freq),color=jaccard))
-  g = g+ theme(axis.text.x=element_text(angle=90,size=7),axis.text.y=element_text(size=6)) + scale_color_gradient(low="yellow",high="darkblue")
+  g = g+ theme(axis.text.x=element_text(vjust=0.1,hjust = 0.2, angle=90,size=7),axis.text.y=element_text(size=6)) + scale_color_gradient(low="yellow",high="darkblue")
   g= g+scale_size(range=c(0,3))
   return(list(cl=cl, cl.df=cl.df,g = g,tb.df=tb.df,cl.id.map=cl.id.map))
 }
 
 
 
+annotate_duplets <- function(cl, norm.dat, de.genes, cl.cor)
+  {
+    nn = setNames(sapply(1:nrow(cl.cor), function(i) {
+      colnames(cl.cor)[-i][head(order(cl.cor[i, -i], decreasing = T), 1)]
+    }), row.names(cl.cor))
+    nn.pair = data.frame(cl1=names(nn), cl2=nn, cl1.label=cl.df[names(nn),"cluster_label"], cl2.label = cl.df[nn,"cluster_label"])
+    pairs = names(de.genes)
+    pairs.df = do.call("rbind",strsplit(pairs,"_"))
+    row.names(pairs.df) = pairs
+    pairs.df = as.data.frame(pairs.df)
+    diff.neighbor=sapply(1:nrow(nn.pair), function(i){
+      p = nn.pair[i,1:2]
+      p = pairs.df[pairs.df[,1] ]
+    })
+    
+  }

@@ -3,7 +3,7 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL, 
   {
     require(Rtsne)
     if(is.null(tsne.result)){
-      tsne.result = Rtsne(t(norm.dat[select.genes,names(cl)]),...)$Y
+      tsne.result = Rtsne(t(as.matrix(norm.dat[select.genes,names(cl)])),...)$Y
       row.names(tsne.result)=names(cl)
     }
     tsne.df = as.data.frame(tsne.result[names(cl),])
@@ -42,7 +42,7 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL, 
 
 
 ###meta is discretized. 
-plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.15)
+plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5)
   {
     tsne.df$meta = as.factor(meta)
     if(is.null(meta.col)){
@@ -51,9 +51,12 @@ plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.
 
     p=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=meta),size=cex)
     p = p+ scale_color_manual(values=as.vector(meta.col[levels(tsne.df$meta)]))
-    p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
+    p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black")) 
     if(!show.legend){
-      p = p + theme(legend.position="none")
+      p = p + theme(legend.position="none") 
+    }
+    else{
+      p = p + guides(colour = guide_legend(override.aes = list(size=legend.size)))
     }
     return(p)
   }

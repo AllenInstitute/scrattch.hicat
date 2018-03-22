@@ -133,7 +133,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #' @export
 #'
 #' @examples
-iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE,result=NULL, min.cells=4,...)
+iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
   {
     require(igraph)
     if(verbose){
@@ -145,7 +145,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
     }
     else{
       markers=NULL
-      if(length(select.cells)  < 2 * min.cells){
+      if(length(select.cells)  < 2 * de.param$min.cells){
         return(NULL)
       }
       if(method=="auto"){
@@ -155,7 +155,6 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
         else{
           if(!is.matrix(co.ratio)){
             co.ratio = as.matrix(co.ratio[select.cells, select.cells])
-            norm.dat = norm.dat[,select.cells]
           }
           select.method="ward"
         }
@@ -164,7 +163,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
         select.method = method
       }
       if(select.method=="ward"){
-        tmp.cl = init_cut(co.ratio, select.cells, cl.list, min.cells=min.cells, th = diff.th,method=select.method)
+        tmp.cl = init_cut(co.ratio, select.cells, cl.list, min.cells= de.param$min.cells, th = diff.th,method=select.method)
         if(is.null(tmp.cl)){
           return(NULL)
         }
@@ -188,9 +187,10 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
       if(verbose){
         print(table(tmp.cl))
       }
-      cell.cl.co.ratio =get_cell.cl.co.ratio(tmp.cl, co.ratio)
-  
-      tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, min.cells=min.cells, verbose=verbose, ...)
+      if(is.null(rd.dat)){
+        rd.dat =get_cell.cl.co.ratio(tmp.cl, co.ratio)
+      }
+      tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=rd.dat, verbose=verbose,  de.param = de.param)
       if(is.null(tmp) | !is.list(tmp)) return(NULL)
       if (length(unique(tmp$cl))==1) return(NULL)
       tmp.cl= tmp$cl
@@ -213,10 +213,10 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
       tmp.prefix= paste0(prefix, ".", i)
       tmp.cells=names(cl)[cl==i]
       uncertain.cells=sum(cell.cl.co.ratio[tmp.cells, as.character(i)] < 1 - diff.th)
-      if(uncertain.cells < min.cells){
+      if(uncertain.cells < de.param$min.cells){
         next
       }
-      result= iter_consensus_clust(co.ratio=co.ratio, cl.list=cl.list, norm.dat=norm.dat, select.cells=tmp.cells,prefix=tmp.prefix, all.col=all.col, diff.th =diff.th, min.cells=min.cells, method=method, de.param = de.param, verbose=verbose)
+      result= iter_consensus_clust(co.ratio=co.ratio, cl.list=cl.list, norm.dat=norm.dat, select.cells=tmp.cells,prefix=tmp.prefix, all.col=all.col, diff.th =diff.th, method=method, de.param = de.param, verbose=verbose, rd.dat=rd.dat)
       if(is.null(result)){
         next
       }
@@ -299,9 +299,9 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
     sum(table(cl[select.cells]) >= min.cells)
   }))
   tmp.dat = co.ratio[select.cells, select.cells]
-  hc=hclust(as.dist(1-as.matrix(crossprod(tmp.dat))), method="ward")
+  hc=  hclust(as.dist(1-as.matrix(crossprod(tmp.dat))), method="ward.D")
   tmp.cl = cutree(hc, ceiling(avg.cl.num)+2)
-  tmp.cl=refine_cl(tmp.cl, co.ratio=co.ratio, min.cells=min.cells, niter=1, tol.th=1)$cl
+  tmp.cl=refine_cl(tmp.cl, co.ratio=co.ratio, min.cells=min.cells, niter=1, confusion.th=1)$cl
   if(length(unique(tmp.cl))==1){
     return(NULL)    
   }
@@ -401,13 +401,16 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th
       cl[tmp.cells] = pred.cl[tmp.cells]
       ###Recompute co stats
       co.stats = get_cl_co_stats(cl, co.ratio=co.ratio, cl.mat=cl.mat)
-      iter.num = iter.num + 1 
+      iter.num = iter.num + 1
+      if(length(unique(cl))==1){
+        break
+      }
     }
     return(list(cl=cl, co.stats=co.stats))
   }
 
 
-plot_co_matrix <- function(co.ratio, cl, max.cl.size=100)
+plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 {
   select.cells = names(cl)
   select.cells = sample_cells(cl, max.cl.size)
@@ -420,6 +423,11 @@ plot_co_matrix <- function(co.ratio, cl, max.cl.size=100)
   ord = ord1[order(cl[ord1])]
   sep = cl[ord]
   sep=which(sep[-1]!=sep[-length(sep)])
-  heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
+  if(is.null(col)){
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
+  }
+  else{
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord])
+  }
 }
 
