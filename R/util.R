@@ -1,4 +1,4 @@
-get_pair_matrix <- function(m, rows, cols)
+get_pair_matrix_coor <- function(m, rows, cols)
   {
     v = as.vector(m)
     if(!is.numeric(rows)){
@@ -8,6 +8,13 @@ get_pair_matrix <- function(m, rows, cols)
       cols=match(cols, colnames(m))
     }
     coor = (cols - 1)* nrow(m) + rows
+    return(coor)
+  }
+
+
+get_pair_matrix <- function(m, rows, cols)
+  {
+    coor= get_pair_matrix_coor(m, rows, cols)
     return(v[coor])
   }
 

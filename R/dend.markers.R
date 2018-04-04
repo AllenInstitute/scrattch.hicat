@@ -152,7 +152,7 @@ selectMarkersPairGroup <- function(norm.dat,cl, g1,g2,de.genes,top.n=50,max.num=
 findNodeSpecificMarkers <- function(dend,norm.dat, cl, cl.df, n.markers=10,de.genes=NULL,up.gene.score=NULL, down.gene.score=NULL,top.n=50,max.num=2000)
 {
   m=list()
-  g1 = row.names(cl.df)[cl.df$cluster_label %in% labels(dend)]
+  g1= labels(dend)
   g2=  setdiff(levels(cl), g1)
   all.genes = row.names(up.gene.score)
   pairs = do.call("rbind",strsplit(colnames(up.gene.score), "_"))

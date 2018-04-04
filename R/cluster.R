@@ -38,10 +38,10 @@ pass_louvain <- function(mod.sc, adj.mat)
 }
 
 ###rows are cells, columns are feathers
-jaccard_louvain.old <- function(dat, k=10)
+jaccard_louvain.FNN <- function(dat, k=10)
   {
-    require(FNN)
-    require(igraph)
+    suppressMessages(library(FNN))
+    suppressMessages(library(igraph))
     knn.result= FNN::get.knn(dat, k)
     knn.matrix = knn.result[[1]]
     p = as.vector(t(knn.matrix))
@@ -49,8 +49,7 @@ jaccard_louvain.old <- function(dat, k=10)
     edge.unique = cbind(rowMins(edge), rowMaxs(edge))
     edge.unique=unique(edge.unique)
     knn.gr = igraph::graph(t(edge))
-    knn.matrix = igraph::get.adjacency(knn.gr)
-    
+    knn.matrix = igraph::get.adjacency(knn.gr)    
     jaccard.adj  = jaccard(knn.matrix)
     jaccard.gr = igraph::graph.adjacency(jaccard.adj, mode="undirected",weighted=TRUE)
     louvain.result= igraph::cluster_louvain(jaccard.gr)
@@ -66,45 +65,46 @@ jaccard_louvain.old <- function(dat, k=10)
 
 jaccard_louvain <- function(dat, k=10)
 {
-  require(Rphenograph)
+  suppressMessages(library(Rphenograph))
   rpheno <- Rphenograph(dat, k = k)
   cl  = setNames(rpheno[[2]]$membership, row.names(dat)[as.integer(rpheno[[2]]$names)])
   return(list(cl = cl, result=rpheno))
 }
 
-
-#' One round of clustering in the iteractive pipeline 
+#' One round of clustering in the iteractive clustering pipeline 
 #'
-#' @param norm.dat 
-#' @param select.cells 
-#' @param counts 
-#' @param method 
-#' @param dim.method 
-#' @param vg.padj.th 
-#' @param max.dim 
-#' @param rm.gene.mod 
-#' @param rm.eigen 
-#' @param rm.th 
-#' @param de.param 
-#' @param min.genes 
-#' @param type 
-#' @param maxGenes 
-#' @param sampleSize 
-#' @param max.cl.size 
-#' @param prefix 
-#' @param verbose 
+#' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).
+#' @param select.cells The cells to be clustered. Default: columns of norm.dat
+#' @param counts Raw gene counts. Default NULL, inferred from norm.dat.
+#' @param method Clustering method. It can be "louvain", "hclust" and "kmeans". Default "louvain"
+#' @param vg.padj.th High variance gene adjusted pvalue cut off. Default 0.5.
+#' @param dim.method Dimension reduction techniques. Current options include "pca" and "WGCNA". Default "pca"
+#' @param max.dim The number of top dimensions retained. Default 20. Since clustering is performed iteratively, not all relevant dimensions need to be captured in one iterations. 
+#' @param rm.eigen The reduced dimensions that need to be masked and removed. Default NULL.  
+#' @param rm.th The cutoff for correlation between reduced dimensions and rm.eigen. Reduced dimensions with correlatin with any rm.eigen vectors are not used for clustering. Default 0.7
+#' @param de.param The differential gene expression threshold. See de_param() function for details. 
+#' @param min.genes The minimal number of high variance and differentially expressed genes genes. Default 5. 
+#' @param type Can either be "undirectional" or "directional". If "undirectional", the differential gene threshold de.param is applied to combined up-regulated and down-regulated genes, if "directional", then the differential gene threshold is applied to both up-regulated and down-regulated genes. 
+#' @param maxGenes Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules. 
+#' @param sampleSize The number of sampled cells to compute reduced dimensions.
+#' @param max.cl.size Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.    
+#' @param prefix Used to keep track of intermediate results in "verbose" mode. Default NULL.
+#' @param verbose Default FALSE
 #'
-#' @return
+#' @return Clustering result is returned as a list with two elements: 
+#'         cl: cluster membership for each cell
+#'         markers: top markers that seperate clusters     
 #' @export
 #'
 #' @examples
-onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL, method=c("louvain","ward"), dim.method=c("pca","WGCNA"), vg.padj.th=0.5, max.dim=20, rm.gene.mod=NULL,  rm.eigen=NULL, rm.th=0.7, de.param = de_param(),min.genes=5, type="undirectional",maxGenes=3000,sampleSize=4000,max.cl.size=300, prefix=NULL, verbose=FALSE)
+onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL, method=c("louvain","ward", "kmeans"), vg.padj.th=0.5, dim.method=c("pca","WGCNA"), max.dim=20, rm.eigen=NULL, rm.th=0.7, de.param = de_param(),min.genes=5, type=c("undirectional", "directional"), maxGenes=3000,sampleSize=4000,max.cl.size=300, prefix=NULL, verbose=FALSE)
+                          
   {
     if(length(select.cells)>sampleSize){
-      tmp.cells = sample(select.cells, pmin(length(select.cells),sampleSize))
+      sampled.cells = sample(select.cells, pmin(length(select.cells),sampleSize))
     }
     else{
-      tmp.cells = select.cells
+      sampled.cells = select.cells
     }
     ###Find high variance genes
     if(is.matrix(norm.dat)){
@@ -115,13 +115,13 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
     }
     ###Find high variance genes.
     if(is.null(counts)){
-      counts = 2^(norm.dat[select.genes, tmp.cells])-1
+      counts = 2^(norm.dat[select.genes, sampled.cells])-1
     }
     plot.fig=NULL
     if(verbose & !is.null(prefix)){
       plot.fig=paste0(prefix,".vg.pdf")
     }
-    vg = findVG(as.matrix(counts[select.genes,tmp.cells]),plot.fig=plot.fig)
+    vg = findVG(as.matrix(counts[select.genes,sampled.cells]),plot.fig=plot.fig)
     if(dim.method=="auto"){
       if(length(select.cells)> 1000){
         dim.method="pca"
@@ -134,7 +134,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
       ###Ignore vg.padj.th for WGCNA, choose top "maxGgenes" for analysis
       select.genes = row.names(vg)[which(vg$loess.padj < 1)]
       select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
-      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=tmp.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)
+      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=sampled.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)
     }
     else{
        ###If most genes are differentially expressed, then use absolute dispersion value
@@ -146,7 +146,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
       if(length(select.genes)< min.genes){
         return(NULL)
       }
-      rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=tmp.cells, max.pca = max.dim)
+      rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)
     }
     if(is.null(rd.dat)||ncol(rd.dat)==0){
       return(NULL)
@@ -183,7 +183,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
       }
     }
     else if(method=="ward"){
-      hc = fastcluster::hclust(dist(rd.dat),method="ward.D")
+      hc = hclust(dist(rd.dat),method="ward.D")
       print("Cluster cells")
       cl = cutree(hc, max.cl)
     }
@@ -197,10 +197,12 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
     merge.result=merge_cl(norm.dat, cl=cl, rd.dat=rd.dat, type=type, de.param=de.param, max.cl.size=max.cl.size)
     gc()
     if(is.null(merge.result))return(NULL)
-    #save(merge.result, file=paste0(prefix, ".merge.rda"))
     sc = merge.result$sc
     #print(sc)
     cl = merge.result$cl
+    if(verbose){
+      save(cl, file=paste0(prefix, ".cl.rda"))
+    }
     if(length(unique(cl))>1){
       de.genes = merge.result$de.genes
       markers= merge.result$markers
@@ -235,7 +237,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
 #'
 #' @examples clust.result = iter_clust(norm.dat)
 #'           clust.result = iter_clust(norm.dat, de.param = de_param(q1.th=0.5, de.score.th=100))
-iter_clust <-function(norm.dat, select.cells=colnames(norm.dat),prefix=NULL, split.size = 10, result=NULL,method="auto",...)
+iter_clust <- function(norm.dat, select.cells=colnames(norm.dat),prefix=NULL, split.size = 10, result=NULL,method="auto",...)
   {
     print(prefix)
     if(method=="auto"){
@@ -249,7 +251,7 @@ iter_clust <-function(norm.dat, select.cells=colnames(norm.dat),prefix=NULL, spl
     else{
       select.method=method
     }
-    if(length(select.cells)<3000){
+    if(length(select.cells) <= 3000){
       if(!is.matrix(norm.dat)){
         norm.dat = as.matrix(norm.dat[,select.cells])
       }
@@ -326,7 +328,7 @@ reorder_cl <- function(cl, dat)
 #' @param rd.dat Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first. 
 #' @param de.param The DE gene criteria. See de_param for details. 
 #' @param type Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately. 
-#' @param max.cl.size Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all genes, we randomly sampled max.cl.size number of cells for testing DE genes.   
+#' @param max.cl.size Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.   
 #' @param de.method Use limma by default. We are still testing "chisq" mode. 
 #' @return A list with cl (cluster membership), de.genes (differentially expressed genes), sc (cluster pairwise de.score), markers (top cluster pairwise markers)
 #' @export

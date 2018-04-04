@@ -1,16 +1,16 @@
 library(ggplot2)
-plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL, show.legend=FALSE, cex=0.15, ...)
+plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, ...)
   {
     require(Rtsne)
-    if(is.null(tsne.result)){
+    if(is.null(tsne.df)){
       tsne.result = Rtsne(t(as.matrix(norm.dat[select.genes,names(cl)])),...)$Y
       row.names(tsne.result)=names(cl)
+      tsne.df = as.data.frame(tsne.result[names(cl),])
+      colnames(tsne.df)=c("Lim1","Lim2")
     }
-    tsne.df = as.data.frame(tsne.result[names(cl),])
-    tsne.df$cl = cl
+    tsne.df$cl = cl[row.names(tsne.df)] 
     tsne.df$cl_label = factor(cl.df[as.character(tsne.df$cl),"cluster_label"], levels=as.character(cl.df$cluster_label))
     tsne.df$cl_label= droplevels(tsne.df$cl_label)
-    colnames(tsne.df)[1:2]=c("Lim1","Lim2")
    
     cl.center=do.call("rbind",tapply(1:nrow(tsne.df), tsne.df$cl, function(x){
       center  = c(median(tsne.df[x,1]), median(tsne.df[x,2]))
@@ -34,7 +34,6 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.result = NULL, 
     else{
       g = g + theme(legend.position="none")
     }
-    
     return(list(tsne.df=tsne.df, g=g))    
   }
 
@@ -62,7 +61,7 @@ plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.
   }
 
 
-plot_tsne_gene <- function(tsne.df, norm.dat, genes,cex=0.15)
+plot_tsne_gene <- function(tsne.df, norm.dat, genes, cex=0.15)
   {
     plots=list()
     for(g in genes){
@@ -71,12 +70,12 @@ plot_tsne_gene <- function(tsne.df, norm.dat, genes,cex=0.15)
       p = p+ scale_color_gradient(low="gray",high="red") + xlab(g)
       p = p + theme(legend.position="none")
       plots[[g]]= p
-      ggsave(paste0(g, ".tsne.pdf"),p)
     }
     return(plots)
   }
 
 
+###copy from R cookbook: http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_(ggplot2)/
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     library(grid)
                                         # Make a list from the ... arguments and plotlist

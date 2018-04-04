@@ -172,7 +172,7 @@ de_pair <- function(df,  de.param=de_param(), cl.size1=NULL, cl.size2=NULL)
 #' @export
 #'
 #' @examples
-de_score <- function(norm.dat, cl,  de.param= de_param(),  method="limma", de.genes=NULL)
+de_score <- function(norm.dat, cl,  de.param= de_param(),  method="limma", de.genes=NULL,...)
 {
    if(is.factor(cl)){
      cl = droplevels(cl)
@@ -185,13 +185,14 @@ de_score <- function(norm.dat, cl,  de.param= de_param(),  method="limma", de.ge
    if(!is.null(de.genes)){
      pairs = pairs[!row.names(pairs) %in% names(de.genes),,drop=F]
    }
-   de.result=de_score_pairs(norm.dat, cl=cl, pairs=pairs, de.param= de.param, method=method)
+   de.result=de_score_pairs(norm.dat, cl=cl, pairs=pairs, de.param= de.param, method=method,...)
    de.genes=c(de.genes, de.result$de.genes)
    return(de.genes)
 }
 
 de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, de.param=de_param(), method="limma")
 {
+  row.names(pairs) = paste(pairs[,1],pairs[,2], sep="_")
   select.cl = unique(c(pairs[,1],pairs[,2]))
   cl = cl[cl %in% select.cl]
   norm.dat = as.matrix(norm.dat[,names(cl)])

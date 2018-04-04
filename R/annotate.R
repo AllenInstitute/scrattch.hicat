@@ -20,14 +20,73 @@ map_by_cor <- function(train.dat, train.cl, test.dat,method="median")
     return(list(pred.df= data.frame(pred.cl=pred.cl,pred.score=pred.score), cor.matrix=test.cl.cor))
   }
 
+map_cl_summary <- function(ref.dat, ref.cl, map.dat, map.cl)
+  {
+    map.result = map_by_cor(ref.dat, ref.cl, map.dat)
+    cor.matrix = map.result$cor.matrix
+    map.df = map.result$pred.df
+    colnames(map.df)[1] = "map.cl"
+    map.df$org.cl = map.cl[row.names(map.df)]
+    cl.size= table(map.cl)
+    cl.map.df = as.data.frame(with(map.df,table(org.cl,  map.cl)))
+    cl.map.df$Prob = round(cl.map.df$Freq/ cl.size[as.character(cl.map.df$org.cl)], digits=2)
+    cl.map.df$pred.score=0
+    for(i in 1:nrow(cl.map.df)){
+      select=names(map.cl)[map.cl== as.character(cl.map.df[i, "org.cl"])]
+      cl.map.df[i,"pred.score"] = mean(cor.matrix[select, as.character(cl.map.df[i,"map.cl"])])
+    }
+    cl.map.df$pred.score= round(cl.map.df$pred.score, digits=2)
+    cl.map.df = cl.map.df[cl.map.df$Freq > 0,]
+    return(list(map.df=map.df, cl.map.df=cl.map.df))
+  }
 
-predict_annotate_cor <- function(cl, ref.markers, ref.cl, ref.cl.df,norm.dat)
+
+predict_annotate_cor <- function(cl, ref.markers, ref.cl, ref.cl.df,norm.dat, reorder=FALSE)
   {
     common.cells= intersect(names(ref.cl),colnames(norm.dat))
     tmp = map_by_cor(norm.dat[ref.markers,common.cells], ref.cl[common.cells], norm.dat[ref.markers,names(cl)])
     pred.cl= setNames(factor(as.character(tmp$pred.df$pred.cl),levels=row.names(ref.cl.df)), row.names(tmp$pred.df))
-    compare_annotate(cl, pred.cl, ref.cl.df)
+    compare_annotate(cl, pred.cl, ref.cl.df, reorder=reorder)
   }
+
+map_sampling <- function(train.dat, train.cl, test.dat, markers, markers.perc=0.8, iter=100)
+  {
+    map.result = sapply(1:iter, function(i){
+      tmp.markers=sample(markers, round(length(markers)*markers.perc))
+      map_by_cor(train.dat[tmp.markers,], train.cl, test.dat[tmp.markers,])
+    },simplify=F)
+    map.cl = sapply(map.result, function(x)x$pred.df$pred.cl)
+
+    row.names(map.cl) = colnames(test.dat)
+    map=  as.data.frame(as.table(as.matrix(map.cl)))
+    map.freq <- table(map$Var1, map$Freq)
+    map.df = data.frame(pred.cl=setNames(colnames(map.freq)[apply(map.freq, 1, which.max)],row.names(map.freq)), prob=rowMaxs(map.freq)/iter)
+    return(list(map.df=map.df, map.freq=map.freq))
+  }
+
+map_cv <- function(norm.dat, cl, markers, n.bin=5,g.perc=1){
+  bins=unlist(tapply(names(cl), cl, function(x){
+    if(length(x) > n.bin){
+      tmp=rep_len(1:n.bin, length(x))
+    }else{
+      tmp = sample(1:n.bin, length(x))
+    }
+    setNames(tmp[sample(length(tmp))], x)
+  }))
+  names(bins) = gsub(".*\\.", "", names(bins))
+  bins= bins[names(cl)]
+  pred.cl = setNames(rep(NA, length(cl)), names(cl))
+  for(i in 1:n.bin){
+    print(i)
+    train.cells = names(cl)[bins!=i]
+    test.cells =names(cl)[bins==i]
+    select.markers=sample(markers, round(length(markers)*g.perc))
+    map.result <- map_by_cor(norm.dat[select.markers,], cl[train.cells], norm.dat[select.markers, test.cells])$pred.df
+    pred.cl[test.cells] = as.character(map.result[test.cells, "pred.cl"])
+  }
+  return(pred.cl)
+}
+
 
 ###cluster annotation ref.cl.df must include "cluster_label" column
 compare_annotate<- function(cl, ref.cl, ref.cl.df, reorder=TRUE)
@@ -82,7 +141,7 @@ compare_annotate<- function(cl, ref.cl, ref.cl.df, reorder=TRUE)
 }
 
 
-
+####Work in progress
 annotate_duplets <- function(cl, norm.dat, de.genes, cl.cor)
   {
     nn = setNames(sapply(1:nrow(cl.cor), function(i) {
@@ -96,6 +155,5 @@ annotate_duplets <- function(cl, norm.dat, de.genes, cl.cor)
     diff.neighbor=sapply(1:nrow(nn.pair), function(i){
       p = nn.pair[i,1:2]
       p = pairs.df[pairs.df[,1] ]
-    })
-    
+    })    
   }

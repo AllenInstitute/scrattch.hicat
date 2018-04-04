@@ -94,7 +94,7 @@ select_markers_pair <- function(norm.dat, de.genes, add.genes, gene.score=NULL,r
       up.gene.score=tmp$up.gene.score
       down.gene.score=tmp$down.gene.score      
       gene.score=pmin(up.gene.score, down.gene.score)
-      row.names(gene.score)=all.genes
+      row.names(gene.score)=row.names(up.gene.score)
     }
     select.genes = setdiff(row.names(gene.score),rm.genes)
     gene.score= gene.score[select.genes,names(add.genes),drop=F]

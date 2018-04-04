@@ -55,7 +55,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
 
 
 
-filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, min.deScore=40, de.param = de_param(), max.cl.size=NULL,rm.eigen=NULL, rm.th = 0.6, maxSize=200, prefix="cl", max.mod=NULL)
+filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, min.deScore=40, de.param = de_param(), max.cl.size=NULL,rm.eigen=NULL, rm.th = 0.7, maxSize=200, prefix="cl", max.mod=NULL)
   {
     eigen = get_eigen(gene.mod, norm.dat,select.cells)[[1]]
     if(!is.null(rm.eigen)){
@@ -63,16 +63,7 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
       rm.cor[is.na(rm.cor)]=0
       rm.score = setNames(rowMaxs(abs(rm.cor)), colnames(eigen))
       print(rm.score)
-      select1 = rm.score < rm.th
-      ###Check of overlapping genes in rm.gene.mod
-      select2 = sapply(gene.mod, function(x){
-        all(sapply(rm.gene.mod, function(y){
-          m=length(intersect(x,y))
-          max(m/length(x),m/length(y)) < 0.5
-        }))
-      })
-      #select = select1 & select2
-      select = select1 
+      select =  rm.score < rm.th
       if(sum(!select)){
         print("Remove module")
         print(rm.score[!select,drop=F])
@@ -126,17 +117,17 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
-##' @title 
-##' @param gene.mod 
-##' @param norm.dat 
-##' @param select.cells 
-##' @param prefix 
-##' @param method 
-##' @param hc 
-##' @param ... 
-##' @return 
-##' @author 
-get_eigen <- function(gene.mod, norm.dat, select.cells, prefix=NULL,method="ward",hc=NULL,...)
+##' @title Compute module eigen genes 
+##' @param gene.mod A list of gene modules. 
+##' @param norm.dat log transformed normalized data matrix. 
+##' @param select.cells Cells used to compute module eigen genes. 
+##' @param prefix Default NULL. If not NULL, a heatmap of the gene module eigen genes will be produced with "prefix" as the prefix for the pdf file. 
+##' @param method Default "ward". Used by hclust method to create the cell dendrogram for the heatmap display.
+##' @param hc Precomputed cell dendrogram for heatmap display. Default NULL.  
+##' @param ... Other plotting parameters passed to the heatmap function. 
+##' @return A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells. 
+
+get_eigen <- function(gene.mod, norm.dat, select.cells=colnames(norm.dat), prefix=NULL,method="ward",hc=NULL,...)
   {
     #gene.vector = setNames(rep(names(gene.mod), sapply(gene.mod, length)), unlist(gene.mod))
     #eigen = moduleEigengenes(t(norm.dat[names(gene.vector),select.cells]), gene.vector)[[1]]
@@ -179,8 +170,7 @@ get_eigen <- function(gene.mod, norm.dat, select.cells, prefix=NULL,method="ward
 
 rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
   {
-    require(WGCNA)
-    require(fastcluster)
+    suppressMessages(library(WGCNA))
     dat = as.matrix(norm.dat[select.genes,sampled.cells])
     adj = adjacency(t(dat), power = softPower,type=type)
     adj[is.na(adj)]=0

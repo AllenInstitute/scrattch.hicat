@@ -40,7 +40,6 @@ build_dend <- function(cl.dat, l.rank=NULL, l.color=NULL, nboot=100)
     }
     if(!is.null(l.rank)){
       dend =reorder_dend(dend,l.rank)
-      dend = collapse_branch(dend, 10^-10)
     }
     return(list(dend=dend, cl.cor=cl.cor, pvclust.result=pvclust.result))
   }
@@ -84,7 +83,7 @@ unbranch_by_conf  <- function(dend, conf.th)
         attr(new_dend, "members") = attr(dend, "members")
         attr(new_dend, "midpoint")= attr(dend, "midpoint")
         attr(new_dend, "edgePar") = attr(dend, "edgePar")
-        attr(new_dend, "label") = attr(end, "label")
+        attr(new_dend, "label") = attr(dend, "label")
         dend= new_dend
       }
     }
@@ -92,7 +91,44 @@ unbranch_by_conf  <- function(dend, conf.th)
   }
 
 
-reorder_dend <- function(dend, l.rank)
+prune_dend <- function(dend, rm.labels, top.level=TRUE)
+  {
+    if(length(dend)>1){
+      new_dend = list()
+      for(i in 1:length(dend)){
+        new_dend[[i]]=prune_dend(dend[[i]],rm.labels, top.level=FALSE)
+      }
+      new_dend = new_dend[!sapply(new_dend, is.null)]
+      if(length(new_dend)>1){
+        member = sum(sapply(new_dend, function(x)attr(x, "member")))
+        class(new_dend)= 'dendrogram'
+        attr(new_dend, "height")  = attr(dend, "height")
+        attr(new_dend, "members") = member
+        attr(new_dend, "edgePar") = attr(dend, "edgePar")
+        attr(new_dend, "label") = attr(dend, "label")
+        print(labels(new_dend))
+        dend= new_dend
+      }
+      else if(length(new_dend)==0){
+        dend=NULL
+      }
+      else if(length(new_dend)==1){
+        dend = new_dend[[1]]
+      }
+    }
+    else{
+      if(labels(dend) %in% rm.labels){
+        cat("Remove nodes",labels(dend),"\n")
+        dend=NULL
+      }
+    }
+    if(top.level & !is.null(dend)){      
+      dend = collapse_branch(dend)
+    }
+    return(dend)  
+  }
+  
+reorder_dend <- function(dend, l.rank, top.level=TRUE)
   {
     tmp.dend = dend
     sc=sapply(1:length(dend), function(i){
@@ -108,9 +144,12 @@ reorder_dend <- function(dend, l.rank)
           dend[[i]]= tmp.dend[[ord[i]]]
         }
         if(length(dend[[i]])>1){
-          dend[[i]]=reorder_dend(dend[[i]],l.rank)
+          dend[[i]]=reorder_dend(dend[[i]],l.rank, top.level=FALSE)
         }
       }
+    }
+    if(top.level){
+      dend = collapse_branch(dend, 10^-10)
     }
     return(dend)
   }
@@ -134,7 +173,9 @@ unbranch_by_length <- function(dend, length.th)
           if(length(dend[[i]])>1){
             for(j in 1:length(dend[[i]])){  ###make sure that no more than 100 chidren
               ind = sprintf("%02d",j)
-              new_dend[[paste(i,ind,sep=".")]] = dend[[i]][[j]]
+              idx= paste(i,ind,sep=".")
+              new_dend[[idx]] = dend[[i]][[j]]
+              attr(new_dend[[idx]], "edgePar") = attr(dend[[i]], "edgePar")
             }
           }
           else{

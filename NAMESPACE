@@ -22,4 +22,4 @@ export(compare_annotate)
 export(predict_annotate_cor)
 export(select_markers)
 export(display_cl)
-
+export(map_by_cor)
