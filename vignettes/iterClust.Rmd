@@ -123,7 +123,7 @@ consensus.result = iter_consensus_clust(co.ratio, cl.list, norm.dat, select.cell
 
 Adjust cluster boundaries to optimize with-in cluster co-clustering probabilties
 ```{r}
-consensus.cl = reassign_co_ratio(co.ratio, consensus.result$cl)$cl
+consensus.cl = refine_cl(co.ratio, consensus.result$cl)$cl
 ```
 
 Plot the heatmap of co-clustering matrix:

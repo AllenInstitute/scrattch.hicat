@@ -41,10 +41,9 @@ map_cl_summary <- function(ref.dat, ref.cl, map.dat, map.cl)
   }
 
 
-predict_annotate_cor <- function(cl, ref.markers, ref.cl, ref.cl.df,norm.dat, reorder=FALSE)
+predict_annotate_cor <- function(cl, norm.dat, ref.markers, ref.cl, ref.cl.df, ref.norm.dat, method="median", reorder=FALSE)
   {
-    common.cells= intersect(names(ref.cl),colnames(norm.dat))
-    tmp = map_by_cor(norm.dat[ref.markers,common.cells], ref.cl[common.cells], norm.dat[ref.markers,names(cl)])
+    tmp = map_by_cor(ref.norm.dat[ref.markers,], ref.cl, norm.dat[ref.markers,names(cl)],method=method)
     pred.cl= setNames(factor(as.character(tmp$pred.df$pred.cl),levels=row.names(ref.cl.df)), row.names(tmp$pred.df))
     compare_annotate(cl, pred.cl, ref.cl.df, reorder=reorder)
   }

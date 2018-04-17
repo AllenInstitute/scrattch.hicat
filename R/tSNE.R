@@ -1,5 +1,5 @@
 library(ggplot2)
-plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, ...)
+plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, ...)
   {
     require(Rtsne)
     if(is.null(tsne.df)){
@@ -24,7 +24,7 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
     g=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
     g = g+ scale_color_manual(values=as.vector(cl.col[levels(tsne.df$cl_label)]))+ scale_shape_manual(values=as.vector(shape[levels(tsne.df$cl_label)]))
     for(i in 1:nrow(cl.center)){
-      g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=2,color="black")
+      g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color="black")
     }
     g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
     if(show.legend){
