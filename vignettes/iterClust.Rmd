@@ -204,6 +204,7 @@ tsne.result$g
 
 Plot gene expression on tSNE
 ```{r}
+tsne.df = tsne.result$tsne.df
 markers=c("Slc17a7","Gad2","Sst","Pvalb","Vip","Lamp5","Sncg","Cux2","Rspo1","Rorb","Fezf2","Osr1","Oprk1","Penk","Foxp2","Nxph4","Tshz2","Sla2","Slc17a8","Fam84b")
 gene.plots = plot_tsne_gene(tsne.df, norm.dat, markers)
 multiplot(plotlist=gene.plots, cols=5)
