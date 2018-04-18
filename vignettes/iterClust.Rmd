@@ -111,7 +111,7 @@ subsample.result = sapply(1:20,function(i){
 Collect cell-cell co-clustering probablities.
 ```{r, echo=FALSE}
 result.files=file.path(d, dir(d, "result.*.rda"))
-co.result <- collect_co_matrix(result.files, select.cells)
+co.result <- collect_co_matrix_sparseM(norm.dat, result.files, all.cells)
 co.ratio <- co.result$co.ratio
 cl.list = co.result$cl.list
 ```
@@ -123,30 +123,34 @@ consensus.result = iter_consensus_clust(co.ratio, cl.list, norm.dat, select.cell
 
 Adjust cluster boundaries to optimize with-in cluster co-clustering probabilties
 ```{r}
-consensus.cl = refine_cl(co.ratio, consensus.result$cl)$cl
-```
-
-Plot the heatmap of co-clustering matrix:
-```{r}
-consensus.cl = reorder_cl(consensus.cl, co.ratio)
-tmp=plot_co_matrix(co.ratio, consensus.cl, max.cl.size=50)
+refine.result = refine_cl(consensus.result$cl, co.ratio=co.ratio, tol.th=0.005, confusion.th=0.8)
 ```
 
 Double check if all clusters are separable based on DEG genes again. 
 ```{r}
-merge.result=merge_cl(norm.dat, consensus.cl, rd.dat = t(norm.dat[consensus.result$markers,select.cells]), de.param = de.param)
-compare.result=compare_annotate(merge.result$cl, cl, cl.df)
+merge.result=merge_cl(norm.dat, refine.result$cl, rd.dat = t(norm.dat[consensus.result$markers,select.cells]), de.param = de.param)
+```
+
+Annotate the consensus clusters based on the reference cluster annotation
+```{r}
+compare.result=compare_annotate(merge.result$cl, ref.cl, ref.cl.df)
 compare.result$g
 cl = compare.result$cl
 cl.df = compare.result$cl.df
 ```
 
 
+Plot the heatmap of co-clustering matrix:
+```{r}
+tmp=plot_co_matrix(co.ratio, cl, max.cl.size=50)
+```
+
+
 At this point,  check the cluster annotation cl.df manually to change the cluster labels, colors, and determine if some clusters are outliers. 
+If there are outlier clusters, define cl.clean as the clusters after removing outliers. 
 ```{r}
 cl.clean = droplevels(cl)
 ```
-If there are outlier clusters, define cl.clean as the clusters after removing outliers. 
 
 
 Find the top 50 differentiall expressed (DE) genes between clusters
@@ -173,7 +177,7 @@ l.color = setNames(as.character(cl.df$cluster_color),row.names(cl.df))
 
 Build dendrogram for clusters using the cluster-cluster correlation matrix based on cluster medians of marker genes
 ```{r, echo=FALSE, fig.keep="all"}
-dend.result <- build_dend(cl.med[select.markers,levels(cl.clean)],l.rank, l.color,collapse.height=0.001, nboot=100)
+dend.result <- build_dend(cl.means[select.markers,levels(cl.clean)],l.rank, l.color,nboot=100)
 dend= dend.result$dend
 ```
 
@@ -195,6 +199,12 @@ heatmap.3(cl.cor, Rowv=dend, Colv=dend, trace="none",col=jet.colors(100),
 Create tSNE plots:
 ```{r}
 tsne.result <- plot_tSNE_cl(norm.dat, select.markers, cl, cl.df)
-tsne.result$p
+tsne.result$g
 ```
 
+Plot gene expression on tSNE
+```{r}
+markers=c("Slc17a7","Gad2","Sst","Pvalb","Vip","Lamp5","Sncg","Cux2","Rspo1","Rorb","Fezf2","Osr1","Oprk1","Penk","Foxp2","Nxph4","Tshz2","Sla2","Slc17a8","Fam84b")
+gene.plots = plot_tsne_gene(tsne.df, norm.dat, markers)
+multiplot(plotlist=gene.plots, cols=5)
+```
