@@ -1,16 +1,17 @@
 ---
 title: "iterClust"
-output: html_notebook
+output:
+  html_document: default
+  html_notebook: default
 ---
 
 The iterClust package offers functions to preform iterative clustering for single cell RNAseq datasets. The pipeline consists of the following kep steps: high variance gene selection, dimensionality reduction, dimension filtering, and Jaccard-Louvain or hierarchichal (Ward) clustering, followed by cluster merging based on presence of differentially expressed genes. This process was then repeated within each resulting cluster until no more clusters meet differential gene expression and cluster size termination criteria. 
 
 We used tasic 2016 nature neuron science datasets as example to demonstrate the usage of this package. 
-
 First prepare the datasets 
 
 ```{r}
-library(iterClust)
+library(iterclust)
 library(devtools)
 install_github("AllenInstitute/tasic2016data") 
 
@@ -163,6 +164,7 @@ de.genes = de.markers$de.genes
 Build dendrogram using top DE genes between clusters.
 Compute cluster median expression based on the marker genes.
 ```{r}
+library(matrixStats)
 cl.med = do.call("cbind",tapply(names(cl), cl, function(x){
   rowMedians(as.matrix(norm.dat[,x]))
 }))
@@ -177,7 +179,7 @@ l.color = setNames(as.character(cl.df$cluster_color),row.names(cl.df))
 
 Build dendrogram for clusters using the cluster-cluster correlation matrix based on cluster medians of marker genes
 ```{r, echo=FALSE, fig.keep="all"}
-dend.result <- build_dend(cl.means[select.markers,levels(cl.clean)],l.rank, l.color,nboot=100)
+dend.result <- build_dend(cl.med[select.markers,levels(cl.clean)],l.rank, l.color,nboot=100)
 dend= dend.result$dend
 ```
 

@@ -1,6 +1,10 @@
+require(dendextend)
+require(dplyr)      
 pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp", "au"), signif_col_fun = colorRampPalette(c("black", 
     "darkred", "red")), ...) 
 {
+  require(dendextend)
+  require(dplyr)
   signif_type <- match.arg(signif_type)
   pvalue_per_node <- pvclust_obj$edges[[signif_type]]
   ord <- rank(get_branches_heights(dend, sort = FALSE))

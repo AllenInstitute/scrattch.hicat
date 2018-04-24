@@ -1,3 +1,4 @@
+
 map_by_cor <- function(train.dat, train.cl, test.dat,method="median")
   {
     if(method=="median"){

@@ -14,6 +14,7 @@ get_pair_matrix_coor <- function(m, rows, cols)
 
 get_pair_matrix <- function(m, rows, cols)
   {
+    v = as.vector(m)
     coor= get_pair_matrix_coor(m, rows, cols)
     return(v[coor])
   }
