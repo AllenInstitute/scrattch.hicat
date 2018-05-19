@@ -23,7 +23,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
         tmp.cl = cutree(hclust(dist(t(tmp.dat)),method="average"),2)
       }
       else if(method=="ward"){
-        tmp.cl = cutree(hclust(dist(t(tmp.dat)),method="ward"),2)
+        tmp.cl = cutree(hclust(dist(t(tmp.dat)),method="ward.D"),2)
       }
       else if(method=="kmeans"){
         tmp.cl = kmeans(t(tmp.dat), 2)$cluster
@@ -127,7 +127,7 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
 ##' @param ... Other plotting parameters passed to the heatmap function. 
 ##' @return A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells. 
 
-get_eigen <- function(gene.mod, norm.dat, select.cells=colnames(norm.dat), prefix=NULL,method="ward",hc=NULL,...)
+get_eigen <- function(gene.mod, norm.dat, select.cells=colnames(norm.dat), prefix=NULL,method="ward.D",hc=NULL,...)
   {
     #gene.vector = setNames(rep(names(gene.mod), sapply(gene.mod, length)), unlist(gene.mod))
     #eigen = moduleEigengenes(t(norm.dat[names(gene.vector),select.cells]), gene.vector)[[1]]

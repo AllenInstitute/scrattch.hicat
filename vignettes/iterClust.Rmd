@@ -65,7 +65,7 @@ de.param = de_param(padj.th=0.05, lfc.th=1, low.th=1, q1.th=0.5, q.diff.th=0.7, 
 Technical variation that should be masked during clustering process can be specified by matrix "rm.eigen". If any batch effects are present, you can use the first principle component of batch specific genes as a column in "rm.eigen". QC related factors, such as sequencing depth, gene detection delimits, fraction of reads mapped to transcriptome also, also tend to drive systemetic technical variation in gene expression. You can directly use proper transformation of such QC related variables, or use the first principle component of the genes that correlate with these QC factors. When rm.eigen is specified, any reduced dimension vectors during cluster that have correlation greater than "rm.th" with any columns of rm.eigen are ignored during clustering. 
 We recommend the users to first run the clustering pipeline without setting rm.eigen. If any batch specific or QC drive clusters cause any issues, the users can create "rm.eigen" and rerun the pipeline. 
 
-```{r}
+```{r,echo=FALSE}
 gene.counts= colSums(counts>0)
 rm.eigen = matrix(log2(gene.counts), ncol=1)
 row.names(rm.eigen) = names(gene.counts)
@@ -75,8 +75,8 @@ colnames(rm.eigen) = "log2GeneCounts"
 
 Perform clustering using WGCNA for dimensional reduction. WGCNA mode is good for detecting rare clusters, provides cleaner cluster boundaries, while PCA is more scalable to large datasets, captures combinatorial marker expression pattern more effectively, and more sensitive to low depth dataset. We recommend using WGCNA for small high quality datasets, and PCA for large low coverage datasets. 
 
-```{r, echo=FALSE}
-set.seed(1)
+```{r, message=FALSE, warning=FALSE, results="hide", echo=FALSE}
+set.seed(12345)
 WGCNA.clust.result <- iter_clust(norm.dat, select.cells=select.cells, dim.method="WGCNA", de.param = de.param, rm.eigen=rm.eigen, rm.th=0.7)
 ```
 To use PCA mode, simply use dim.method = "pca"
@@ -123,12 +123,12 @@ consensus.result = iter_consensus_clust(co.ratio, cl.list, norm.dat, select.cell
 ```
 
 Adjust cluster boundaries to optimize with-in cluster co-clustering probabilties
-```{r}
+```{r, echo=FALSE}
 refine.result = refine_cl(consensus.result$cl, co.ratio=co.ratio, tol.th=0.005, confusion.th=0.8)
 ```
 
 Double check if all clusters are separable based on DEG genes again. 
-```{r}
+```{r, echo=FALSE}
 merge.result=merge_cl(norm.dat, refine.result$cl, rd.dat = t(norm.dat[consensus.result$markers,select.cells]), de.param = de.param)
 ```
 
@@ -140,11 +140,6 @@ cl = compare.result$cl
 cl.df = compare.result$cl.df
 ```
 
-
-Plot the heatmap of co-clustering matrix:
-```{r}
-tmp=plot_co_matrix(co.ratio, cl, max.cl.size=50)
-```
 
 
 At this point,  check the cluster annotation cl.df manually to change the cluster labels, colors, and determine if some clusters are outliers. 
@@ -191,12 +186,14 @@ cl.df.clean =cl.df[levels(cl.clean),]
 
 Plot the dendrogram and cluster-cluster correlation matrix:
 ```{r, echo=FALSE, fig.keep="all"}
+library(dendextend)
 labels(dend) = cl.df[labels(dend),"cluster_label"]
 cl.cor = dend.result$cl.cor
 plot(dend)
 heatmap.3(cl.cor, Rowv=dend, Colv=dend, trace="none",col=jet.colors(100),
           cexCol=0.5,cexRow=0.5,breaks=c(-0.2, 0.2, seq(0.2, 1, length.out=99)))
 ```
+
 
 Create tSNE plots:
 ```{r}
@@ -207,7 +204,14 @@ tsne.result$g
 Plot gene expression on tSNE
 ```{r}
 tsne.df = tsne.result$tsne.df
-markers=c("Slc17a7","Gad2","Sst","Pvalb","Vip","Lamp5","Sncg","Cux2","Rspo1","Rorb","Fezf2","Osr1","Oprk1","Penk","Foxp2","Nxph4","Tshz2","Sla2","Slc17a8","Fam84b")
+markers=c("Slc17a7","Gad2","Sst","Chodl","Myh8","Pvalb","Vip","6330527O06Rik","Sncg","Cxcl14")
 gene.plots = plot_tsne_gene(tsne.df, norm.dat, markers)
 multiplot(plotlist=gene.plots, cols=5)
 ```
+
+Plot the heatmap of co-clustering matrix:
+```{r}
+tmp=plot_co_matrix(co.ratio, cl.clean, max.cl.size=50)
+```
+
+

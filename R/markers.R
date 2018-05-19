@@ -207,17 +207,19 @@ group_specific_markers <- function(cl.g, norm.dat, cl, de.param, n.markers=5, cl
     else{
       fg = rowSums(cl.present.counts[,cl.g,drop=F])
       bg = rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
-      bg.freq= bg/length(not.select.cells)
-      fg.freq = fg/length(select.cells)
     }
+    bg.freq= bg/length(not.select.cells)
+    fg.freq = fg/length(select.cells)
     tau = (fg.freq - bg.freq)/pmax(bg.freq,fg.freq)
     ratio = fg/(fg+bg)
+    stats <- vec_chisq_test(fg, rep(length(select.cells),length(fg)), bg, rep(length(not.select.cells), length(bg)))
+    
     g = names(fg.freq)[fg.freq > de.param$q1.th & tau > de.param$q.diff.th]
     g = g[order(tau[g]+ ratio[g]/4 + fg.freq[g]/5,decreasing=T)]
     select.g = c(g[tau[g]> 0.95], head(g, n.markers))
     g = g[g %in% select.g]
     if(length(g > 0)){
-      df=data.frame(g=g,specificity=round(tau[g],digits=2), fg.freq=round(fg.freq[g],digits=2), bg.freq = round(bg.freq[g],digits=2), fg.counts=fg[g],bg.counts=bg[g])
+      df=data.frame(g=g,specificity=round(tau[g],digits=2), fg.freq=round(fg.freq[g],digits=2), bg.freq = round(bg.freq[g],digits=2), fg.counts=fg[g],bg.counts=bg[g],pval=stats[g,"pval"])
       return(df)
     }
     return(NULL)

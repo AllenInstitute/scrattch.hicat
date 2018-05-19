@@ -281,15 +281,24 @@ get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
     cell.cl.co.ratio= get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.mat=cl.mat)
     cl.co.ratio <- get_cl_means(t(cell.cl.co.ratio), cl)
 
-    cell.cl.confusion <- unlist(sapply(1:ncol(cell.cl.co.ratio),function(i){
+    
+    cell.co.stats <- do.call("rbind",sapply(1:ncol(cell.cl.co.ratio),function(i){
       select.cells=names(cl)[cl==colnames(cell.cl.co.ratio)[i]]
-      cell.cl.co.ratio=setNames(rowMaxs(cell.cl.co.ratio[select.cells, -i,drop=FALSE])/cell.cl.co.ratio[select.cells, i,drop=F], select.cells)
+      cohesion = setNames(cell.cl.co.ratio[select.cells, i], select.cells)
+      best.between = rowMaxs(cell.cl.co.ratio[select.cells, -i])
+      confusion = best.between / cohesion
+      seperability = cohesion  - best.between
+      data.frame(cohesion, seperability, confusion)
     },simplify=F))
-    cell.cl.confusion = cell.cl.confusion[names(cl)]
-    cl.confusion = setNames(sapply(1:nrow(cl.co.ratio),function(i){
-      max(cl.co.ratio[i, -i])/cl.co.ratio[i,i]
-    }),row.names(cl.co.ratio))
-    return(list(cell.cl.co.ratio=cell.cl.co.ratio, cell.cl.confusion=cell.cl.confusion, cl.co.ratio=cl.co.ratio, cl.confusion=cl.confusion))
+        
+    cl.co.stats = do.call("rbind",tapply(1:nrow(cell.co.stats), cl[row.names(cell.co.stats)], function(x){
+      sapply(cell.co.stats[x,], median)
+    }))
+    
+    return(list(cell.cl.co.ratio=cell.cl.co.ratio,
+                cl.co.ratio=cl.co.ratio,
+                cell.co.stats = cell.co.stats, 
+                cl.co.stats = cl.co.stats))
   }
 
 

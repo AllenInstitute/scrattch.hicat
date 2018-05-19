@@ -100,6 +100,10 @@ jaccard_louvain <- function(dat, k=10)
 onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL, method=c("louvain","ward", "kmeans"), vg.padj.th=0.5, dim.method=c("pca","WGCNA"), max.dim=20, rm.eigen=NULL, rm.th=0.7, de.param = de_param(),min.genes=5, type=c("undirectional", "directional"), maxGenes=3000,sampleSize=4000,max.cl.size=300, prefix=NULL, verbose=FALSE)
                           
   {
+    method=method[1]
+    dim.method=dim.method[1]
+    type=type[1]
+    
     if(length(select.cells)>sampleSize){
       sampled.cells = sample(select.cells, pmin(length(select.cells),sampleSize))
     }

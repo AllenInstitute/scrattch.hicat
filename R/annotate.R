@@ -49,11 +49,11 @@ predict_annotate_cor <- function(cl, norm.dat, ref.markers, ref.cl, ref.cl.df, r
     compare_annotate(cl, pred.cl, ref.cl.df, reorder=reorder)
   }
 
-map_sampling <- function(train.dat, train.cl, test.dat, markers, markers.perc=0.8, iter=100)
+map_sampling <- function(train.dat, train.cl, test.dat, markers, markers.perc=0.8, iter=100, method="median")
   {
     map.result = sapply(1:iter, function(i){
       tmp.markers=sample(markers, round(length(markers)*markers.perc))
-      map_by_cor(train.dat[tmp.markers,], train.cl, test.dat[tmp.markers,])
+      map_by_cor(train.dat[tmp.markers,], train.cl, test.dat[tmp.markers,], method=method)
     },simplify=F)
     map.cl = sapply(map.result, function(x)x$pred.df$pred.cl)
 

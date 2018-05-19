@@ -43,14 +43,18 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
 ###meta is discretized. 
 plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5)
   {
-    tsne.df$meta = as.factor(meta)
-    if(is.null(meta.col)){
-      meta.col = setNames(jet.colors(length()))
-    }
-
+    tsne.df$meta = meta
     p=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=meta),size=cex)
-    p = p+ scale_color_manual(values=as.vector(meta.col[levels(tsne.df$meta)]))
-    p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black")) 
+    if(is.factor(meta)){
+      if(is.null(meta.col)){
+        meta.col = setNames(jet.colors(length(levels(meta))), levels(meta))
+      }
+      p = p+ scale_color_manual(values=as.vector(meta.col[levels(tsne.df$meta)]))
+      p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
+    }
+    else{
+      p = p+ scale_color_gradient(low="blue",high="red")
+    }
     if(!show.legend){
       p = p + theme(legend.position="none") 
     }
