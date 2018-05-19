@@ -1,5 +1,5 @@
 ---
-title: "iterClust"
+title: "scrattch.hicat"
 output:
   html_document: default
   html_notebook: default
