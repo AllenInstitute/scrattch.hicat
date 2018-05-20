@@ -197,13 +197,14 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
     else{
       stop(paste("Unknown clustering method", method))
     }
-    print(table(cl))
+    #print(table(cl))
     merge.result=merge_cl(norm.dat, cl=cl, rd.dat=rd.dat, type=type, de.param=de.param, max.cl.size=max.cl.size)
     gc()
     if(is.null(merge.result))return(NULL)
     sc = merge.result$sc
     #print(sc)
     cl = merge.result$cl
+    print(table(cl))
     if(verbose){
       save(cl, file=paste0(prefix, ".cl.rda"))
     }

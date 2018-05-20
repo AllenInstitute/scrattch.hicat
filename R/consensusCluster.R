@@ -284,8 +284,8 @@ get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
     
     cell.co.stats <- do.call("rbind",sapply(1:ncol(cell.cl.co.ratio),function(i){
       select.cells=names(cl)[cl==colnames(cell.cl.co.ratio)[i]]
-      cohesion = setNames(cell.cl.co.ratio[select.cells, i], select.cells)
-      best.between = rowMaxs(cell.cl.co.ratio[select.cells, -i])
+      cohesion = setNames(cell.cl.co.ratio[select.cells, i, drop=F], select.cells)
+      best.between = rowMaxs(cell.cl.co.ratio[select.cells, -i, drop=F])
       confusion = best.between / cohesion
       seperability = cohesion  - best.between
       data.frame(cohesion, seperability, confusion)
@@ -439,4 +439,6 @@ plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
     heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord])
   }
 }
+
+
 
