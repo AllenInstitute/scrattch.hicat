@@ -282,15 +282,19 @@ get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
     cl.co.ratio <- get_cl_means(t(cell.cl.co.ratio), cl)
 
     
-    cell.co.stats <- do.call("rbind",sapply(1:ncol(cell.cl.co.ratio),function(i){
+    #cell.co.stats <- do.call("rbind",sapply(1:ncol(cell.cl.co.ratio),function(i){
+    cell.co.stats <- sapply(1:ncol(cell.cl.co.ratio),function(i){
       select.cells=names(cl)[cl==colnames(cell.cl.co.ratio)[i]]
       cohesion = setNames(cell.cl.co.ratio[select.cells, i, drop=F], select.cells)
       best.between = rowMaxs(cell.cl.co.ratio[select.cells, -i, drop=F])
       confusion = best.between / cohesion
-      seperability = cohesion  - best.between
-      data.frame(cohesion, seperability, confusion)
-    },simplify=F))
-        
+      separability = cohesion  - best.between
+      df=data.frame(cohesion, separability, confusion)
+      colnames(df) = c("cohesion", "separability", "confusion")
+      df
+    },simplify=F)
+
+    cell.co.stats = do.call("rbind", cell.co.stats)
     cl.co.stats = do.call("rbind",tapply(1:nrow(cell.co.stats), cl[row.names(cell.co.stats)], function(x){
       sapply(cell.co.stats[x,], median)
     }))
