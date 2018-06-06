@@ -201,8 +201,8 @@ group_specific_markers <- function(cl.g, norm.dat, cl, de.param, n.markers=5, cl
     select.cells = names(cl)[cl %in% cl.g]
     not.select.cells = setdiff(names(cl), select.cells)
     if(is.null(cl.present.counts)){
-      fg = rowSums(norm.dat[,select.cells]> de.param$low.th)/length(select.cells)
-      bg = rowSums(norm.dat[,not.select.cells]> de.param$low.th)/length(not.select.cells)
+      fg = rowSums(norm.dat[,select.cells]> de.param$low.th)
+      bg = rowSums(norm.dat[,not.select.cells]> de.param$low.th)
     }
     else{
       fg = rowSums(cl.present.counts[,cl.g,drop=F])

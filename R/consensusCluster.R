@@ -295,9 +295,9 @@ get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
     },simplify=F)
 
     cell.co.stats = do.call("rbind", cell.co.stats)
-    cl.co.stats = do.call("rbind",tapply(1:nrow(cell.co.stats), cl[row.names(cell.co.stats)], function(x){
+    cl.co.stats = as.data.frame(do.call("rbind",tapply(1:nrow(cell.co.stats), cl[row.names(cell.co.stats)], function(x){
       sapply(cell.co.stats[x,], median)
-    }))
+    })))
     
     return(list(cell.cl.co.ratio=cell.cl.co.ratio,
                 cl.co.ratio=cl.co.ratio,
@@ -376,7 +376,21 @@ cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
     cl = setNames(as.integer(cut(1:ncol(co.ratio), c(0,sep,ncol(co.ratio)+1))), colnames(co.ratio)[ord])
     return(cl)
   }
-
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param cl 
+##' @param co.ratio 
+##' @param cl.mat 
+##' @param co.stats 
+##' @param confusion.th 
+##' @param min.cells 
+##' @param niter 
+##' @param tol.th 
+##' @param verbose 
+##' @return 
+##' @author Zizhen Yao
 refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02, verbose=0)
   {
     if(is.null(co.stats)){
@@ -386,8 +400,7 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th
     iter.num = 0
     while(iter.num < niter){
       cell.cl.co.ratio = co.stats$cell.cl.co.ratio
-      cell.confusion = co.stats$cell.cl.confusion
-      cl.confusion = co.stats$cl.confusion
+      cl.confusion = setNames(co.stats$cl.co.stats$confusion, row.names(co.stats$cl.co.stats))
       tmp.dat = cell.cl.co.ratio[names(cl),as.character(sort(unique(cl)))]
       pred.cl <- setNames(colnames(tmp.dat)[apply(tmp.dat, 1, which.max)], row.names(tmp.dat))      
       if(sum(cl==pred.cl) <= correct){
@@ -404,10 +417,9 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th
       tmp.cells = names(pred.cl)[pred.cl!=cl[names(pred.cl)]]
       cl[tmp.cells]=pred.cl[tmp.cells]
       cl.size = table(cl)
-      ###Remove small clusters with high average confusion score, assign cells to other cluster
-      cl.small = names(cl.size)[cl.size <=10]
-      cl.confusion[cl.small]
-      rm.cl = cl.small[cl.confusion[cl.small] > confusion.th| cl.size[cl.small]< min.cells]
+      ###Remove small clusters with high average confusion score, assign cells to other cluster      
+      cl.small = names(cl.size)[cl.size <= 2 * min.cells]
+      rm.cl = cl.small[cl.confusion[cl.small] > confusion.th | cl.size[cl.small] < min.cells]
       tmp.cells = names(cl)[cl %in% rm.cl]
       tmp.dat = cell.cl.co.ratio[tmp.cells,setdiff(unique(cl),rm.cl),drop=F]
       pred.cl = setNames(colnames(tmp.dat)[apply(tmp.dat, 1, which.max)], row.names(tmp.dat))

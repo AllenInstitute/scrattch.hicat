@@ -1,4 +1,4 @@
-rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cells, max.pca=10, w=NULL)
+rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cells, max.pca=10, th=2,w=NULL)
 {
   require(Matrix)
   if(is.null(w)){
@@ -32,7 +32,7 @@ rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cel
     pca1$x <- e %*% eig.vec
   }
 
-  select= which((v - mean(v))/sd(v)>2) 
+  select= which((v - mean(v))/sd(v)>th) 
   tmp = head(select,max.pca)
   if(length(sampled.cells)< length(select.cells)){
     rot  =  pca$rotatio[,tmp]
