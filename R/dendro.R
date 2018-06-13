@@ -37,7 +37,9 @@ build_dend <- function(cl.dat, l.rank=NULL, l.color=NULL, nboot=100)
       dend = as.dendrogram(cl.hc)
     }
     dend = dend %>% set("labels_cex", 0.7)
-    dend = dend %>% set("labels_col", l.color[labels(dend)])
+    if(!is.null(l.color)){
+      dend = dend %>% set("labels_col", l.color[labels(dend)])
+    }
     dend = dend %>% set("leaves_pch", 19) %>% set("leaves_cex", 0.5)
     if(!is.null(l.color)){
       dend = dend %>% set("leaves_col", l.color[labels(dend)])

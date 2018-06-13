@@ -38,12 +38,14 @@ pass_louvain <- function(mod.sc, adj.mat)
 }
 
 ###rows are cells, columns are feathers
-jaccard_louvain.FNN <- function(dat, k=10)
+jaccard_louvain.FNN <- function(dat, k=10, knn.matrix=NULL)
   {
-    suppressMessages(library(FNN))
     suppressMessages(library(igraph))
-    knn.result= FNN::get.knn(dat, k)
-    knn.matrix = knn.result[[1]]
+    if(is.null(knn.matrix)){
+      knn.result= FNN::get.knn(dat, k)
+      knn.matrix = knn.result[[1]]
+      suppressMessages(library(FNN))
+    }
     p = as.vector(t(knn.matrix))
     edge = cbind(rep(1:nrow(knn.matrix),rep(k, nrow(knn.matrix))),p)
     edge.unique = cbind(rowMins(edge), rowMaxs(edge))

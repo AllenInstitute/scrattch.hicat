@@ -1,3 +1,8 @@
+cpm <- function(counts)
+  {
+    t(t(counts)*10^6/colSums(counts))
+  }
+
 get_pair_matrix_coor <- function(m, rows, cols)
   {
     v = as.vector(m)
