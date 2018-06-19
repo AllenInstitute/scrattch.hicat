@@ -58,14 +58,22 @@ convert_pair_matrix <- function(pair.num, l=NULL,directed=FALSE)
     return(pair.num.mat)
   }
 
+get_cl_mat <- function(cl)
+  {
+    if(!is.factor(cl)){
+      cl = factor(cl)
+    }
+    cl.mat = sparseMatrix(i = 1:length(cl),  j = as.integer(cl), x=1)
+    row.names(cl.mat) = names(cl)
+    colnames(cl.mat) = levels(cl)
+    return(cl.mat)
+  }
 
 get_cl_sums <- function(mat, cl)
   {
     require(Matrix)
-    tmp.df= data.frame(cell=names(cl), cl=cl)
-    tb=xtabs(~cl+cell, data=tmp.df)
-    tb = Matrix(tb, sparse=TRUE)
-    tmp=Matrix::tcrossprod(mat[,colnames(tb)], tb)
+    cl.mat = get_cl_mat(cl)
+    tmp=Matrix::tcrossprod(mat[,row.names(cl.mat)], t(cl.mat))
     cl.sums = as.matrix(tmp)
     return(cl.sums)
   }

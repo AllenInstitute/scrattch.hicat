@@ -66,12 +66,9 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     else{
       select.cells= all.cells
     }
-    cl.mat = do.call("rbind", sapply(cl.list, function(cl){
-      tmp.df= data.frame(cell=select.cells, cl=cl[select.cells])
-      tb=xtabs(~cl+cell, data=tmp.df)
-      tb = Matrix(tb, sparse=TRUE)
+    cl.mat = do.call("cbind", sapply(cl.list, function(cl){
+      get_cl_mat(cl[select.cells])
     },simplify=F))
-    cl.mat = t(cl.mat)
     return(list(cl.list=cl.list, cl.mat = cl.mat))
   }
 

@@ -28,10 +28,17 @@ run_consensus_clust <- function(norm.dat, niter=100, sample.frac=0.8, de.param=d
       stopCluster(cl)
     }
     result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))
-    co.result <- collect_co_matrix_sparseM(norm.dat, result.files, all.cells)
-    co.ratio = co.result$co.ratio
-    consensus.result = iter_consensus_clust(co.ratio, co.result$cl.list, norm.dat, select.cells=all.cells, de.param = de.param)
-    refine.result = refine_cl(consensus.result$cl, co.ratio=co.ratio, tol.th=0.01, confusion.th=0.6)
+    if(length(all.cells)> 100000){
+      co.result <- collect_co_matrix_sparseM(norm.dat, result.files, all.cells)
+      co.ratio = co.result$co.ratio
+      consensus.result = iter_consensus_clust(co.ratio, co.result$cl.list, norm.dat, select.cells=all.cells, de.param = de.param)
+      refine.result = refine_cl(consensus.result$cl, co.ratio=co.ratio, tol.th=0.01, confusion.th=0.6)
+    }
+    else{
+      result <- iter_clust(norm.dat=norm.dat, select.cells=all.cells,prefix=prefix, de.param = de.param, ...)
+      co.result <- collect_subsample_cl_matrix(norm.dat,result.files,all.cells)
+      refine.result = refine_cl(result$cl, cl.mat = co.result$cl.mat, tol.th=0.01, confusion.th=0.6)
+    }
     merge.result= merge_cl(norm.dat=norm.dat, cl=refine.result$cl, rd.dat=t(norm.dat[consensus.result$markers,]), de.param = de.param,return.markers=FALSE)
     return(list(co.result=co.result, cl.result=merge.result))
   }
