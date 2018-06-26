@@ -83,7 +83,7 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
     }
     gene.mod = head(gene.mod, nmod)
     eigen = eigen[,1:nmod,drop=F]
-    print("Score modules")
+    #print("Score modules")
     mod.score = setNames(rep(0, length(gene.mod)), names(gene.mod))
     not.selected=1:length(gene.mod)
     
@@ -170,11 +170,11 @@ get_eigen <- function(gene.mod, norm.dat, select.cells=colnames(norm.dat), prefi
 
 rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
   {
-    suppressMessages(library(WGCNA))
+    suppressPackageStartupMessages(require(WGCNA))
     dat = as.matrix(norm.dat[select.genes,sampled.cells])
     adj = adjacency(t(dat), power = softPower,type=type)
     adj[is.na(adj)]=0
-    TOM = TOMsimilarity(adj,TOMType=type)
+    TOM = TOMsimilarity(adj,TOMType=type,verbose=0)
     dissTOM = as.matrix(1-TOM)
     row.names(dissTOM)= colnames(dissTOM) = row.names(dat)
     rm(dat)

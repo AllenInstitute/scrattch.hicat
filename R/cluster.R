@@ -33,7 +33,7 @@ pass_louvain <- function(mod.sc, adj.mat)
   rand.mod1 <- 0.97 * sqrt((1 - p)/(p*n))
   rand.mod2 <- (1 - 2 / sqrt(n)) * (2 / (p * n))^(2/3)
   rand.mod.max <- max(rand.mod1, rand.mod2, na.rm=TRUE)
-  cat("Modularity:",mod.sc, "threshold:",rand.mod.max, "\n")
+  #cat("Modularity:",mod.sc, "threshold:",rand.mod.max, "\n")
   return(mod.sc > rand.mod.max)
 }
 
@@ -162,7 +162,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
       rm.cor[is.na(rm.cor)]=0
       rm.score = rowMaxs(abs(rm.cor))
       select = rm.score < rm.th
-      if(sum(!select)>0){
+      if(sum(!select)>0 & verbose){
         print("Remove dimension:")
         print(rm.score[!select])
       }
@@ -171,7 +171,9 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
       }
       rd.dat = rd.dat[,select,drop=F]
     }
-    print(method)
+    if(verbose){
+      print(method)
+    }
     max.cl = ncol(rd.dat)*2 + 1
     if(method=="louvain"){
       tmp = jaccard_louvain(rd.dat, 15)
@@ -190,7 +192,7 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
     }
     else if(method=="ward"){
       hc = hclust(dist(rd.dat),method="ward.D")
-      print("Cluster cells")
+      #print("Cluster cells")
       cl = cutree(hc, max.cl)
     }
     else if(method=="kmeans"){
@@ -206,11 +208,13 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
     sc = merge.result$sc
     #print(sc)
     cl = merge.result$cl
-    print(table(cl))
-    if(verbose){
-      save(cl, file=paste0(prefix, ".cl.rda"))
-    }
     if(length(unique(cl))>1){
+      if(verbose){
+        cat("Expand",prefix, "\n")
+        cl.size=table(cl)
+        print(cl.size)
+        save(cl, file=paste0(prefix, ".cl.rda"))
+      }
       de.genes = merge.result$de.genes
       markers= merge.result$markers
       cl.dat = get_cl_means(norm.dat[markers,], cl[sample_cells(cl, max.cl.size)])
@@ -294,8 +298,6 @@ iter_clust <- function(norm.dat, select.cells=colnames(norm.dat),prefix=NULL, sp
             else{
               tmp.cl = tmp.result$cl
               if(length(unique(tmp.cl)>1)){
-                cat("Expand",tmp.prefix, "\n")
-                print(table(tmp.cl))
                 new.cl[names(tmp.cl)] = n.cl + as.integer(tmp.cl)
                 markers=union(markers, tmp.result$markers)
               }
