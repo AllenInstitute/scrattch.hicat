@@ -140,20 +140,26 @@ compare_annotate<- function(cl, ref.cl, ref.cl.df, reorder=TRUE)
   return(list(cl=cl, cl.df=cl.df,g = g,tb.df=tb.df,cl.id.map=cl.id.map))
 }
 
-
-####Work in progress
-annotate_duplets <- function(cl, norm.dat, de.genes, cl.cor)
+get_color <- function(color.mapping)
   {
-    nn = setNames(sapply(1:nrow(cl.cor), function(i) {
-      colnames(cl.cor)[-i][head(order(cl.cor[i, -i], decreasing = T), 1)]
-    }), row.names(cl.cor))
-    nn.pair = data.frame(cl1=names(nn), cl2=nn, cl1.label=cl.df[names(nn),"cluster_label"], cl2.label = cl.df[nn,"cluster_label"])
-    pairs = names(de.genes)
-    pairs.df = do.call("rbind",strsplit(pairs,"_"))
-    row.names(pairs.df) = pairs
-    pairs.df = as.data.frame(pairs.df)
-    diff.neighbor=sapply(1:nrow(nn.pair), function(i){
-      p = nn.pair[i,1:2]
-      p = pairs.df[pairs.df[,1] ]
-    })    
+    while(1){
+      tmp.color = which(duplicated(color.mapping))
+      if(length(tmp.color)==0){
+        break
+      }
+      rgb = col2rgb(color.mapping)
+      for(x in tmp.color){
+        if(x < length(tmp.color)){
+          tmp= round(rgb[,x-1] *0.8 + sample(20, 3) + rgb[,x+1] *0.2) 
+        }
+        else{
+          tmp= round(rgb[,x-1] *0.8 +  sample(40, 3))
+        }
+        rgb[,x] = tmp
+      }
+      rgb[rgb > 255]=255
+      color.mapping = rgb(rgb[1,],rgb[2,],rgb[3,], maxColorValue=255)
+    }
+    return(color.mapping)
   }
+

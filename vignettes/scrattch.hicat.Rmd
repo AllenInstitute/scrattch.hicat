@@ -5,22 +5,19 @@ output:
   html_notebook: default
 ---
 
-The iterClust package offers functions to preform iterative clustering for single cell RNAseq datasets. The pipeline consists of the following kep steps: high variance gene selection, dimensionality reduction, dimension filtering, and Jaccard-Louvain or hierarchichal (Ward) clustering, followed by cluster merging based on presence of differentially expressed genes. This process was then repeated within each resulting cluster until no more clusters meet differential gene expression and cluster size termination criteria. 
+The scrattch.hicat package offers functions to preform iterative clustering for single cell RNAseq datasets. The pipeline consists of the following kep steps: high variance gene selection, dimensionality reduction, dimension filtering, and Jaccard-Louvain or hierarchichal (Ward) clustering, followed by cluster merging based on presence of differentially expressed genes. This process was then repeated within each resulting cluster until no more clusters meet differential gene expression and cluster size termination criteria. 
 
-We used tasic 2016 nature neuron science datasets as example to demonstrate the usage of this package. 
+We used tasic 2016 nature neuron science datasets as an example to demonstrate the usage of this package. 
+
 First prepare the datasets 
-
 ```{r}
-library(iterclust)
+library(scrattch.hicat)
 library(devtools)
 install_github("AllenInstitute/tasic2016data") 
 
-library(tasic2016data)
-anno <- tasic_2016_anno
-counts <- tasic_2016_counts
-
 jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000")) 
 
+library(tasic2016data)
 anno <- tasic_2016_anno
 ref.cl = setNames(factor(anno$primary_type), anno$sample_id)
 ref.cl.df = as.data.frame(unique(anno[,c("primary_type","broad_type")]))
@@ -29,10 +26,18 @@ row.names(ref.cl.df) = ref.cl.df$cluster_label
 ref.cl.df$cluster_color = jet.colors(nrow(ref.cl.df))
 ```
 
-Convert counts to CPM and take the log2 transformation
+Convert counts to CPM and take log2 transformation
 ```{r}
-norm.dat = log2(t(t(counts)/colSums(counts)*10^6)+1)
+norm.dat = log2(cpm(tasic_2016_counts)+1)
 ```
+If you have a very large matrix, convert it to sparse matrix to save memory
+```{r}
+library(Matrix)
+norm.dat = cpm(Matrix(tasic_2016_counts,sparse=TRUE))
+norm.dat@x = log2(norm.dat@x+1)
+```
+
+
 
 For demo, only use GABA-ergic neurons for clustering. 
 ```{r}
@@ -49,11 +54,11 @@ lfc.th: log2 fold change threshold for DE genes.
 We also require DE genes to have relatively on/off binary expression pattern, specified by the following parameters:
 low.th: the threshold used to determine whether a gene is detected in a given cell or not. This threshold is applied to log2 transformed normalized data. The fault value is 1. Users can specifiy different thresholds for different genes if necessary.
 For every pair of clusters (one as foreground, and the other as background), we define q1, and q2 as the proportion of cells detecting the gene in the foregound and background cluster respectively.
-q1.th: For up regulated genes, q1 should be greater than q1.th. 
-q2.th: For up regulated genes, q2 should be smaller than q2.th. 
+q1.th: For up regulated genes, q1 should be greater than q1.th.
+q2.th: For up regulated genes, q2 should be smaller than q2.th.
 q.diff.th: The difference, defined as abs(q1 - q2)/max(q1, q2) should be greater than q.diff.th. 
 By default, q1.th is set to 0.5, q.diff.th to 0.7, and q2.th to NULL. 
-The users can also ignore these parameters by setting them to NULL. 
+The users can also ignore these parameters by setting them all to NULL. 
 
 To determine whether two clusters are seperable based on DE genes, we define de.score as the sum of -log10(adjusted Pvalub) for all DE genes. Each gene contributes at most 20 towards the sum. All clusters should have pairwise de.score greater than de.score.th. 
 
@@ -62,7 +67,7 @@ To determine whether two clusters are seperable based on DE genes, we define de.
 de.param = de_param(padj.th=0.05, lfc.th=1, low.th=1, q1.th=0.5, q.diff.th=0.7, de.score.th=60)
 ```
 
-Technical variation that should be masked during clustering process can be specified by matrix "rm.eigen". If any batch effects are present, you can use the first principle component of batch specific genes as a column in "rm.eigen". QC related factors, such as sequencing depth, gene detection delimits, fraction of reads mapped to transcriptome also, also tend to drive systemetic technical variation in gene expression. You can directly use proper transformation of such QC related variables, or use the first principle component of the genes that correlate with these QC factors. When rm.eigen is specified, any reduced dimension vectors during cluster that have correlation greater than "rm.th" with any columns of rm.eigen are ignored during clustering. 
+Technical variation that should be masked during clustering process can be specified by matrix "rm.eigen". If any batch effects are present, you can use the first principle component of batch specific genes as a column in "rm.eigen". QC related factors, such as sequencing depth, gene detection delimits, fraction of reads mapped to transcriptome also, also tend to drive systemetic technical variation in gene expression. You can directly use proper transformation of such QC related variables, or use the first principle component of the genes that correlate with these QC factors. When rm.eigen is specified, any reduced dimension vectors during clustering that have correlation greater than "rm.th" with any columns of rm.eigen are ignored during clustering. 
 We recommend the users to first run the clustering pipeline without setting rm.eigen. If any batch specific or QC drive clusters cause any issues, the users can create "rm.eigen" and rerun the pipeline. 
 
 ```{r,echo=FALSE}
@@ -77,7 +82,7 @@ Perform clustering using WGCNA for dimensional reduction. WGCNA mode is good for
 
 ```{r, message=FALSE, warning=FALSE, results="hide", echo=FALSE}
 set.seed(12345)
-WGCNA.clust.result <- iter_clust(norm.dat, select.cells=select.cells, dim.method="WGCNA", de.param = de.param, rm.eigen=rm.eigen, rm.th=0.7)
+WGCNA.clust.result <- iter_clust(norm.dat, select.cells=select.cells, dim.method="WGCNA", de.param = de.param, rm.eigen=rm.eigen)
 ```
 To use PCA mode, simply use dim.method = "pca"
 
@@ -96,14 +101,28 @@ WGCNA.cl.df = compare.result$cl.df
 ```
 
 
+Iterative clustering pipeline tend to produce many clusters, and uncertainty increases as we try to split the clusters at finer resolution. Therefore, it will be very important to access the robustness of clustering result. We solve this problem by performing clustering many times on subsampled cells. 
+```{r, echo=FALSE}
+result <- run_consensus_clust(norm.dat, niter=50, de.param =de.param, rm.eigen=rm.eigen)
+```
+
+If you have a multi-core computer, this function can be run in parallel by setting mc.cores to the number of cores you can use. 
+```{r, echo=FALSE}
+result <- run_consensus_clust(norm.dat, niter=50, de.param =de.param, rm.eigen=rm.eigen, mc.cores=4)
+```
+
+
+
+
+
 Perferm clustering on subsampled cells repeatedly to test clustering robustness. 
 ```{r, echo=FALSE}
-d = paste0("subsample")
+d = paste0("subsample_result")
 dir.create(d)
 all.cells=select.cells
 subsample.result = sapply(1:20,function(i){
   prefix=paste0("iter",i)
-  tmp.cells = sample(select.cells, round(0.8*length(select.cells)))
+  tmp.cells = sample(all.cells, round(0.8*length(all.cells)))
   result <- iter_clust(norm.dat, select.cells=tmp.cells, prefix=prefix, dim.method="WGCNA", de.param = de.param)
   save(result, file=file.path(d, paste0("result.",i,".rda")))
 })
@@ -131,6 +150,7 @@ Double check if all clusters are separable based on DEG genes again.
 ```{r, echo=FALSE}
 merge.result=merge_cl(norm.dat, refine.result$cl, rd.dat = t(norm.dat[consensus.result$markers,select.cells]), de.param = de.param)
 ```
+
 
 Annotate the consensus clusters based on the reference cluster annotation
 ```{r}

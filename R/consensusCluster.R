@@ -227,8 +227,8 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
     return(list(cl=cl, markers=markers))
   }
 
-merge_cl_by_co <- function(cl, co.ratio, diff.th=0.25, verbose=0){
-  cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio)
+merge_cl_by_co <- function(cl, co.ratio=NULL, cl.mat=NULL, diff.th=0.25, verbose=0){
+  cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.mat=cl.mat)
   cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,,drop=F])))
   co.within= diag(cl.co.ratio)
   co.df <- as.data.frame(as.table(cl.co.ratio),stringsAsFactors=FALSE)

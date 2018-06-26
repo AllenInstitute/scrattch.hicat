@@ -268,6 +268,7 @@ iter_clust <- function(norm.dat, select.cells=colnames(norm.dat),prefix=NULL, sp
       gc()
     }
     if(!is.null(result)){
+      select.cells= intersect(select.cells, names(result$cl))
       #save(result, file=paste0(prefix,".rda"))
       cl = result$cl[select.cells]
       gene.mod = result$gene.mod

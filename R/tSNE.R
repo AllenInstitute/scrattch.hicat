@@ -13,11 +13,13 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
     tsne.df$cl_label= droplevels(tsne.df$cl_label)
    
     cl.center=do.call("rbind",tapply(1:nrow(tsne.df), tsne.df$cl, function(x){
+      x = sample(x, pmin(length(x),500))
       center  = c(median(tsne.df[x,1]), median(tsne.df[x,2]))
-      #i = min()
-      #center= x[which.max(cell.cl.co.ratio[x, as.character(i)])]
-      #c(x=median(tsne.df[center,1]), y= median(tsne.df[center,2]))
+      dist = as.matrix(dist(tsne.df[x,1:2]))
+      tmp= x[which.min(rowSums(dist))]
+      c(x=tsne.df[tmp, 1], y= tsne.df[tmp,2])
     }))
+    
     row.names(cl.center)= cl.df[row.names(cl.center), "cluster_label"]
     cl.col = setNames(as.character(cl.df$cluster_color),cl.df$cluster_label)
     shape = setNames(1:length(levels(tsne.df$cl_label)) %% 20 + 1,levels(tsne.df$cl_label))
@@ -26,6 +28,7 @@ plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
     for(i in 1:nrow(cl.center)){
       g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color="black")
     }
+    g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y), size=cex*1.5)
     g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
     if(show.legend){
       g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),ncol=5)
