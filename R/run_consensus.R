@@ -1,9 +1,9 @@
-run_consensus_clust <- function(norm.dat, niter=100, sample.frac=0.8, de.param=de_param(), output_dir="subsample_result",mc.cores=1, override=FALSE, init.result=NULL, ...)
+run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, de.param=de_param(), output_dir="subsample_result",mc.cores=1, override=FALSE, init.result=NULL, ...)
   {
     if(!dir.exists(output_dir)){
       dir.create(output_dir)
     }
-    all.cells= colnames(norm.dat)
+    all.cells=select.cells
     if(!is.null(init.result)){
       all.cells= intersect(all.cells, names(init.result$cl))
     }
@@ -22,7 +22,7 @@ run_consensus_clust <- function(norm.dat, niter=100, sample.frac=0.8, de.param=d
     }
     
     if (mc.cores==1){
-      sapply(1:n.iter, function(i){run(i,...)})
+      sapply(1:niter, function(i){run(i,...)})
     }
     else{
       require(foreach)
