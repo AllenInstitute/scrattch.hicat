@@ -132,6 +132,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #' @examples
 iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
   {
+    method=method[1]
     require(igraph)
     if(verbose){
       print(prefix)
