@@ -1,6 +1,6 @@
 blue.red <-colorRampPalette(c("blue", "white", "red"))
 
-plot_cl_heatmap <- function(norm.dat, cl, markers, prefix,hc=NULL, gene.hc=NULL,centered=FALSE,labels=names(cl),sorted=FALSE,by.cl=TRUE,ColSideColors=NULL,maxValue=5,min.sep=4,main="", height=13, width=9)
+plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=NULL,centered=FALSE,labels=names(cl),sorted=FALSE,by.cl=TRUE,ColSideColors=NULL,maxValue=5,min.sep=4,main="", height=13, width=9)
   {
     select.cells=names(cl)
     tmp.dat = as.matrix(norm.dat[markers,select.cells,drop=F])
@@ -29,7 +29,9 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix,hc=NULL, gene.hc=NULL,
       hc = hclust(dist(t(tmp.dat)), method="ward")
     }
     col = blue.red(150)[51:150]
-    pdf(paste(prefix,"pdf",sep="."), height=height, width=width)
+    if(!is.null(prefix)){
+      pdf(paste(prefix,"pdf",sep="."), height=height, width=width)
+    }
     if(by.cl){
       if(sorted){
         ord = 1:length(cl)
@@ -52,11 +54,13 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix,hc=NULL, gene.hc=NULL,
       heatmap.3(tmp.dat,Rowv=as.dendrogram(gene.hc), Colv=as.dendrogram(hc), col=col, trace="none", dendrogram=dendro, cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors,breaks=breaks,main=main)
       cells.order=colnames(tmp.dat)[hc$order]
     }
-    dev.off()
+    if(!is.null(prefix)){
+      dev.off()
+    }
     return(cells.order)
   }
     
-display_cl<- function(cl, norm.dat,prefix=NULL, col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9,...)
+display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9,...)
   {
     select.cells=names(cl)        
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -78,8 +82,8 @@ display_cl<- function(cl, norm.dat,prefix=NULL, col=NULL, max.cl.size=NULL,marke
       de.genes=tmp$de.genes
     }
     cells_order=NULL
-    if(!is.null(prefix) & !is.null(markers)){
-      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, by.cl=TRUE,min.sep=10,main=main, height=height, width=width)
+    if(plot & !is.null(markers)){
+      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=10,main=main, height=height, width=width)
     }
     return(list(markers=markers,de.genes=de.genes, cells_order= cells_order))
   }

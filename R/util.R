@@ -84,7 +84,19 @@ get_cl_means <- function(mat, cl)
     cl.size = table(cl)
     cl.means = as.matrix(t(t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
     return(cl.means)
-  }
+}
+
+
+get_cl_medians <- function(mat, cl)
+{
+  require(matrixStats)
+  cl.med = do.call("cbind",tapply(names(cl), cl, function(x){
+    rowMedians(as.matrix(mat[,x]))
+  }))
+  row.names(cl.med)=row.names(mat)
+  return(cl.med)
+}
+
 
 sparse_cor <- function(x){
   n <- nrow(x)
