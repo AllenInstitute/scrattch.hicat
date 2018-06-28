@@ -1,5 +1,5 @@
 library(ggplot2)
-plot_tSNE_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, ...)
+plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, ...)
   {
     require(Rtsne)
     if(is.null(tsne.df)){

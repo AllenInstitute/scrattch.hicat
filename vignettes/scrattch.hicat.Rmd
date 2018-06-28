@@ -57,13 +57,14 @@ q1.th: For up regulated genes, q1 should be greater than q1.th.
 q2.th: For up regulated genes, q2 should be smaller than q2.th.  
 q.diff.th: The difference, defined as abs(q1 - q2)/max(q1, q2) should be greater than q.diff.th.   
 By default, q1.th = 0.5, q.diff.th = 0.7, and q2.th = NULL.   
+
 The users can also ignore these parameters by setting them all to NULL.   
 For high depth dataset like Smartseq, we recomment q1.th = 0.5  
 For low depth dataset like Dropseq or 10X, we recomment q1.th=0.3    
 When focusing on discrete cell type heterogenity, set q.diff.th close to 1.  
 If graident differences are of interest, set q.diff.th close to 0.   
-
-
+  
+  
 To determine whether two clusters are seperable based on DE genes, we define de.score as the sum of -log10(adjusted Pvalue) for all DE genes. Each gene contributes at most 20 towards the sum. All clusters should have pairwise de.score greater than de.score.th.  
 For small datasets (#cells < 1000), we recommend de.score.th = 50.   
 For large datasets (#cells > 10000), we recommend de.score.th = 150  
@@ -76,7 +77,7 @@ Technical variation that should be masked during clustering process can be speci
 We recommend the users to first run the clustering pipeline without setting rm.eigen. If any batch specific or QC drive clusters cause any issues, the users can create "rm.eigen" and rerun the pipeline. 
 
 ```{r,echo=FALSE}
-gene.counts= colSums(counts>0)
+gene.counts= colSums(norm.dat>0)
 rm.eigen = matrix(log2(gene.counts), ncol=1)
 row.names(rm.eigen) = names(gene.counts)
 colnames(rm.eigen) = "log2GeneCounts"
@@ -92,8 +93,8 @@ WGCNA.clust.result <- iter_clust(norm.dat, select.cells=select.cells, dim.method
 To use PCA mode, simply use dim.method = "pca".  
 
 
-Although we checked whether clusters at any iteration can be seperated by DEG, clusters from different iterations can end up quite similar. So it is necessary check whether all the clusters are seperable by DEGs in the end. 
-Clusters that merged in the order defined by the nearest neighbors. Nearest neighbors are computed in a reduced dimension space defined by rd.dat. Here, we used the markers 
+Although we checked whether clusters at any iteration can be seperated by DEG, clusters from different iterations can end up quite similar. So it is necessary to check whether all the clusters are seperable by DEGs in the end. 
+Clusters that merged in the order defined by the nearest neighbors. Nearest neighbors are computed in a reduced dimension space defined by rd.dat. Here, we used the markers produced by iter_clust to define the reduced dimension. 
 ```{r, message=FALSE, warning=FALSE, result="hide", echo=FALSE}
 merge.result=merge_cl(norm.dat, WGCNA.clust.result$cl, rd.dat = t(norm.dat[WGCNA.clust.result$markers, select.cells]), de.param = de.param)
 ```
@@ -125,8 +126,8 @@ Compare the consensus clustering result with the reference clusters
 ```{r, echo=FALSE}
 compare.result=compare_annotate(result$cl.result$cl, ref.cl, ref.cl.df)
 compare.result$g
-consensus.cl = compare.result$cl
-consensus.cl.df = compare.result$cl.df
+cl = compare.result$cl
+cl.df = compare.result$cl.df
 ```
 
 
@@ -219,7 +220,7 @@ heatmap.3(cl.cor, Rowv=dend, Colv=dend, trace="none",col=jet.colors(100),
 
 Create tSNE plots:
 ```{r,fig.keep="all"}
-tsne.result <- plot_tSNE_cl(norm.dat, select.markers, cl, cl.df)
+tsne.result <- plot_tsne_cl(norm.dat, select.markers, cl, cl.df)
 tsne.result$g
 ```
 
