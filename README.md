@@ -1,4 +1,6 @@
-# scrattch.hicat: Hierarchical, Iterative Clustering for Analysis of Transcriptomics
+# scrattch.hicat: Hierarchical, Iterative Clustering for Analysis of Transcriptomics 
+
+![](https://upload.wikimedia.org/wikipedia/commons/0/06/WhiteServalPharaoh.jpg "Serval: A hicat")
 
 ## Installation
 
@@ -36,3 +38,6 @@ We are planning on occasional updating this tool with no fixed schedule. Communi
 ## Contribution Agreement
 
 If you contribute code to this repository through pull requests or other mechanisms, you are subject to the Allen Institute Contribution Agreement, which is available in full at: https://github.com/AllenInstitute/scrattch.hicat/blob/master/CONTRIBUTION
+
+#### Image attribution:
+User:BigCatRescue [CC BY 3.0 (https://creativecommons.org/licenses/by/3.0)], via Wikimedia Commons
