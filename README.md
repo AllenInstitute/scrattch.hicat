@@ -1,6 +1,6 @@
 # scrattch.hicat: Hierarchical, Iterative Clustering for Analysis of Transcriptomics 
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/0/06/WhiteServalPharaoh.jpg" alt="Serval: A hicat" width="150px"/>
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/The_cat_-_an_introduction_to_the_study_of_backboned_animals%2C_especially_mammals_%281881%29_%2820577850762%29.jpg/320px-The_cat_-_an_introduction_to_the_study_of_backboned_animals%2C_especially_mammals_%281881%29_%2820577850762%29.jpg" alt="A hicat" width="200px"/>
 
 ## Installation
 
