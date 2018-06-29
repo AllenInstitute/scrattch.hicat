@@ -1,8 +1,12 @@
 ---
 title: "scrattch.hicat"
-output:
-  html_document: default
-  html_notebook: default
+author: "Zizhen Yao"
+date: "2018-06-29"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
 
 The scrattch.hicat package offers functions to preform iterative clustering for single cell RNAseq datasets. The pipeline consists of the following kep steps: high variance gene selection, dimensionality reduction, dimension filtering, and Jaccard-Louvain or hierarchichal (Ward) clustering, followed by cluster merging based on presence of differentially expressed genes. This process was then repeated within each resulting cluster until no more clusters meet differential gene expression and cluster size termination criteria. 
