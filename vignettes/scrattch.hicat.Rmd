@@ -44,7 +44,8 @@ library(Matrix)
 library(scrattch.hicat)
 ```
 
-## Dataset Formatting and Setup {#setup}
+<a id="setup"></a>
+## Dataset Formatting and Setup
 
 First prepare the datasets 
 ```{r}
