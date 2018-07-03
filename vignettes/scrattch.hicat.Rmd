@@ -275,7 +275,8 @@ cl.clean <- droplevels(cl)
 <a id="markerplot"></a>
 ## Marker genes and heatmaps
 
-Compute DE genes between every pair of clusters, and plot the heatmap using top 20 DE genes between every pair. If you have many clusters, the heatmap will be very large. Choose small number of n.markers, and use "max.cl.size" to sample subsets of cells for plotting.  
+Compute DE genes between every pair of clusters, and plot the heatmap using the top 20 DE genes between every pair.  
+If you have many clusters, the heatmap will be very large. Choose a small number of **n.markers**, and **max.cl.size** to sample subsets of cells for plotting.  
 ```{r}
 display.result <- display_cl(cl.clean, 
                              norm.dat, 
