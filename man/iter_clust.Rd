@@ -20,7 +20,7 @@ iter_clust(norm.dat, select.cells = colnames(norm.dat), prefix = NULL,
 
 \item{method}{Clustering method. It can be "auto", "louvain", "hclust"}
 
-\item{...}{Other parameters passed to method "onestep_clust"}
+\item{...}{Other parameters passed to method `onestep_clust()`}
 }
 \value{
 Clustering result is returned as a list with two elements: 

@@ -2,12 +2,12 @@
 % Please edit documentation in R/consensusCluster.R
 \name{iter_consensus_clust}
 \alias{iter_consensus_clust}
-\title{Title}
+\title{Iterative consensus clustering}
 \usage{
 iter_consensus_clust(co.ratio, cl.list, norm.dat,
   select.cells = colnames(co.ratio), all.col = NULL, diff.th = 0.25,
   prefix = NULL, method = c("auto", "louvain", "ward"), verbose = FALSE,
-  result = NULL, min.cells = 4, ...)
+  de.param = de.param, result = NULL, rd.dat = NULL)
 }
 \arguments{
 \item{co.ratio}{cell cell co-clustering matrix}
@@ -38,5 +38,5 @@ iter_consensus_clust(co.ratio, cl.list, norm.dat,
 A list with cluster membership, and top pairwise marker genes.
 }
 \description{
-Title
+Iterative consensus clustering
 }

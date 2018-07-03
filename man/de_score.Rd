@@ -4,21 +4,21 @@
 \alias{de_score}
 \title{Title}
 \usage{
-de_score(norm.dat, cl, min.cells = 4, de.param = de_param(),
-  method = "limma", de.genes = NULL)
+de_score(norm.dat, cl, de.param = de_param(), method = "limma",
+  de.genes = NULL, ...)
 }
 \arguments{
 \item{norm.dat}{log transformed normalized gene expression matrix}
 
 \item{cl}{Cluster membership.}
 
-\item{min.cells}{Minimal number of cells in a cluster}
-
 \item{de.param}{DE gene criteria set by de_param function.}
 
 \item{method}{Default "limma".}
 
 \item{de.genes}{If DE genes already computed for some pairs of clusters, use them without recomputation.}
+
+\item{min.cells}{Minimal number of cells in a cluster}
 }
 \value{
 a list with DE genes from all pairs of clusters.

@@ -4,9 +4,10 @@
 \alias{merge_cl}
 \title{Merge clusters based on pairwise differential expressed genes.}
 \usage{
-merge_cl(norm.dat, cl, rd.dat, min.cells = 4, de.param = de_param(),
+merge_cl(norm.dat, cl, rd.dat, de.param = de_param(),
   type = c("undirectional", "directional"), max.cl.size = 300,
-  de.method = "limma")
+  de.method = "limma", de.genes = NULL, return.markers = TRUE,
+  verbose = 0)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)}
@@ -15,13 +16,11 @@ merge_cl(norm.dat, cl, rd.dat, min.cells = 4, de.param = de_param(),
 
 \item{rd.dat}{Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first.}
 
-\item{min.cells}{The minimal number of cells in a cluster}
-
 \item{de.param}{The DE gene criteria. See de_param for details.}
 
 \item{type}{Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately.}
 
-\item{max.cl.size}{Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all genes, we randomly sampled max.cl.size number of cells for testing DE genes.}
+\item{max.cl.size}{Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.}
 
 \item{de.method}{Use limma by default. We are still testing "chisq" mode.}
 }

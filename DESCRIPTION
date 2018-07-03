@@ -10,7 +10,7 @@ Depends: R (>= 3.3.0)
 License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true
-Imports: limma, matrixStats, Matrix, Rphenograph, dendextend, ggplot2, WGCNA, pvclust, Rtsne, grid,dplyr
+Imports: limma, matrixStats, Matrix, Rphenograph, dendextend, ggplot2, WGCNA, pvclust, Rtsne, grid, dplyr, foreach, doParallel
 RoxygenNote: 6.0.1
 Suggests: knitr,
     rmarkdown

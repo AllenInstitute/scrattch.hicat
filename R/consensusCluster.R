@@ -1,13 +1,8 @@
-library(Matrix)
-#' Title
+#' Collect co-clustering matrix from results files
 #'
-#' @param result.files 
-#' @param all.cells 
+#' @param result.files A directory containing results files
+#' @param all.cells The cells to read from results files
 #'
-#' @return
-#' @export
-#'
-#' @examples
 collect_co_matrix <- function(result.files,all.cells)
   {
     subsample.cl=list()
@@ -72,17 +67,13 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     return(list(cl.list=cl.list, cl.mat = cl.mat))
   }
 
-#' Title
+#' Collect coclustering results as a sparse matrix
 #'
-#' @param norm.dat 
-#' @param result.files 
-#' @param all.cells 
-#' @param max.cl.size 
+#' @param norm.dat Normalized data matrix
+#' @param result.files A directory containing results files
+#' @param all.cells Samples to read from the results files
+#' @param max.cl.size Maximum number of cells per cluster to use
 #'
-#' @return
-#' @export
-#'
-#' @examples
 collect_co_matrix_sparseM <- function(norm.dat,result.files,all.cells,max.cl.size=1000)
   {
     tmp = collect_subsample_cl_matrix(norm.dat,result.files,all.cells, max.cl.size=max.cl.size)
@@ -111,7 +102,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 
 
 
-#' Title
+#' Iterative consensus clustering
 #'
 #' @param co.ratio cell cell co-clustering matrix
 #' @param cl.list  The list of subsampled clustering results. 
@@ -127,9 +118,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #' @param ... Other parameters passed to merge_cl
 #'
 #' @return A list with cluster membership, and top pairwise marker genes. 
-#' @export
-#'
-#' @examples
+#' 
 iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
   {
     method=method[1]
@@ -248,15 +237,13 @@ merge_cl_by_co <- function(cl, co.ratio=NULL, cl.mat=NULL, diff.th=0.25, verbose
   cl = setNames(as.integer(as.character(cl)), names(cl))
   return(cl)
 }
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param cl 
-##' @param co.ratio 
-##' @param cl.mat 
-##' @return 
-##' @author Zizhen Yao
+
+#' Get cell co-clustering ratios
+#'  
+#' @param cl Vector of cluster assignments
+#' @param co.ratio coclustering ratio results
+#' @param cl.mat A matrix of cluster results?
+#' 
 get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
   {
     if(!is.null(co.ratio)){
@@ -373,22 +360,8 @@ cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
     diff.col= jet.colors(100)[diff.bin]
     cl = setNames(as.integer(cut(1:ncol(co.ratio), c(0,sep,ncol(co.ratio)+1))), colnames(co.ratio)[ord])
     return(cl)
-  }
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param cl 
-##' @param co.ratio 
-##' @param cl.mat 
-##' @param co.stats 
-##' @param confusion.th 
-##' @param min.cells 
-##' @param niter 
-##' @param tol.th 
-##' @param verbose 
-##' @return 
-##' @author Zizhen Yao
+}
+
 refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, co.stats=NULL,confusion.th=0.4,min.cells=4, niter=10, tol.th=0.02, verbose=0)
   {
     if(is.null(co.stats)){
