@@ -9,7 +9,9 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-The scrattch.hicat package offers functions to perform iterative clustering for single cell RNAseq datasets. 
+# Overview of Hierarchical Iterative Clustering for Analysis of Transcriptomics
+
+The `scrattch.hicat` package offers functions to perform iterative clustering for single cell RNAseq datasets. 
 
 The pipeline consists of the following key steps: 
 * [Dataset formatting and setup](#setup)
@@ -177,7 +179,7 @@ WGCNA.cl.df <- compare.result$cl.df
 
 The iterative clustering pipeline tends to produce many clusters, with increased uncertainty as we try to split the clusters at finer resolution. Therefore, it is important to assess the robustness of clustering results. We address this problem by performing clustering many times on 80% of randomly subsampled cells, keep track of how often each cell is clustered with each other cell (a cell-cell co-clustering matrix), and use these frequencies of cell-cell co-clustering to infer consensus clustering. We also compute statistics to evaluate our confidence in the seperation between every pair of consensus clusters.
 
-`run_consensus_clust` is a convenient wrapper function for performing this bootstrapped, iterative clustering process:
+`run_consensus_clust()` is a convenient wrapper function for performing this bootstrapped, iterative clustering process:
 ```{r, echo=FALSE}
 set.seed(12345)
 result <- run_consensus_clust(norm.dat[,select.cells], 
@@ -211,7 +213,7 @@ cl.df <- compare.result$cl.df
 <a id="breakdown"></a>
 ## Consensus clustering process
 
-`run_consensus_clust` is a wrapper function that performs the following steps:  
+`run_consensus_clust()` is a wrapper function that performs the following steps:  
 - Perform clustering on subsampled cells:
 ```{r, echo=FALSE, eval=FALSE}
 d <- paste0("subsample_WGCNA")
