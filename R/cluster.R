@@ -1,22 +1,28 @@
-library(Matrix)
-library(matrixStats)
-library(Rphenograph)
+# library(Matrix)
+# library(matrixStats)
+# library(Rphenograph)
+# 
+# jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+# blue.red <-colorRampPalette(c("blue", "white", "red"))
 
-jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
-blue.red <-colorRampPalette(c("blue", "white", "red"))
-
+#' Compute jaccard distances for a matrix
+#' 
+#' @param m A matrix or sparse matrix
+#' 
+#' @return a sparse matrix of Jaccard distances.
+#' 
 jaccard <- function(m) {
-  require(Matrix)
+  library(Matrix)
   ## common values:
-  A =  m %*% t(m)
+  A <-  m %*% t(m)
   ## indexes for non-zero common values
-  im = Matrix::which(A > 0, arr.ind=TRUE)
+  im <- Matrix::which(A > 0, arr.ind=TRUE)
   ## counts for each row
-  b = Matrix::rowSums(m)  
+  b <- Matrix::rowSums(m)  
   ## only non-zero values of common
-  Aim = A[im]
+  Aim <- A[im]
   ## Jacard formula: #common / (#i + #j - #common)
-  J = sparseMatrix(
+  J <- sparseMatrix(
     i = im[,1],
     j = im[,2],
     x = Aim / (b[im[,1]] + b[im[,2]] - Aim),
@@ -28,17 +34,25 @@ jaccard <- function(m) {
 
 pass_louvain <- function(mod.sc, adj.mat)
 {
-  p = mean(Matrix::colSums(adj.mat>0)-1)/ nrow(adj.mat)
-  n = ncol(adj.mat)
-  rand.mod1 <- 0.97 * sqrt((1 - p)/(p*n))
-  rand.mod2 <- (1 - 2 / sqrt(n)) * (2 / (p * n))^(2/3)
-  rand.mod.max <- max(rand.mod1, rand.mod2, na.rm=TRUE)
+  p <- mean(Matrix::colSums(adj.mat > 0) - 1) / nrow(adj.mat)
+  n <- ncol(adj.mat)
+  rand.mod1 <- 0.97 * sqrt((1 - p) / (p * n))
+  rand.mod2 <- (1 - 2 / sqrt(n)) * (2 / (p * n)) ^ (2 / 3)
+  rand.mod.max <- max(rand.mod1, rand.mod2, na.rm = TRUE)
   #cat("Modularity:",mod.sc, "threshold:",rand.mod.max, "\n")
   return(mod.sc > rand.mod.max)
 }
 
 ###rows are cells, columns are feathers
-jaccard_louvain.FNN <- function(dat, k=10, knn.matrix=NULL)
+#' Find nearest neighbors using Jaccard/Louvain metrics
+#'
+#' @param dat
+#' @param k
+#' @param knn.matrix
+#'
+jaccard_louvain.FNN <- function(dat, 
+                                k = 10, 
+                                knn.matrix = NULL)
   {
     suppressMessages(library(igraph))
     if(is.null(knn.matrix)){
@@ -69,8 +83,8 @@ jaccard_louvain <- function(dat, k=10)
 {
   suppressMessages(library(Rphenograph))
   rpheno <- Rphenograph(dat, k = k)
-  cl  = setNames(rpheno[[2]]$membership, row.names(dat)[as.integer(rpheno[[2]]$names)])
-  return(list(cl = cl, result=rpheno))
+  cl <- setNames(rpheno[[2]]$membership, row.names(dat)[as.integer(rpheno[[2]]$names)])
+  return(list(cl = cl, result = rpheno))
 }
 
 #' One round of clustering in the iteractive clustering pipeline 
@@ -96,10 +110,24 @@ jaccard_louvain <- function(dat, k=10)
 #' @return Clustering result is returned as a list with two elements: 
 #'         cl: cluster membership for each cell
 #'         markers: top markers that seperate clusters     
-#' @export
-#'
-#' @examples
-onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL, method=c("louvain","ward", "kmeans"), vg.padj.th=0.5, dim.method=c("pca","WGCNA"), max.dim=20, rm.eigen=NULL, rm.th=0.7, de.param = de_param(),min.genes=5, type=c("undirectional", "directional"), maxGenes=3000,sampleSize=4000,max.cl.size=300, prefix=NULL, verbose=FALSE)
+#'         
+onestep_clust <- function(norm.dat, 
+                          select.cells = colnames(norm.dat), 
+                          counts = NULL, 
+                          method = c("louvain","ward", "kmeans"), 
+                          vg.padj.th = 0.5, 
+                          dim.method = c("pca","WGCNA"), 
+                          max.dim = 20, 
+                          rm.eigen = NULL, 
+                          rm.th = 0.7, 
+                          de.param = de_param(),
+                          min.genes = 5, 
+                          type = c("undirectional", "directional"), 
+                          maxGenes = 3000,
+                          sampleSize = 4000,
+                          max.cl.size = 300, 
+                          prefix = NULL, 
+                          verbose = FALSE)
                           
   {
     method=method[1]
@@ -239,18 +267,23 @@ onestep_clust <- function(norm.dat, select.cells=colnames(norm.dat), counts=NULL
 #' @param split.size The minimal cluster size for further splitting
 #' @param result The current clustering result as basis for further splitting.
 #' @param method Clustering method. It can be "auto", "louvain", "hclust"
-#' @param ... Other parameters passed to method "onestep_clust"
+#' @param ... Other parameters passed to method `onestep_clust()`
 #'
 #' @return Clustering result is returned as a list with two elements: 
 #'         cl: cluster membership for each cell
 #'         markers: top markers that seperate clusters     
-#' @export
-#'
+#'         
 #' @examples clust.result = iter_clust(norm.dat)
 #'           clust.result = iter_clust(norm.dat, de.param = de_param(q1.th=0.5, de.score.th=100))
-iter_clust <- function(norm.dat, select.cells=colnames(norm.dat),prefix=NULL, split.size = 10, result=NULL,method="auto",...)
+iter_clust <- function(norm.dat, 
+                       select.cells = colnames(norm.dat),
+                       prefix = NULL, 
+                       split.size = 10, 
+                       result = NULL,
+                       method = "auto",
+                       ...)
   {
-    print(prefix)
+    if(!is.null(prefix)) { print(prefix) }
     if(method=="auto"){
       if(length(select.cells)>3000){
         select.method="louvain"
@@ -344,7 +377,16 @@ reorder_cl <- function(cl, dat)
 #' @export
 #'
 #' @examples
-merge_cl<- function(norm.dat, cl, rd.dat, de.param = de_param(), type=c("undirectional","directional"), max.cl.size=300,de.method="limma",de.genes=NULL, return.markers=TRUE, verbose=0)
+merge_cl<- function(norm.dat, 
+                    cl, 
+                    rd.dat, 
+                    de.param = de_param(), 
+                    type = c("undirectional","directional"), 
+                    max.cl.size = 300,
+                    de.method = "limma",
+                    de.genes = NULL, 
+                    return.markers = TRUE, 
+                    verbose = 0)
   {
     cl = setNames(as.integer(as.character(cl)), names(cl))
     de.df=list()

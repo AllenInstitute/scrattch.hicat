@@ -1,13 +1,8 @@
-library(Matrix)
-#' Title
+#' Collect co-clustering matrix from results files
 #'
-#' @param result.files 
-#' @param all.cells 
+#' @param result.files A directory containing results files
+#' @param all.cells The cells to read from results files
 #'
-#' @return
-#' @export
-#'
-#' @examples
 collect_co_matrix <- function(result.files,all.cells)
   {
     subsample.cl=list()
@@ -72,17 +67,13 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     return(list(cl.list=cl.list, cl.mat = cl.mat))
   }
 
-#' Title
+#' Collect coclustering results as a sparse matrix
 #'
-#' @param norm.dat 
-#' @param result.files 
-#' @param all.cells 
-#' @param max.cl.size 
+#' @param norm.dat Normalized data matrix
+#' @param result.files A directory containing results files
+#' @param all.cells Samples to read from the results files
+#' @param max.cl.size Maximum number of cells per cluster to use
 #'
-#' @return
-#' @export
-#'
-#' @examples
 collect_co_matrix_sparseM <- function(norm.dat,result.files,all.cells,max.cl.size=1000)
   {
     tmp = collect_subsample_cl_matrix(norm.dat,result.files,all.cells, max.cl.size=max.cl.size)
@@ -111,7 +102,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 
 
 
-#' Title
+#' Iterative consensus clustering
 #'
 #' @param co.ratio cell cell co-clustering matrix
 #' @param cl.list  The list of subsampled clustering results. 
@@ -127,9 +118,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #' @param ... Other parameters passed to merge_cl
 #'
 #' @return A list with cluster membership, and top pairwise marker genes. 
-#' @export
-#'
-#' @examples
+#' 
 iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
   {
     method=method[1]
@@ -248,15 +237,12 @@ merge_cl_by_co <- function(cl, co.ratio=NULL, cl.mat=NULL, diff.th=0.25, verbose
   cl = setNames(as.integer(as.character(cl)), names(cl))
   return(cl)
 }
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param cl 
-##' @param co.ratio 
-##' @param cl.mat 
-##' @return 
-##' @author Zizhen Yao
+
+#' Get cell co-clustering ratios
+#'  
+#' @param cl Vector of cluster assignments
+#' @param co.ratio coclustering ratio results
+#' @param cl.mat Cluster membership matrix for all cells and all clusters from all bootstrapping iterations. 
 get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
   {
     if(!is.null(co.ratio)){
@@ -324,56 +310,6 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
 }
 
 
-init_cut.old <- function(co.ratio, select.cells, cl.list=NULL, min.cells=4, th = 0.3,method="ward",verbose=FALSE)
-  {
-    tmp.dat = as.matrix(co.ratio[select.cells, select.cells])
-    hc = hclust(as.dist(1-tmp.dat),method=method)
-    tmp.cl=cut_co_matrix(tmp.dat, hc$order,w=min.cells-1, th = th)
-    ord = colnames(tmp.dat)[hc$order]
-    sep = which(tmp.cl[-1]!=tmp.cl[-length(tmp.cl)])
-    if(verbose){
-      pdf("co.pdf")
-      heatmap.2(tmp.dat[ord,ord], Colv=NULL,Rowv=NULL,trace="none",col=blue.red(100),colsep=sep,sepcolor="black")
-      dev.off()
-    }    
-    if(length(unique(tmp.cl))==1){
-      return(NULL)    
-    }
-    tmp.cl=merge_cl_by_co(tmp.cl, tmp.dat, diff.th=th)
-    if(length(unique(tmp.cl))==1){
-      return(NULL)    
-    }
-    ###reassign each cells to the clusters, if it prefer to co-cluster with another cluster much better.
-    tmp.cl=refine_cl(tmp.cl, co.ratio=co.ratio, min.cells=min.cells, niter=1, tol.th=1)$cl
-    if(length(unique(tmp.cl))==1){
-      return(NULL)    
-    }
-    tmp <- do.call("cbind",tapply(names(tmp.cl), tmp.cl, function(x){
-      rowMeans(tmp.dat[,x,drop=F])
-    }))
-    cl.hc = hclust(dist(t(tmp)),method="average")
-    cl = setNames(factor(as.character(tmp.cl), levels=cl.hc$labels[cl.hc$order]),names(tmp.cl))
-    cl = setNames(as.integer(cl),names(cl))
-    return(cl)
-  }
- 
-cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
-  {
-    tmp=co.ratio[ord,ord]
-    l = ncol(tmp)
-    ##Compute the at every position the moving window
-    co.w=sapply(1:(l-w),function(x)rowMeans(tmp[,x:(x+w)]))
-    diff = colSums(abs(co.w[,1:(l-w*2-1),drop=F] - co.w[,(w+2):(l-w),drop=F]))
-    diff = diff/ colSums(co.w[,1:(l-w*2-1),drop=F] + co.w[,(w+2):(l-w),drop=F])
-    diff = c(rep(0,w),diff,rep(0,w))
-
-    peak=slice(Rle(diff), th)
-    sep=which.max(peak)
-    diff.bin=cut(diff,breaks= c(seq(-0.05,1,length.out=100),2))
-    diff.col= jet.colors(100)[diff.bin]
-    cl = setNames(as.integer(cut(1:ncol(co.ratio), c(0,sep,ncol(co.ratio)+1))), colnames(co.ratio)[ord])
-    return(cl)
-  }
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
@@ -381,7 +317,6 @@ cut_co_matrix <- function(co.ratio, ord, w=3,th=0.25)
 ##' @param cl 
 ##' @param co.ratio 
 ##' @param cl.mat 
-##' @param co.stats 
 ##' @param confusion.th 
 ##' @param min.cells 
 ##' @param niter 

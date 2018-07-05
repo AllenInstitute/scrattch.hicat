@@ -2,20 +2,20 @@
 % Please edit documentation in R/consensusCluster.R
 \name{collect_co_matrix_sparseM}
 \alias{collect_co_matrix_sparseM}
-\title{Title}
+\title{Collect coclustering results as a sparse matrix}
 \usage{
 collect_co_matrix_sparseM(norm.dat, result.files, all.cells,
   max.cl.size = 1000)
 }
 \arguments{
-\item{norm.dat}{}
+\item{norm.dat}{Normalized data matrix}
 
-\item{result.files}{}
+\item{result.files}{A directory containing results files}
 
-\item{all.cells}{}
+\item{all.cells}{Samples to read from the results files}
 
-\item{max.cl.size}{}
+\item{max.cl.size}{Maximum number of cells per cluster to use}
 }
 \description{
-Title
+Collect coclustering results as a sparse matrix
 }

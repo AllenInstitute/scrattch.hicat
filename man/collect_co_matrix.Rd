@@ -2,15 +2,15 @@
 % Please edit documentation in R/consensusCluster.R
 \name{collect_co_matrix}
 \alias{collect_co_matrix}
-\title{Title}
+\title{Collect co-clustering matrix from results files}
 \usage{
 collect_co_matrix(result.files, all.cells)
 }
 \arguments{
-\item{result.files}{}
+\item{result.files}{A directory containing results files}
 
-\item{all.cells}{}
+\item{all.cells}{The cells to read from results files}
 }
 \description{
-Title
+Collect co-clustering matrix from results files
 }

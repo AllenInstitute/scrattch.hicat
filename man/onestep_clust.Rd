@@ -2,54 +2,55 @@
 % Please edit documentation in R/cluster.R
 \name{onestep_clust}
 \alias{onestep_clust}
-\title{One round of clustering in the iteractive pipeline}
+\title{One round of clustering in the iteractive clustering pipeline}
 \usage{
 onestep_clust(norm.dat, select.cells = colnames(norm.dat), counts = NULL,
-  method = c("louvain", "ward"), dim.method = c("pca", "WGCNA"),
-  min.cells = 4, vg.padj.th = 0.5, max.dim = 20, rm.gene.mod = NULL,
-  rm.eigen = NULL, rm.th = 0.6, de.param = de_param(), min.genes = 5,
-  type = "undirectional", maxGenes = 3000, sampleSize = 4000,
-  max.cl.size = 300, prefix = NULL, verbose = FALSE)
+  method = c("louvain", "ward", "kmeans"), vg.padj.th = 0.5,
+  dim.method = c("pca", "WGCNA"), max.dim = 20, rm.eigen = NULL,
+  rm.th = 0.7, de.param = de_param(), min.genes = 5,
+  type = c("undirectional", "directional"), maxGenes = 3000,
+  sampleSize = 4000, max.cl.size = 300, prefix = NULL, verbose = FALSE)
 }
 \arguments{
-\item{norm.dat}{}
+\item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).}
 
-\item{select.cells}{}
+\item{select.cells}{The cells to be clustered. Default: columns of norm.dat}
 
-\item{counts}{}
+\item{counts}{Raw gene counts. Default NULL, inferred from norm.dat.}
 
-\item{method}{}
+\item{method}{Clustering method. It can be "louvain", "hclust" and "kmeans". Default "louvain"}
 
-\item{dim.method}{}
+\item{vg.padj.th}{High variance gene adjusted pvalue cut off. Default 0.5.}
 
-\item{min.cells}{}
+\item{dim.method}{Dimension reduction techniques. Current options include "pca" and "WGCNA". Default "pca"}
 
-\item{vg.padj.th}{}
+\item{max.dim}{The number of top dimensions retained. Default 20. Since clustering is performed iteratively, not all relevant dimensions need to be captured in one iterations.}
 
-\item{max.dim}{}
+\item{rm.eigen}{The reduced dimensions that need to be masked and removed. Default NULL.}
 
-\item{rm.gene.mod}{}
+\item{rm.th}{The cutoff for correlation between reduced dimensions and rm.eigen. Reduced dimensions with correlatin with any rm.eigen vectors are not used for clustering. Default 0.7}
 
-\item{rm.eigen}{}
+\item{de.param}{The differential gene expression threshold. See de_param() function for details.}
 
-\item{rm.th}{}
+\item{min.genes}{The minimal number of high variance and differentially expressed genes genes. Default 5.}
 
-\item{de.param}{}
+\item{type}{Can either be "undirectional" or "directional". If "undirectional", the differential gene threshold de.param is applied to combined up-regulated and down-regulated genes, if "directional", then the differential gene threshold is applied to both up-regulated and down-regulated genes.}
 
-\item{min.genes}{}
+\item{maxGenes}{Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules.}
 
-\item{type}{}
+\item{sampleSize}{The number of sampled cells to compute reduced dimensions.}
 
-\item{maxGenes}{}
+\item{max.cl.size}{Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.}
 
-\item{sampleSize}{}
+\item{prefix}{Used to keep track of intermediate results in "verbose" mode. Default NULL.}
 
-\item{max.cl.size}{}
-
-\item{prefix}{}
-
-\item{verbose}{}
+\item{verbose}{Default FALSE}
+}
+\value{
+Clustering result is returned as a list with two elements: 
+        cl: cluster membership for each cell
+        markers: top markers that seperate clusters
 }
 \description{
-One round of clustering in the iteractive pipeline
+One round of clustering in the iteractive clustering pipeline
 }

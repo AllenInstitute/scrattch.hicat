@@ -1,4 +1,6 @@
-# scrattch.hicat: Hierarchical, Iterative Clustering for Analysis of Transcriptomics
+# scrattch.hicat: Hierarchical, Iterative Clustering for Analysis of Transcriptomics 
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/The_cat_-_an_introduction_to_the_study_of_backboned_animals%2C_especially_mammals_%281881%29_%2820577850762%29.jpg/640px-The_cat_-_an_introduction_to_the_study_of_backboned_animals%2C_especially_mammals_%281881%29_%2820577850762%29.jpg" alt="A hicat" width="300px"/>
 
 ## Installation
 
@@ -36,3 +38,6 @@ We are planning on occasional updating this tool with no fixed schedule. Communi
 ## Contribution Agreement
 
 If you contribute code to this repository through pull requests or other mechanisms, you are subject to the Allen Institute Contribution Agreement, which is available in full at: https://github.com/AllenInstitute/scrattch.hicat/blob/master/CONTRIBUTION
+
+#### Image attribution:
+By Internet Archive Book Images [No restrictions], via Wikimedia Commons
