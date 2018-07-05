@@ -84,7 +84,7 @@ get_cl_means <- function(mat, cl)
   {
     cl.sums <- get_cl_sums(mat, cl)
     cl.size <- table(cl)
-    cl.means <- as.matrix(t(Matrix::t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
+    cl.means <- as.matrix(Matrix::t(Matrix::t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
     return(cl.means)
 }
 
