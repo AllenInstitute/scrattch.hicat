@@ -112,7 +112,6 @@ prune_dend <- function(dend, rm.labels, top.level=TRUE)
         attr(new_dend, "members") = member
         attr(new_dend, "edgePar") = attr(dend, "edgePar")
         attr(new_dend, "label") = attr(dend, "label")
-        print(labels(new_dend))
         dend= new_dend
       }
       else if(length(new_dend)==0){
@@ -141,9 +140,7 @@ reorder_dend <- function(dend, l.rank, top.level=TRUE)
       l = dend[[i]] %>% labels
       mean(l.rank[dend[[i]] %>% labels])
     })
-    print(sc)
     ord = order(sc)
-    print(ord)
     if(length(dend)>1){
       for(i in 1:length(dend)){
         if(ord[i]!=i){

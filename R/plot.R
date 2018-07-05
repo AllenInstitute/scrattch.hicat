@@ -16,14 +16,10 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=
       breaks=c(0, seq(0.05, 1, length.out=100))
     }
     colnames(tmp.dat)=labels
-    dendro = "column"
     cexCol = min(70/ncol(tmp.dat),1)
     cexRow = min(60/nrow(tmp.dat),1)
     if(is.null(gene.hc)){
       gene.hc = hclust(dist(tmp.dat), method="ward")
-    }
-    else{
-      dendro="both"
     }
     if(is.null(hc) & !sorted & length(select.cells)< 2000){
       hc = hclust(dist(t(tmp.dat)), method="ward")
@@ -51,7 +47,7 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=
       cells.order=colnames(tmp.dat)[ord]
     }
     else{
-      heatmap.3(tmp.dat,Rowv=as.dendrogram(gene.hc), Colv=as.dendrogram(hc), col=col, trace="none", dendrogram=dendro, cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors,breaks=breaks,main=main)
+      heatmap.3(tmp.dat,Rowv=as.dendrogram(gene.hc), Colv=as.dendrogram(hc), col=col, trace="none", dendrogram="none", cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors,breaks=breaks,main=main)
       cells.order=colnames(tmp.dat)[hc$order]
     }
     if(!is.null(prefix)){
