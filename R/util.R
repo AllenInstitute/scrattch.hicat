@@ -61,28 +61,30 @@ convert_pair_matrix <- function(pair.num, l=NULL,directed=FALSE)
 get_cl_mat <- function(cl)
   {
     if(!is.factor(cl)){
-      cl = factor(cl)
+      cl <- factor(cl)
     }
-    cl.mat = sparseMatrix(i = 1:length(cl),  j = as.integer(cl), x=1)
-    row.names(cl.mat) = names(cl)
-    colnames(cl.mat) = levels(cl)
+    cl.mat <- sparseMatrix(i = 1:length(cl),  
+                           j = as.integer(cl), 
+                           x = 1)
+    rownames(cl.mat) <- names(cl)
+    colnames(cl.mat) <- levels(cl)
     return(cl.mat)
   }
 
 get_cl_sums <- function(mat, cl)
   {
     require(Matrix)
-    cl.mat = get_cl_mat(cl)
-    tmp=Matrix::tcrossprod(mat[,row.names(cl.mat)], t(cl.mat))
-    cl.sums = as.matrix(tmp)
+    cl.mat <- get_cl_mat(cl)
+    tmp <- Matrix::tcrossprod(mat[,rownames(cl.mat)], t(cl.mat))
+    cl.sums <- as.matrix(tmp)
     return(cl.sums)
   }
 
 get_cl_means <- function(mat, cl)
   {
-    cl.sums = get_cl_sums(mat, cl)
-    cl.size = table(cl)
-    cl.means = as.matrix(t(t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
+    cl.sums <- get_cl_sums(mat, cl)
+    cl.size <- table(cl)
+    cl.means <- as.matrix(t(t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
     return(cl.means)
 }
 

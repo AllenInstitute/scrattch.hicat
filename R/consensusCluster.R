@@ -40,23 +40,30 @@ sample_cl_list <- function(cl.list, max.cl.size=500)
     return(select.cells)
   }
 
-collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.size=NULL)
+collect_subsample_cl_matrix <- function(norm.dat,
+                                        result.files,
+                                        all.cells,
+                                        max.cl.size = NULL)
   {
-    select.cells=c()
-    cl.list=list()
+    select.cells <- c()
+    cl.list <- list()
     for(f in result.files){
       print(f)
-      tmp=load(f)
-      cl= result$cl
-      test.cells = setdiff(all.cells, names(cl))
-      markers=unique(result$markers)
-      map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
-      test.cl = setNames(map.df$pred.cl, row.names(map.df))
-      all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
-      cl.list[[f]] = all.cl
+      tmp <- load(f)
+      cl <- result$cl
+      test.cells <- setdiff(all.cells, names(cl))
+      markers <- unique(result$markers)
+      map.df <- map_by_cor(norm.dat[markers,names(cl)],
+                           cl, 
+                           norm.dat[markers,test.cells],
+                           method = "means")$pred.df
+      test.cl <- setNames(map.df$pred.cl, row.names(map.df))
+      all.cl <- c(setNames(as.character(cl), names(cl)), 
+                  setNames(as.character(test.cl), names(test.cl)))
+      cl.list[[f]] <- all.cl
     }
     if(!is.null(max.cl.size)){
-      select.cells= sample_cl_list(cl.list, max.cl.size=max.cl.size)
+      select.cells <- sample_cl_list(cl.list, max.cl.size=max.cl.size)
     }
     else{
       select.cells= all.cells

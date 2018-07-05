@@ -51,7 +51,7 @@ run_consensus_clust <- function(norm.dat,
       if(!is.null(output_dir)) {
         outfile <- file.path(output_dir, paste0("result.",i,".rda"))
         if(file.exists(outfile) & overwrite == FALSE){
-          stop(paste("Output file",outfile,"exists and overwrite = FALSE. Stopping."))
+          print(paste("Output file",outfile,"exists and overwrite = FALSE. Skipping."))
         }
       }
       
