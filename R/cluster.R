@@ -130,6 +130,7 @@ onestep_clust <- function(norm.dat,
                           verbose = FALSE)
                           
   {
+    library(matrixStats)
     method=method[1]
     dim.method=dim.method[1]
     type=type[1]
@@ -409,7 +410,7 @@ merge_cl<- function(norm.dat,
       tmp.cells = sample_cells(cl, weights=cell.weights, max.cl.size=max.cl.size)
       tmp.dat = as.matrix(norm.dat[,tmp.cells])
       ###Merge small clusters with the closest neighbors first.
-      cl.rd = t(get_cl_means(t(rd.dat),cl))
+      cl.rd = Matrix::t(get_cl_means(Matrix::t(rd.dat),cl))
       while(TRUE){
         cl.size = table(cl)
         ##Compute cluster similary on reduced dimension
