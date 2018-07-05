@@ -119,7 +119,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #'
 #' @return A list with cluster membership, and top pairwise marker genes. 
 #' 
-iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
+iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward.D"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
   {
     method=method[1]
     require(igraph)
@@ -143,13 +143,13 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
           if(!is.matrix(co.ratio)){
             co.ratio = as.matrix(co.ratio[select.cells, select.cells])
           }
-          select.method="ward"
+          select.method="ward.D"
         }
       }
       else{
         select.method = method
       }
-      if(select.method=="ward"){
+      if(select.method=="ward.D"){
         tmp.cl = init_cut(co.ratio, select.cells, cl.list, min.cells= de.param$min.cells, th = diff.th,method=select.method)
         if(is.null(tmp.cl)){
           return(NULL)
@@ -290,7 +290,7 @@ get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
   }
 
 
-init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,method="ward",verbose=FALSE)
+init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,method="ward.D",verbose=FALSE)
 {
   avg.cl.num = mean(sapply(cl.list, function(cl){
     sum(table(cl[select.cells]) >= min.cells)
