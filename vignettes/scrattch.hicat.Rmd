@@ -35,12 +35,14 @@ Finally, we can inspect and visualize the results of consensus clustering:
 
 For this vignette, we use a subset of the dataset published in [Tasic, et al. (2016) Nature Neuroscience](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4985242/), which is available in the [tasic2016data package](https://github.com/AllenInstitute/tasic2016data):
 ```{r tasic2016data}
-#devtools::install_github("AllenInstitute/tasic2016data")
+if(!"tasic2016data" %in% rownames(installed.packages())) {
+  devtools::install_github("AllenInstitute/tasic2016data")
+}
 library(tasic2016data)
 ```
 
 This vignette depends on a few other packages, in addition to `scrattch.hicat`:
-```{r Load libraries}
+```{r Load libraries, echo = F, messages = F}
 library(WGCNA)
 library(dendextend)
 library(Matrix)
@@ -76,7 +78,7 @@ norm.dat <- log2(cpm(tasic_2016_counts)+1)
 
 If you have a very large matrix, we recommend you convert it to a sparse matrix using the Matrix package to save memory:
 ```{r Convert to sparse}
-norm.dat <- cpm(Matrix(tasic_2016_counts, sparse = TRUE))
+norm.dat <- Matrix(cpm(tasic_2016_counts), sparse = TRUE)
 
 norm.dat@x <- log2(norm.dat@x+1)
 ```
@@ -145,10 +147,10 @@ We recommend using WGCNA for smaller, high-depth datasets (< 4,000 samples; > 5,
 ```{r Run iter_clust, message=FALSE, warning=FALSE, results="hide", echo=TRUE}
 set.seed(12345)
 PCA.clust.result <- iter_clust(norm.dat, 
-                                 select.cells = select.cells, 
-                                 dim.method = "PCA", 
-                                 de.param = de.param, 
-                                 rm.eigen = rm.eigen)
+                               select.cells = select.cells, 
+                               dim.method = "PCA", 
+                               de.param = de.param, 
+                               rm.eigen = rm.eigen)
 ```
 To use WGCNA mode, which will provide better resolution on this dataset, simply set the **dim.method** parameter to "WGCNA".  
 
@@ -353,4 +355,3 @@ To reduce the size of image, we randomly sample up to 50 cells per cluster with 
 co.ratio <- result$co.result$co.ratio
 tmp <- plot_co_matrix(co.ratio, cl.clean, max.cl.size = 50)
 ```
-
