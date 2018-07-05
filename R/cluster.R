@@ -284,8 +284,8 @@ iter_clust <- function(norm.dat,
                        ...)
   {
     if(!is.null(prefix)) { print(prefix) }
-    if(method=="auto"){
-      if(length(select.cells)>3000){
+    if(method == "auto"){
+      if(length(select.cells) > 3000){
         select.method="louvain"
       }
       else{

@@ -1,6 +1,4 @@
-library(iterclust)
-library(matrixStats)
- 
+
 test_cv_cor <- function(norm.dat, cl, markers, n.bin=5,g.perc=1){
   bins=unlist(tapply(names(cl), cl, function(x){
     if(length(x) > n.bin){

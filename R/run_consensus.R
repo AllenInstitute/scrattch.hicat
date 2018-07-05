@@ -1,5 +1,4 @@
-#' Wrapper function to repeatively run clustering on subsampled cells and infer consensus clusters
-#' Run bootstrapped, iterative consensus clustering
+#' Wrapper function to repeatedly run clustering on subsampled cells and infer consensus clusters
 #'
 #' @param norm.dat A matrix of normalized data
 #' @param select.cells A selected subset of sample IDs. Default is colnames(norm.dat).
@@ -132,6 +131,3 @@ run_consensus_clust <- function(norm.dat,
     return(list(co.result = co.result, 
                 cl.result = merge.result))
   }
-
-
-
