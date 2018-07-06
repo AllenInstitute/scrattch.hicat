@@ -45,6 +45,7 @@ This vignette depends on a few other packages, in addition to `scrattch.hicat`:
 ```{r Load libraries, echo = F, messages = F}
 library(WGCNA)
 library(dendextend)
+library(matrixStats)
 library(Matrix)
 library(scrattch.hicat)
 ```
