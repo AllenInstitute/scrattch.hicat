@@ -374,7 +374,7 @@ plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 {
   select.cells = names(cl)
   select.cells = sample_cells(cl, max.cl.size)
-  tom  = crossprod(co.ratio[select.cells, select.cells])
+  tom  = Matrix::crossprod(co.ratio[select.cells, select.cells])
   row.names(tom)=colnames(tom)=select.cells
   ###
   all.hc = hclust(as.dist(1-tom),method="average")
