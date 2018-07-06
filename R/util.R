@@ -1,5 +1,6 @@
 cpm <- function(counts)
   {
+    require(Matrix)
     t(t(counts)*10^6/colSums(counts))
   }
 

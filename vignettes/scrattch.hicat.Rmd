@@ -81,7 +81,7 @@ norm.dat <- cpm(Matrix(tasic_2016_counts, sparse = TRUE))
 norm.dat@x <- log2(norm.dat@x+1)
 ```
 
-For this demo, we'll select a small subset for clustering: Iptg, Ndnf and Vip neurons. This gives us a set of 262 single-cell transcriptomic profiles to work with.
+For this demo, we'll select a small subset for clustering: Igtp, Ndnf and Vip neurons. This gives us a set of 262 single-cell transcriptomic profiles to work with.
 ```{r Filter samples}
 select.cells <- with(anno, sample_id[primary_type!="unclassified" & grepl("Igtp|Ndnf|Vip",primary_type)])
 ```
