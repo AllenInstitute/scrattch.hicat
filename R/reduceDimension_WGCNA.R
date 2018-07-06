@@ -22,7 +22,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
       if(method=="average"){
         tmp.cl = cutree(hclust(dist(t(tmp.dat)),method="average"),2)
       }
-      else if(method=="ward"){
+      else if(method=="ward.D"){
         tmp.cl = cutree(hclust(dist(t(tmp.dat)),method="ward.D"),2)
       }
       else if(method=="kmeans"){
@@ -75,7 +75,7 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
       method="louvain"
     }
     else{
-      method=c("ward","kmeans")
+      method=c("ward.D","kmeans")
     }
     nmod = min(20, length(gene.mod))
     if(nmod==0){
@@ -122,7 +122,7 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
 ##' @param norm.dat log transformed normalized data matrix. 
 ##' @param select.cells Cells used to compute module eigen genes. 
 ##' @param prefix Default NULL. If not NULL, a heatmap of the gene module eigen genes will be produced with "prefix" as the prefix for the pdf file. 
-##' @param method Default "ward". Used by hclust method to create the cell dendrogram for the heatmap display.
+##' @param method Default "ward.D". Used by hclust method to create the cell dendrogram for the heatmap display.
 ##' @param hc Precomputed cell dendrogram for heatmap display. Default NULL.  
 ##' @param ... Other plotting parameters passed to the heatmap function. 
 ##' @return A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells. 

@@ -19,10 +19,10 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=
     cexCol = min(70/ncol(tmp.dat),1)
     cexRow = min(60/nrow(tmp.dat),1)
     if(is.null(gene.hc)){
-      gene.hc = hclust(dist(tmp.dat), method="ward")
+      gene.hc = hclust(dist(tmp.dat), method="ward.D")
     }
     if(is.null(hc) & !sorted & length(select.cells)< 2000){
-      hc = hclust(dist(t(tmp.dat)), method="ward")
+      hc = hclust(dist(t(tmp.dat)), method="ward.D")
     }
     col = blue.red(150)[51:150]
     if(!is.null(prefix)){
