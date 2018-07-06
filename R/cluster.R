@@ -114,7 +114,7 @@ jaccard_louvain <- function(dat, k=10)
 onestep_clust <- function(norm.dat, 
                           select.cells = colnames(norm.dat), 
                           counts = NULL, 
-                          method = c("louvain","ward", "kmeans"), 
+                          method = c("louvain","ward.D", "kmeans"), 
                           vg.padj.th = 0.5, 
                           dim.method = c("pca","WGCNA"), 
                           max.dim = 20, 
@@ -219,7 +219,7 @@ onestep_clust <- function(norm.dat,
         cl = setNames(tmp.cl[as.character(cl)], names(cl))
       }
     }
-    else if(method=="ward"){
+    else if(method=="ward.D"){
       hc = hclust(dist(rd.dat),method="ward.D")
       #print("Cluster cells")
       cl = cutree(hc, max.cl)
@@ -290,7 +290,7 @@ iter_clust <- function(norm.dat,
         select.method="louvain"
       }
       else{
-        select.method="ward"
+        select.method="ward.D"
       }
     }
     else{
