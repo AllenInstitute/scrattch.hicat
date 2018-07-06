@@ -79,7 +79,7 @@ collect_co_matrix_sparseM <- function(norm.dat,result.files,all.cells,max.cl.siz
     tmp = collect_subsample_cl_matrix(norm.dat,result.files,all.cells, max.cl.size=max.cl.size)
     cl.list = tmp$cl.list
     cl.mat = tmp$cl.mat
-    co.ratio = crossprod(t(cl.mat))
+    co.ratio = Matrix::crossprod(Matrix::t(cl.mat))
     co.ratio@x = co.ratio@x/length(result.files)
     return(list(co.ratio=co.ratio, cl.mat=cl.mat, cl.list=cl.list))
   }
