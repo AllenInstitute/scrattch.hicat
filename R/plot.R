@@ -56,7 +56,7 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=
     return(cells.order)
   }
     
-display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9,...)
+display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9, min.sep=10, ...)
   {
     select.cells=names(cl)        
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -79,7 +79,7 @@ display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL,
     }
     cells_order=NULL
     if(plot & !is.null(markers)){
-      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=10,main=main, height=height, width=width)
+      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width)
     }
     return(list(markers=markers,de.genes=de.genes, cells_order= cells_order))
   }
