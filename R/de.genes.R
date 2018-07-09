@@ -297,6 +297,9 @@ DE_genes_cat_by_cl <- function(norm.dat, cl, binary.cat, ...)
 
 plot_de_lfc_num <- function(de.genes, top.n=100, select.pair=NULL, cl.label=NULL)
 {
+  de.score <- sapply(de.genes, function(x){
+    x$score
+  })
   de.num <- sapply(de.genes, function(x){
     x$num
   })
@@ -309,7 +312,7 @@ plot_de_lfc_num <- function(de.genes, top.n=100, select.pair=NULL, cl.label=NULL
     q.diff=with(x$de.df[top.genes,], abs(q1 - q2)/pmax(q1, q2))
     mean(q.diff)
   })
-  de.summary = data.frame(de.num, de.lfc, de.q.diff)
+  de.summary = data.frame(de.score, de.num, de.lfc, de.q.diff)
   row.names(de.summary) = names(de.genes)
   tmp=do.call("rbind",strsplit(row.names(de.summary),"_"))
   de.summary$cl1= tmp[,1]

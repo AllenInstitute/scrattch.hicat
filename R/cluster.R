@@ -389,6 +389,7 @@ merge_cl<- function(norm.dat,
                     return.markers = TRUE, 
                     verbose = 0)
   {
+    type=type[1]
     cl = setNames(as.integer(as.character(cl)), names(cl))
     de.df=list()
     select.cells = names(cl)

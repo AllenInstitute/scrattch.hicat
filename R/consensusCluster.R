@@ -384,9 +384,33 @@ plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
   sep = cl[ord]
   sep=which(sep[-1]!=sep[-length(sep)])
   if(is.null(col)){
-    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
   }
   else{
-    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord])
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord],labRow="")
   }
 }
+
+
+plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
+{
+  select.cells = sample_cells(cl, max.cl.size)
+  co.stats = get_cl_co_stats(cl, co.ratio)
+  mat = co.stats$cell.cl.co.ratio
+  
+  tom  = Matrix::tcrossprod(mat[select.cells,])
+  row.names(tom)=colnames(tom)=select.cells
+  ###
+  all.hc = hclust(as.dist(1-tom),method="average")
+  ord1 = all.hc$labels[all.hc$order]
+  ord = ord1[order(cl[ord1])]
+  sep = cl[ord]
+  sep=which(sep[-1]!=sep[-length(sep)])
+  if(is.null(col)){
+    heatmap.3(mat[ord,], col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", dendrogram="none",labRow="")
+  }
+  else{
+    heatmap.3(mat[ord,], col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", ColSideColors=col[,ord],dendogram="none",labRow="")
+  }
+}
+
