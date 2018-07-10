@@ -53,14 +53,14 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
     co.result <- collect_co_matrix_sparseM(norm.dat, result.files, all.cells)
     co.ratio = co.result$co.ratio
     consensus.result = iter_consensus_clust(co.ratio, co.result$cl.list, norm.dat, select.cells=all.cells, de.param = de.param)
-    refine.result = refine_cl(consensus.result$cl, co.ratio=co.ratio, tol.th=0.01, confusion.th=0.6)
+    refine.result = refine_cl(consensus.result$cl, co.ratio=co.ratio, tol.th=0.01, confusion.th=0.6, min.cells= de.param$min.cells)
     markers = consensus.result$markers
   }
   else{
     result <- iter_clust(norm.dat=norm.dat, select.cells=all.cells, de.param = de.param, ...)
     co.result <- collect_subsample_cl_matrix(norm.dat,result.files,all.cells)
     cl=merge_cl_by_co(result$cl, co.ratio=co.result$co.ratio, cl.mat=co.result$cl.mat, diff.th=0.25)
-    refine.result = refine_cl(cl, cl.mat = co.result$cl.mat, tol.th=0.01, confusion.th=0.6)
+    refine.result = refine_cl(cl, cl.mat = co.result$cl.mat, tol.th=0.01, confusion.th=0.6, min.cells=de.param$min.cells)
     markers=result$markers      
   }
   cl = refine.result$cl

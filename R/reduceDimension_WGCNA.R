@@ -57,6 +57,7 @@ score_gene_mod <-  function(norm.dat, select.cells, gene.mod, eigen=NULL,method=
 
 filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, min.deScore=40, de.param = de_param(), max.cl.size=NULL,rm.eigen=NULL, rm.th = 0.7, maxSize=200, prefix="cl", max.mod=NULL)
   {
+    require(matrixStats)
     eigen = get_eigen(gene.mod, norm.dat,select.cells)[[1]]
     if(!is.null(rm.eigen)){
       rm.cor=cor(eigen, rm.eigen[select.cells,])

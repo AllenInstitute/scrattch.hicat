@@ -54,14 +54,13 @@ library(scrattch.hicat)
 
 First prepare the datasets 
 ```{r Set up anno}
-jet.colors <- colorRampPalette(c("#00007F", "#0000FF", "#007FFF", "#FF00FF", "#7FFF7F", "#FFFF00", "#FF7F00", "#FF0000", "#7F0000"))
-
 # Load sample annotations (anno)
 anno <- tasic_2016_anno
 
 # Make a data.frame of unique cluster id, type, color, and broad type
 ref.cl.df <- as.data.frame(unique(anno[,c("primary_type_id", "primary_type", "primary_type_color", "broad_type")]))
 
+#standardize cluster annoation with cluster_id, cluster_label and cluster_color. These are the required fields to visualize clusters properly.
 colnames(ref.cl.df)[1:3] <- c("cluster_id", "cluster_label", "cluster_color")
 
 # Sort by cluster_id
@@ -191,7 +190,7 @@ compare.result$g
 cl <- compare.result$cl
 cl.df <- compare.result$cl.df
 ```
-Note that the clustering differ slightly from the reference clusters. Based on analysis based on a bigger dataset, we know that the cell type diversities for CGE-derived interneurons are beyond what we described here, and clustering analysis is far from saturation due to small number of cells. 
+Note that the clustering differ slightly from the reference clusters. Particularly, the original Ndnf Cxcl14 is split into two clusters, and one of this cluster also contain cells from Vip Gpc3 cluster. Based on analysis based on a bigger dataset, we know that the cell type diversities for CGE-derived interneurons are richer than what we described here, and this clustering analysis is far from saturation due to small number of cells. 
 
 Now Let's compute DE genes between every pair of clusters. To generate the heatmap, use the top 20 DE genes b default. If you have many clusters, the heatmap can be too large to display. The users may choose different "n.markers"
 ```{r, fig.height=7, fig.width=7}
@@ -206,9 +205,8 @@ cl.clean <- droplevels(cl)
 ```
 
 <a id="dendplot"></a>
-## Hierarchical dendrograms
 We find it helpful to use hierarchical structure to categorize cell types at different resolution. To build dendrogram, we use cluster-cluster correlation matrix based on cluster medians of the top 50 genes between every pair of clusters with `select_markers()` and `build_dend()`. The confidence of each branch point can be estimated by bootstrap approach implemented by pvclust package, which is encapsulated by "build_dend" function. 
-```{r Build dendrogram, echo=FALSE, include=FALSE}
+```{r Build dendrogram, warnings=FALSE, message=FALSE, results="hide", fig.keep="all", fig.height = 7, fig.width = 7}
 select.markers = select_markers(norm.dat, cl.clean, de.genes=de.genes,n.markers=50)$markers
 cl.med <- get_cl_medians(norm.dat[select.markers,], cl)
 ##The prefered order for the leaf nodes.
@@ -220,6 +218,10 @@ dend.result <- build_dend(cl.med[,levels(cl.clean)],
                           l.color,
                           nboot = 100)
 dend <- dend.result$dend
+###attach cluster labels to the leafs of the tree 
+dend.labeled = dend
+labels(dend.labeled) <- cl.df[labels(dend), "cluster_label"]
+plot(dend.labeled)
 ```
 
 Reorder the clusters based on the dendrogram:
@@ -228,24 +230,22 @@ cl.clean <- setNames(factor(as.character(cl.clean), levels = labels(dend)), name
 cl.df.clean <- cl.df[levels(cl.clean),]
 ```
 
-Plot the dendrogram and cluster-cluster correlation matrix:
-```{r Plot cluster correlation, echo=FALSE, fig.keep="all"}
-labels(dend) <- cl.df[labels(dend), "cluster_label"]
+Plot  cluster-cluster correlation matrix:
+```{r Plot the correlation heatmap,fig.keep="all", fig.height = 7, fig.width = 7}
 cl.cor <- dend.result$cl.cor
 row.names(cl.cor) <- colnames(cl.cor) <- cl.df[row.names(cl.cor), "cluster_label"]
-plot(dend)
 heatmap.3(cl.cor,
           Rowv = dend, Colv = dend,
-          trace = "none", col = jet.colors(100),
-          cexCol = 0.5, cexRow = 0.5,
+          trace = "none", col = heat.colors(100),cexRow=0.8, cexCol=0.8,
           breaks = c(-0.2, 0.2, seq(0.2, 1, length.out = 99)))
 ```
+
 
 <a id="tsneplot"></a>
 ## t-SNE plots
 
 Generate t-SNE coordinates and a plot using `plot_tsne_cl()`:
-```{r tSNE plot,fig.keep="all", fig.height = 8, fig.width = 7}
+```{r tSNE plot,fig.keep="all", fig.height = 9, fig.width = 7}
 tsne.result <- plot_tsne_cl(norm.dat, select.markers, cl, cl.df, fn.size=5, cex=1)
 tsne.df = tsne.result$tsne.df
 tsne.result$g
@@ -290,7 +290,7 @@ result <- run_consensus_clust(norm.dat,
                               mc.cores = 4)
 ```
 
-Compare the consensus clustering results against the reference clusters, and we see that PCA mode produce clusters at lower resolution than WGCNA mode. Small clusters like Igtp, which has very distinct transcriptional signature, still got merged with other related clusters.  
+Compare the consensus clustering results against the reference clusters, and we see that PCA mode produce clusters at lower resolution than WGCNA mode. Small clusters like Igtp, which has very distinct transcriptional signature, still got merged with other clusters.  
 ```{r Compare consensus to benchmark, echo=FALSE, fig.height = 7, fig.width = 7}
 compare.result <- compare_annotate(result$cl.result$cl, ref.cl, ref.cl.df)
 compare.result$g
@@ -367,6 +367,6 @@ co.ratio <- result$co.result$co.ratio
 tmp <- plot_co_matrix(co.ratio, consensus.cl, max.cl.size = 50)
 ```
 Plot the heatmap of the average co-clustering probablities for each cell with all the cells within each cluster. 
-```{r}
+```{r cell-cluster coclustering heatmap, fig.keep="all", fig.height = 7, fig.width = 7}
 plot_cell_cl_co_matrix(co.ratio, consensus.cl)
 ```

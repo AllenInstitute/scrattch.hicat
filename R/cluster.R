@@ -54,7 +54,8 @@ jaccard_louvain.FNN <- function(dat,
                                 k = 10, 
                                 knn.matrix = NULL)
   {
-    suppressMessages(library(igraph))
+    suppressMessages(require(igraph))
+    suppressMessages(require(matrixStats))
     if(is.null(knn.matrix)){
       knn.result= FNN::get.knn(dat, k)
       knn.matrix = knn.result[[1]]

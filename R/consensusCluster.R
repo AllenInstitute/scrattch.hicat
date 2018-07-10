@@ -119,7 +119,7 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #'
 #' @return A list with cluster membership, and top pairwise marker genes. 
 #' 
-iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
+iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward.D"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
 {
   method=method[1]
   require(igraph)
@@ -143,13 +143,13 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
         if(!is.matrix(co.ratio)){
           co.ratio = as.matrix(co.ratio[select.cells, select.cells])
         }
-        select.method="ward"
+        select.method="ward.D"
       }
     }
     else{
       select.method = method
     }
-    if(select.method=="ward"){
+    if(select.method=="ward.D"){
       tmp.cl = init_cut(co.ratio, select.cells, cl.list, min.cells= de.param$min.cells, th = diff.th,method=select.method)
       if(is.null(tmp.cl)){
         return(NULL)
@@ -190,7 +190,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
     markers=tmp$markers
     if(verbose){
       print(table(cl))
-      display_cl_markers_co.ratio(unique(cl), cl, norm.dat=norm.dat, co.ratio=co.ratio, prefix=prefix,  all.col=all.col, markers=markers)
+      #display_cl_markers_co.ratio(unique(cl), cl, norm.dat=norm.dat, co.ratio=co.ratio, prefix=prefix,  all.col=all.col, markers=markers)
     }
   }
   cell.cl.co.ratio = get_cl_means(co.ratio, cl)
@@ -262,6 +262,7 @@ get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
 
 get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
 {
+  require(matrixStats)
   cell.cl.co.ratio= get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.mat=cl.mat)
   cl.co.ratio <- get_cl_means(t(cell.cl.co.ratio), cl)
   
@@ -290,7 +291,7 @@ get_cl_co_stats <- function(cl, co.ratio=NULL, cl.mat=NULL)
 }
 
 
-init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,method="ward",verbose=FALSE)
+init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,method="ward.D",verbose=FALSE)
 {
   avg.cl.num = mean(sapply(cl.list, function(cl){
     sum(table(cl[select.cells]) >= min.cells)
@@ -326,6 +327,8 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
 ##' @author Zizhen Yao
 refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells=4, niter=50, tol.th=0.02, verbose=0)
 {
+  ###If cl is factor, turn in to integer vector first. 
+  cl = setNames(as.integer(as.character(cl)), names(cl))
   while(TRUE){
     correct = 0
     iter.num = 0
@@ -351,9 +354,8 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells
     }
     cl.size = table(cl)
     cl.confusion = setNames(co.stats$cl.co.stats$confusion, row.names(co.stats$cl.co.stats))
-    ###Remove small clusters with high average confusion score, assign cells to other cluster      
+    ###Remove small clusters with high average confusion score, assign cells to other cluster     
     cl.small = names(cl.size)[cl.size <  min.cells]
-    cl.confusion
     rm.cl = union(names(cl.confusion)[cl.confusion > confusion.th], cl.small)
     if(length(rm.cl)==0){
       break
