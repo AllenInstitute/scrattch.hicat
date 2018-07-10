@@ -15,13 +15,10 @@ devtools::install_github("JinmiaoChenLab/Rphenograph")
 
 Once these dependencies are installed, `scrattch.hicat` can be installed with:
 ```
-devtools::install_github("AllenInstitute/scrattch.hicat", build_vignettes = TRUE)
+devtools::install_github("AllenInstitute/scrattch.hicat")
 ```
 
-An overview of the main functions in `scrattch.hicat` is provided in a vignette, which can be viewed with:
-```
-vignette("scrattch.hicat", package = "scrattch.hicat")
-```
+An overview of the main functions in `scrattch.hicat` is provided in a vignette, which can be viewed [Here](http://htmlpreview.github.io/?https://github.com/AllenInstitute/scrattch.hicat/blob/master/vignettes/scrattch.hicat.html) 
 
 ## The `scrattch` suite
 
