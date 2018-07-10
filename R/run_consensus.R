@@ -15,7 +15,7 @@
 #' @export
 #'
 #' @examples
-run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, de.param=de_param(), output_dir="subsample_result",mc.cores=1, override=FALSE, init.result=NULL, ...)
+run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, de.param=de_param(), output_dir="subsample_result",mc.cores=1, override=FALSE, init.result=NULL, cut.method="auto",...)
 {
   if(!dir.exists(output_dir)){
     dir.create(output_dir)
@@ -52,7 +52,7 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
   if(length(all.cells) < 100000){
     co.result <- collect_co_matrix_sparseM(norm.dat, result.files, all.cells)
     co.ratio = co.result$co.ratio
-    consensus.result = iter_consensus_clust(co.ratio, co.result$cl.list, norm.dat, select.cells=all.cells, de.param = de.param)
+    consensus.result = iter_consensus_clust(co.ratio, co.result$cl.list, norm.dat, select.cells=all.cells, de.param = de.param, method=cut.method)
     refine.result = refine_cl(consensus.result$cl, co.ratio=co.ratio, tol.th=0.01, confusion.th=0.6, min.cells= de.param$min.cells)
     markers = consensus.result$markers
   }
