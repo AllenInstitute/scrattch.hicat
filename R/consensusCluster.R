@@ -386,10 +386,10 @@ plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
   sep = cl[ord]
   sep=which(sep[-1]!=sep[-length(sep)])
   if(is.null(col)){
-    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
   }
   else{
-    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord],labRow="")
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord],labRow="")
   }
 }
 
@@ -409,10 +409,10 @@ plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
   sep = cl[ord]
   sep=which(sep[-1]!=sep[-length(sep)])
   if(is.null(col)){
-    heatmap.3(mat[ord,], col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", dendrogram="none",labRow="")
+    heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", dendrogram="none",labRow="")
   }
   else{
-    heatmap.3(mat[ord,], col = blue.red(100), trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", ColSideColors=col[,ord],dendogram="none",labRow="")
+    heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", ColSideColors=col[,ord],dendogram="none",labRow="")
   }
 }
 
