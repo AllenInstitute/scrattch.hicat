@@ -128,19 +128,26 @@ calc_tau <- function(m, byRow=TRUE)
 }
 
 
-sample_cells <- function(cl,max.cl.size, weights=NULL)
+sample_cells <- function(cl,sample.size, weights=NULL)
 {
-  
-  sampled.cells = unlist(tapply(names(cl),cl, function(x){
-    if(length(x) > max.cl.size){
-      if(!is.null(weights)){
-        x= sample(x, max.cl.size, prob= weights[x])
-      }
-      else{
-        x= sample(x, max.cl.size)
-      }
+  tmp = unique(cl)
+  if(length(sample.size)==1){
+    sample.size = setNames(rep(sample.size, length(tmp)), tmp)
+  }
+  cl.cells= split(names(cl),cl)
+  sampled.cells = unlist(sapply(names(cl.cells), function(x){
+    cells= cl.cells[[x]]
+    if(sample.size[[x]]==length(cells)){
+      return(cells)
     }
-    x
+    to.sample = pmin(sample.size[[x]], length(cells))
+    if(!is.null(weights)){
+      sampled= sample(cells, to.sample, prob= weights[x])
+    }
+    else{
+      sampled= sample(cells, to.sample)
+    }
+    sampled
   },simplify=FALSE))
 }
   

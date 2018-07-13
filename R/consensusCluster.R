@@ -245,6 +245,7 @@ merge_cl_by_co <- function(cl, co.ratio=NULL, cl.mat=NULL, diff.th=0.25, verbose
 #' @param cl.mat Cluster membership matrix for all cells and all clusters from all bootstrapping iterations. 
 get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
 {
+  require(Matrix)
   if(!is.null(co.ratio)){
     cell.cl.co.ratio=get_cl_means(co.ratio, cl)
     return(cell.cl.co.ratio)    

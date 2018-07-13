@@ -14,26 +14,24 @@ vignette: >
 The `scrattch.hicat` package offers functions to perform iterative clustering for single cell RNAseq datasets. 
 
 The pipeline consists of the following key steps:  
-* [Dataset formatting and setup](#setup)  
-* [Parameter specification](#params)  
-* [Dimension filtering based on QC correlation](#filter)  
-* [High variance gene selection and dimensionality reduction](#dimred)  
-* [Jaccard-Louvain or hierarchichal (Ward) clustering](#clust)  
-* [Cluster merging based on presence of differentially expressed genes.](#merge)  
+* [High variance gene selection]  
+* [Dimensionality reduction]  
+* [Dimension filtering based on QC correlation](#filter)    
+* [Jaccard-Louvain or hierarchichal (Ward) clustering]  
+* [Cluster merging based on presence of differentially expressed genes.](#merge)    
 
 This process is iteratively repeated within each resulting cluster until no more clusters meet differential gene expression and cluster size termination criteria.  
-
-To obtain measures of clustering robustness, we perform consensus clustering:  
-* [Bootstrapping of the iterative clustering process](#boot)  
-* [Breakdown of consensus clustering](#breakdown)  
-
-Finally, we can inspect and visualize the results of consensus clustering:  
+We can inspect and visualize the results of consensus clustering:  
 * [Compute marker genes and plot marker heatmaps](#markerplot)  
 * [Hierarchical dendrograms](#dendplot)  
-* [t-SNE plots](#tsneplot)  
+* [t-SNE plots](#tsneplot)    
+
+To obtain measures of clustering robustness, we perform consensus clustering:  
+* [Bootstrapping of the iterative clustering process](#boot)    
+* [Breakdown of consensus clustering](#breakdown)  
 * [Co-clustering heatmaps](#coclplot)  
 
-For this vignette, we use a subset of the dataset published in [Tasic, et al. (2016) Nature Neuroscience](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4985242/), which is available in the [tasic2016data package](https://github.com/AllenInstitute/tasic2016data):
+For this vignette, we use a subset of the dataset published in [Tasic, et al. (2016) Nature Neuroscience](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4985242/), which is available in the [tasic2016data package](https://github.com/AllenInstitute/tasic2016data):  
 ```{r tasic2016data}
 if(!"tasic2016data" %in% rownames(installed.packages())) {
   devtools::install_github("AllenInstitute/tasic2016data")
@@ -41,18 +39,18 @@ if(!"tasic2016data" %in% rownames(installed.packages())) {
 library(tasic2016data)
 ```
 
-This vignette depends on a few other packages, in addition to `scrattch.hicat`:
-```{r Load libraries, echo = F, messages = F, include=FALSE}
+This vignette depends on a few other packages, in addition to `scrattch.hicat`:  
+```{r Load libraries, messages = F, include=FALSE}
 library(dendextend)
 library(matrixStats)
 library(Matrix)
 library(scrattch.hicat)
 ```
 
+## Dataset Formatting and Setup  
 <a id="setup"></a>
-## Dataset Formatting and Setup
 
-First prepare the datasets 
+First prepare the datasets   
 ```{r Set up anno}
 # Load sample annotations (anno)
 anno <- tasic_2016_anno
@@ -70,25 +68,25 @@ row.names(ref.cl.df) <- ref.cl.df$cluster_id
 ref.cl <- setNames(factor(anno$primary_type_id), anno$sample_id)
 ```
 
-Convert counts to CPM and take log2 transformation
+Convert counts to CPM and take log2 transformation  
 ```{r Normalize data}
 norm.dat <- log2(cpm(tasic_2016_counts)+1)
 ```
 
-If you have a very large matrix, we recommend you convert it to a sparse matrix using the Matrix package to save memory:
+If you have a very large matrix, we recommend you convert it to a sparse matrix using the Matrix package to save memory:  
 ```{r Convert to sparse}
 norm.dat <- Matrix(cpm(tasic_2016_counts), sparse = TRUE)
 
 norm.dat@x <- log2(norm.dat@x+1)
 ```
 
-For this demo, we'll select a small subset of CGE-derived interneurons for clustering. This gives us a set of 284 single-cell transcriptomic profiles to work with.
+For this demo, we'll select a small subset of CGE-derived interneurons for clustering. This gives us a set of 284 single-cell transcriptomic profiles to work with.   
 ```{r Filter samples}
 select.cells <- with(anno, sample_id[primary_type!="unclassified" & grepl("Igtp|Ndnf|Vip|Sncg|Smad3",primary_type)])
 ```
 
+## Parameter specification  
 <a id="params"></a>
-## Parameter specification
 
 The final number of clusters produced by this iterative clustering algorithm is largely determined by the required cell type resolution specified by the user. The cell type resolution is defined by differential expression (DE) criteria between every pair of clusters. The users can specify these criteria ahead of time, for reuse in hicat functions by using the `de_param()` function. 
 
@@ -108,7 +106,7 @@ The user can also ignore these parameters by setting them all to NULL.
 For high-depth datasets, like those generated using SMARTerV4 or Smart-Seq2, we recommend starting with **q1.th** = 0.5 .  
 For low-depth datasets, like those generated using Dropseq or 10X Genomics, we recommend starting with **q1.th** = 0.3 due to the generally lower gene detection per cell in these datasets.  
 When focusing on discrete cell types, set **q.diff.th** closer to 1.  
-If splitting cell types based on graded or combinatorial differences in gene expression are of interest, adjust **q.diff.th** closer to 0.  
+If splitting cell types based on graded gene expression variation is of interest, adjust **q.diff.th** closer to 0.  
   
 To determine whether two clusters are seperable based on DE genes, we define **de.score** as the sum of -log10(adjusted Pvalue) for all DE genes. Each gene contributes at most 20 towards the sum. All clusters should have pairwise de.score greater than **de.score.th**.  
 For small datasets (#cells < 1000), we recommend **de.score.th** = 40.  
@@ -122,74 +120,90 @@ de.param <- de_param(padj.th     = 0.05,
                      de.score.th = 40)
 ```
 
+
+##Perform clustering  
+<a id="clust"></a>
+
+`scrattch.hicat` can perform clustering using WGCNA or PCA for dimensionality reduction. WGCNA mode is good for detecting rare clusters and provides cleaner cluster boundaries, while PCA is more scalable to large datasets, captures combinatorial marker expression patterns more effectively, and is more sensitive to low-depth datasets.   
+We recommend using WGCNA for smaller, high-depth datasets (< 4,000 samples; > 5,000 genes detecter per sample), and PCA for large or low-coverage datasets (> 4,000 samples or < 5,000 genes detected per sample). Another consideration is that WGCNA is considerably slower than PCA. Note that while the whole clustering pipeline scales quite well with the number of cells, the running time heavily depends on the cell type complexity as clustering is iterative.
+
+First, let us just run one round of clustering using WGCNA mode using high stringency to check the broad cell types 
+```{r Run iter_clust, message=FALSE, warning=FALSE, echo=TRUE, include=FALSE}
+onestep.result <- onestep_clust(norm.dat, 
+                               select.cells = select.cells, 
+                               dim.method = "WGCNA", 
+                               de.param = de_param(de.score.th=500))
+```
+
+<a id="markerplot"></a>
+
+Take a quick look at the clustering heatmap  
+```{r, fig.height=7, fig.width=7}
+display.result = display_cl(onestep.result$cl, norm.dat, plot=TRUE, de.param=de.param)
+```
+Apply iterative clustering pipeline for finer splits based on existing clusters using more relaxed threshold.   
+```{r, message=FALSE, warning=FALSE, results="hide"}
+WGCNA.clust.result <- iter_clust(norm.dat, 
+                               select.cells = select.cells, 
+                               dim.method = "WGCNA", 
+                               de.param = de.param, 
+                               result=onestep.result)
+```
+
+You can apply iterative clustering pipeline from the scratch.    
+```{r, eval=FALSE}
+WGCNA.clust.result <- iter_clust(norm.dat, 
+                               select.cells = select.cells, 
+                               dim.method = "WGCNA", 
+                               de.param = de.param)
+```
+
+
+## Eliminate technical artfacts at dimension reduction state  
 <a id="filter"></a>
-## Dimension filtering based on QC correlation
 
 Technical variation that should be masked during the clustering process can be specified using a matrix that we term **rm.eigen**. If batch effects are present, you can use the first principle component of batch-specific genes as a column in **rm.eigen**.  
 QC-related factors, such as sequencing depth, gene detection limits, and fraction of reads mapped to transcriptome also tend to correlate with systemetic technical variation in gene expression.  
 You can directly use proper transformation of these QC-related variables, or use the first principle component of the genes that correlate with these QC factors. The latter approach tends to work better with real datasets. When **rm.eigen** is specified, any reduced-dimension vectors during clustering that have correlation greater than **rm.th** with any columns of **rm.eigen** are ignored during clustering. 
 
 We recommend that users to first explore their data by running the clustering pipeline without setting **rm.eigen**. If any batch specific or QC-driven clusters appear to cause problems, the user can create **rm.eigen** as demonstrated below, and rerun the pipeline. 
-
-```{r Reduce dimesnions,echo=FALSE}
+```{r, eval=FALSE}
 gene.counts <- colSums(norm.dat > 0)
 rm.eigen <- matrix(log2(gene.counts), ncol = 1)
 row.names(rm.eigen) <- names(gene.counts)
 colnames(rm.eigen) <- "log2GeneCounts"
-```
-
-<a id="dimred"></a>
-## High variance gene selection and dimensionality reduction
-
-`scrattch.hicat` can perform clustering using WGCNA or PCA for dimensionality reduction. WGCNA mode is good for detecting rare clusters and provides cleaner cluster boundaries, while PCA is more scalable to large datasets, captures combinatorial marker expression patterns more effectively, and is more sensitive to low-depth datasets.   
-We recommend using WGCNA for smaller, high-depth datasets (< 4,000 samples; > 5,000 genes detecter per sample), and PCA for large or low-coverage datasets (> 4,000 samples or < 5,000 genes detected per sample). Another consideration is that WGCNA is considerably slower than PCA. Note that while the whole clustering pipeline scales quite well with the number of cells, the running time heavily depends on the cell type complexity as clustering is iterative.
-
-First, let us just run one round of clustering using WGCNA mode using high stringency to check the broad cell types 
-```{r Run iter_clust, message=FALSE, warning=FALSE, results="hide", echo=TRUE, include=FALSE}
-onestep.result <- onestep_clust(norm.dat, 
-                               select.cells = select.cells, 
-                               dim.method = "WGCNA", 
-                               de.param = de_param(de.score.th=500), 
-                               rm.eigen = rm.eigen)
-```
-
-Take a quick look at the clustering heatmap
-```{r, fig.height=7, fig.width=7}
-display.result = display_cl(onestep.result$cl, norm.dat, plot=TRUE, de.param=de.param)
-```
-Apply iterative clustering pipeline for finer splits based on existing clusters using more relaxed threshold. 
-```{r, include=FALSE}
 WGCNA.clust.result <- iter_clust(norm.dat, 
                                select.cells = select.cells, 
                                dim.method = "WGCNA", 
-                               de.param = de.param, 
-                               rm.eigen = rm.eigen,
-                               result=onestep.result)
+                               de.param = de.param,
+                               rm.eigen = rm.eigen)
 ```
 
-<a id="clust"></a>
-## Cluster merging based on presence of differentially expressed genes.
+## Cluster merging based on presence of differentially expressed genes.  
+<a id="merge"></a>
 
 Throughout the iterative clustering process performed by `iter_clust()`, the function checked whether clusters at any iteration can be seperated by DEG. However, clusters from different iterations can end up very similar. Thus, it is necessary to check whether all the clusters are seperable by DEGs in the end. 
 Clusters are merged in an order defined by the pairs of clusters that are nearest neighbors, which are computed in a reduced dimension space defined by **rd.dat**.  
 Here, we use the set of markers produced by `iter_clust()` to define the reduced dimensions:
-```{r Merge clusters, message=FALSE, warning=FALSE, result="hide", echo=FALSE}
+```{r Merge clusters, message=FALSE, warning=FALSE, result="hide"}
 WGCNA.merge.result <- merge_cl(norm.dat, 
                          cl = WGCNA.clust.result$cl, 
                          rd.dat = t(norm.dat[WGCNA.clust.result$markers, select.cells]),
                          de.param = de.param)
 ```
+
+## compare and annotate clusters against reference cluster annotation.   
 <a id="annotate"></a>
-## compare and annotate clusters against reference cluster annotation. 
 
 
 In this demo, we have previously derived cluster labels from Tasic, et al. (2016). To see how these cluster calls match up to those generated by `scrattch.hicat`, we can compare and annotate the clusters based on the reference cluster annotation. 
-```{r Compare to benchmark, echo=FALSE, fig.height = 7, fig.width = 7}
+```{r Compare to benchmark, echo=FALSE, fig.height = 5, fig.width = 6.5}
 compare.result <- compare_annotate(WGCNA.merge.result$cl, ref.cl, ref.cl.df)
 compare.result$g
 cl <- compare.result$cl
 cl.df <- compare.result$cl.df
 ```
+
 Note that the clustering differ slightly from the reference clusters. Particularly, the original Ndnf Cxcl14 is split into two clusters, and one of this cluster also contain cells from Vip Gpc3 cluster. Based on analysis based on a bigger dataset, we know that the cell type diversities for CGE-derived interneurons are richer than what we described here, and this clustering analysis is far from saturation due to small number of cells. 
 
 Now Let's compute DE genes between every pair of clusters. To generate the heatmap, use the top 20 DE genes b default. If you have many clusters, the heatmap can be too large to display. The users may choose different "n.markers"
@@ -206,7 +220,8 @@ cl.clean <- droplevels(cl)
 
 <a id="dendplot"></a>
 We find it helpful to use hierarchical structure to categorize cell types at different resolution. To build dendrogram, we use cluster-cluster correlation matrix based on cluster medians of the top 50 genes between every pair of clusters with `select_markers()` and `build_dend()`. The confidence of each branch point can be estimated by bootstrap approach implemented by pvclust package, which is encapsulated by "build_dend" function. 
-```{r Build dendrogram, warnings=FALSE, message=FALSE, results="hide", fig.keep="all", fig.height = 7, fig.width = 7}
+
+```{r Build dendrogram, warning=FALSE, message=FALSE, results="hide", fig.keep="all", fig.height = 4.5, fig.width = 7}
 select.markers = select_markers(norm.dat, cl.clean, de.genes=de.genes,n.markers=50)$markers
 cl.med <- get_cl_medians(norm.dat[select.markers,], cl)
 ##The prefered order for the leaf nodes.
@@ -231,7 +246,7 @@ cl.df.clean <- cl.df[levels(cl.clean),]
 ```
 
 Plot  cluster-cluster correlation matrix:
-```{r Plot the correlation heatmap,fig.keep="all", fig.height = 7, fig.width = 7}
+```{r Plot the correlation heatmap,fig.keep="all", fig.height = 5, fig.width = 5}
 cl.cor <- dend.result$cl.cor
 row.names(cl.cor) <- colnames(cl.cor) <- cl.df[row.names(cl.cor), "cluster_label"]
 heatmap.3(cl.cor,
@@ -240,19 +255,18 @@ heatmap.3(cl.cor,
           breaks = c(-0.2, 0.2, seq(0.2, 1, length.out = 99)))
 ```
 
-
+## t-SNE plots  
 <a id="tsneplot"></a>
-## t-SNE plots
 
 Generate t-SNE coordinates and a plot using `plot_tsne_cl()`:
-```{r tSNE plot,fig.keep="all", fig.height = 9, fig.width = 7}
+```{r tsne plot,fig.keep="all", fig.height = 5, fig.width = 6}
 tsne.result <- plot_tsne_cl(norm.dat, select.markers, cl, cl.df, fn.size=5, cex=1)
 tsne.df = tsne.result$tsne.df
 tsne.result$g
 ```
 
 Plot expression of a set of genes using the t-SNE coordinates with `plot_tsne_gene()`:
-```{r tSNE expression, , fig.height = 5, fig.width = 7}
+```{r tSNE expression, , fig.height = 6, fig.width = 7}
 tsne.df <- tsne.result$tsne.df
 ## 6330527O06Rik is alias for Lamp5, and A930038C07Rik is alais for Ndnf
 markers <- c("Vip","6330527O06Rik","Sncg","Cxcl14","Gpc3","A930038C07Rik")
@@ -260,14 +274,13 @@ gene.plots <- plot_tsne_gene(tsne.df, norm.dat, markers)
 multiplot(plotlist = gene.plots, cols = 3)
 ```
 
-
+## Bootstrapping for Consensus clustering  
 <a id="boot"></a>
-## Bootstrapping for Consensus clustering
 
 The iterative clustering pipeline tends to produce many clusters, with increased uncertainty as we try to split the clusters at finer resolution. Therefore, it is important to assess the robustness of clustering results. We address this problem by performing clustering many times on 80% of randomly subsampled cells, keep track of how often each cell is clustered with each other cell (a cell-cell co-clustering matrix), and use these frequencies of cell-cell co-clustering to infer consensus clustering. We also compute statistics to evaluate our confidence in the seperation between every pair of consensus clusters. 
 `run_consensus_clust()` is a convenient wrapper function for performing this bootstrapped, iterative clustering process.
 For faster execution, we use "PCA" mode. 
-```{r Run consensus clustering, echo=FALSE, include=FALSE}
+```{r Run consensus clustering, include=FALSE}
 set.seed(12345)
 result <- run_consensus_clust(norm.dat[,select.cells], 
                               select.cells = select.cells,
@@ -280,7 +293,7 @@ result <- run_consensus_clust(norm.dat[,select.cells],
 
 If you have a multi-core computer, this function can be run in parallel by setting **mc.cores** to the number of cores you can use.  
 Note that this can result in high memory consumption with a high number of parallel processes. Try using small number of cores first to monitor the memory consumption:
-```{r Run consensus multicore, eval=FALSE, echo=FALSE}
+```{r Run consensus multicore, eval=FALSE}
 result <- run_consensus_clust(norm.dat, 
                               niter = 20, 
                               de.param = de.param, 
@@ -291,19 +304,19 @@ result <- run_consensus_clust(norm.dat,
 ```
 
 Compare the consensus clustering results against the reference clusters, and we see that PCA mode produce clusters at lower resolution than WGCNA mode. Small clusters like Igtp, which has very distinct transcriptional signature, still got merged with other clusters.  
-```{r Compare consensus to benchmark, echo=FALSE, fig.height = 7, fig.width = 7}
+```{r Compare consensus to benchmark, echo=FALSE, fig.height = 5, fig.width = 6}
 compare.result <- compare_annotate(result$cl.result$cl, ref.cl, ref.cl.df)
 compare.result$g
 consensus.cl <- compare.result$cl
 consensus.cl.df <- compare.result$cl.df
 ```
 
+## Consensus clustering process  
 <a id="breakdown"></a>
-## Consensus clustering process
 
 `run_consensus_clust()` is a wrapper function that performs the following steps:  
 - Perform clustering on subsampled cells:
-```{r Consensus clust breakdown 1, echo=FALSE, eval=FALSE}
+```{r Consensus clust breakdown 1, eval=FALSE}
 d <- paste0("subsample_PCA")
 dir.create(d)
 n_iter <- 5
@@ -323,7 +336,7 @@ subsample.result <- sapply(1:n_iter,
 ```
 
 - Collect cell-cell co-clustering probablities:
-```{r Consensus clust breakdown 2, echo=FALSE, eval=FALSE}
+```{r Consensus clust breakdown 2,  eval=FALSE}
 result.files <- file.path(d, dir(d, "result.*.rda"))
 co.result <- collect_co_matrix_sparseM(norm.dat, result.files, all.cells)
 co.ratio <- co.result$co.ratio
@@ -331,7 +344,7 @@ cl.list <- co.result$cl.list
 ```
 
 - Infer consensus clusters based on the cell-cell co-clustering matrix:
-```{r Consensus clust breakdown 3, echo=FALSE, eval=FALSE}
+```{r Consensus clust breakdown 3,  eval=FALSE}
 consensus.result <- iter_consensus_clust(co.ratio, 
                                          cl.list, 
                                          norm.dat, 
@@ -340,7 +353,7 @@ consensus.result <- iter_consensus_clust(co.ratio,
 ```
 
 - Adjust cluster boundaries to optimize within-cluster co-clustering probabilties:
-```{r Consensus clust breakdown 4, echo=FALSE, eval= FALSE}
+```{r Consensus clust breakdown 4,  eval= FALSE}
 refine.result <- refine_cl(consensus.result$cl, 
                            co.ratio = co.ratio, 
                            tol.th = 0.005, 
@@ -348,7 +361,7 @@ refine.result <- refine_cl(consensus.result$cl,
 ```
 
 - Double-check if all clusters are separable based on DE genes again:
-```{r Consensus clust breakdown 5, echo=FALSE, eval=FALSE}
+```{r Consensus clust breakdown 5,  eval=FALSE}
 merge.result <- merge_cl(norm.dat, 
                          refine.result$cl, 
                          rd.dat = t(norm.dat[consensus.result$markers,select.cells]), 
@@ -356,17 +369,16 @@ merge.result <- merge_cl(norm.dat,
 ```
 
 
-
+## Co-clustering matrix heatmap   
 <a id="coclplot"></a>
-## Co-clustering matrix heatmap
 
 Plot the heatmap of co-clustering matrix with `plot_co_matrix()`.  
 To reduce the size of image, we randomly sample up to 50 cells per cluster with **max.cl.size**:
-```{r Coclustering heatmap, fig.height = 7, fig.width = 7,warning=FALSE}
+```{r Coclustering heatmap, fig.height = 5, fig.width = 5,warning=FALSE}
 co.ratio <- result$co.result$co.ratio
 tmp <- plot_co_matrix(co.ratio, consensus.cl, max.cl.size = 50)
 ```
 Plot the heatmap of the average co-clustering probablities for each cell with all the cells within each cluster. 
-```{r cell-cluster coclustering heatmap, fig.keep="all", fig.height = 7, fig.width = 7}
+```{r cell-cluster coclustering heatmap, fig.keep="all", fig.height = 5, fig.width = 6}
 plot_cell_cl_co_matrix(co.ratio, consensus.cl)
 ```

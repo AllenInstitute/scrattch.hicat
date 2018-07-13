@@ -22,6 +22,8 @@ pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp
 
 build_dend <- function(cl.dat, l.rank=NULL, l.color=NULL, nboot=100)
   {
+    require(dendextend)
+    require(dplyr)
     cl.cor = cor(cl.dat)
     pvclust.result=NULL
     if(nboot > 0){
