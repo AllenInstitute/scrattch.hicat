@@ -1,61 +1,115 @@
+#' Convert a matrix of count values to CPM (Counts per Million)
+#' 
+#' @param counts a standard or sparse matrix
+#' 
+#' @return a matrix object of the same type as counts with normalized values
+#' 
 cpm <- function(counts)
   {
-    require(Matrix)
+    library(Matrix)
     t(t(counts)*10^6/colSums(counts))
   }
 
+#' Convert matrix row/column positions to vector position
+#' 
+#' @param m a matrix object
+#' @param rows row positions, either as indices or matches to row names
+#' @param cols row positions, either as indices or matches to row names
+#' 
+#' @return a vector containing the numeric position at [rows,cols]
+#' 
 get_pair_matrix_coor <- function(m, rows, cols)
   {
-    v = as.vector(m)
     if(!is.numeric(rows)){
-      rows= match(rows, row.names(m))
+      rows <- match(rows, row.names(m))
     }
+  
     if(!is.numeric(cols)){
-      cols=match(cols, colnames(m))
+      cols <- match(cols, colnames(m))
     }
-    coor = (cols - 1)* nrow(m) + rows
+  
+    coor <- (cols - 1) * nrow(m) + rows
+
     return(coor)
   }
 
-
+#' Subset a matrix as a vector using row and column positions
+#' 
+#' @param m a matrix object
+#' @param rows row positions, either as indices or matches to row names
+#' @param cols row positions, either as indices or matches to row names
+#' 
+#' @return a vector with values extracted from m at [rows/cols]
+#' 
 get_pair_matrix <- function(m, rows, cols)
   {
-    v = as.vector(m)
-    coor= get_pair_matrix_coor(m, rows, cols)
+    v <- as.vector(m)
+    coor <- get_pair_matrix_coor(m, rows, cols)
     return(v[coor])
   }
 
 
-
-set_pair_matrix <- function(m, rows, cols,vals)
+#' Update a matrix with values from a 1d vector using row and column positions
+#' 
+#' @param m a matrix object
+#' @param rows row positions, either as indices or matches to row names
+#' @param cols row positions, either as indices or matches to row names
+#' @param vals values to insert at [rows/cols]
+#' 
+#' @return a matrix with updated values
+#' 
+set_pair_matrix <- function(m, rows, cols, vals)
   {
-    v = as.vector(m)
-    if(!is.numeric(rows)){
-      rows= match(rows, row.names(m))
-    }
-    if(!is.numeric(cols)){
-      cols=match(cols, colnames(m))
-    }
-    coor = (cols - 1)* nrow(m) + rows
-    m[coor] = vals
+    coor <- get_pair_matrix_coor(m, rows, cols)
+    m[coor] <- vals
     return(m)
   }
 
-convert_pair_matrix <- function(pair.num, l=NULL,directed=FALSE)
+#' Convert paired cluster comparison values to a matrix
+#' 
+#' @param pair.num a vector of values with names of compared elements separted by "_", e.g. "c1_c2", "c23_c59"
+#' @param l labels for columns. Default is NULL, which will compute them from names(pair.num)
+#' @param directed If FALSE (default), the first value in each split will be used as columns, with the second as rows. 
+#' If TRUE, first values will be rows, and second will be columns.
+#' 
+#' @return a matrix containing values from pair.num, and named for each element separated by "_" in names(pair.num)
+#'  
+#' @examples
+#' 
+#' pair_values <- seq(1,27,3)
+#' names(pair_values) <- paste(rep(letters[1:3], each = 3), rep(letters[1:3], 3), sep = "_")
+#' pair_values
+#' 
+#' pair_matrix <- convert_pair_matrix(pair_values, directed = FALSE)
+#' pair_matrix
+#' 
+#' pair_matrix <- convert_pair_matrix(pair_values, directed = TRUE)
+#' pair_matrix
+#' 
+convert_pair_matrix <- function(pair.num, 
+                                l = NULL,
+                                directed = FALSE)
   {
-    pairs = do.call("rbind",strsplit(names(pair.num),"_"))
+    pairs <- do.call("rbind", strsplit(names(pair.num),"_"))
+    
     if(is.null(l)){
-      l = sort(unique(as.vector(pairs)))
+      l <- sort(unique(as.vector(pairs)))
     }
-    n.cl = length(l)
-    pair.num.mat = matrix(0, nrow = n.cl, ncol=n.cl)
-    row.names(pair.num.mat) = colnames(pair.num.mat) = l
+    
+    n.cl <- length(l)
+    
+    pair.num.mat <- matrix(0, nrow = n.cl, ncol = n.cl)
+    rownames(pair.num.mat) <- l
+    colnames(pair.num.mat) <- l
+    
     for(i in 1:nrow(pairs)){
-      pair.num.mat[pairs[i,1], pairs[i,2]] = pair.num[i]
-      if(!directed){
-        pair.num.mat[pairs[i,2], pairs[i,1]] = pair.num[i]
+      if(directed) {
+        pair.num.mat[pairs[i,1], pairs[i,2]] <- pair.num[i]
+      } else if(!directed) {
+        pair.num.mat[pairs[i,2], pairs[i,1]] <- pair.num[i]
       }
     }
+    
     return(pair.num.mat)
   }
 
