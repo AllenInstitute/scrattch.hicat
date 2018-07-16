@@ -2,7 +2,7 @@
 % Please edit documentation in R/cluster.R
 \name{jaccard}
 \alias{jaccard}
-\title{Compute jaccard distances for a matrix}
+\title{Compute jaccard distances between columns of a matrix}
 \usage{
 jaccard(m)
 }
@@ -13,5 +13,5 @@ jaccard(m)
 a sparse matrix of Jaccard distances.
 }
 \description{
-Compute jaccard distances for a matrix
+Compute jaccard distances between columns of a matrix
 }

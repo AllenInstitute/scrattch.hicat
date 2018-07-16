@@ -5,7 +5,7 @@
 \title{One round of clustering in the iteractive clustering pipeline}
 \usage{
 onestep_clust(norm.dat, select.cells = colnames(norm.dat), counts = NULL,
-  method = c("louvain", "ward", "kmeans"), vg.padj.th = 0.5,
+  method = c("louvain", "ward.D", "kmeans"), vg.padj.th = 0.5,
   dim.method = c("pca", "WGCNA"), max.dim = 20, rm.eigen = NULL,
   rm.th = 0.7, de.param = de_param(), min.genes = 5,
   type = c("undirectional", "directional"), maxGenes = 3000,

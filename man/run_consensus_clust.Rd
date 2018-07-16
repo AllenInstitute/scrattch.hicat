@@ -2,34 +2,34 @@
 % Please edit documentation in R/run_consensus.R
 \name{run_consensus_clust}
 \alias{run_consensus_clust}
-\title{Run bootstrapped, iterative consensus clustering}
+\title{Wrapper function to repeatively run clustering on subsampled cells and infer consensus clusters}
 \usage{
 run_consensus_clust(norm.dat, select.cells = colnames(norm.dat),
   niter = 100, sample.frac = 0.8, de.param = de_param(),
-  output_dir = "subsample_result", overwrite = FALSE, mc.cores = 1,
-  init.result = NULL, ...)
+  output_dir = "subsample_result", mc.cores = 1, override = FALSE,
+  init.result = NULL, cut.method = "auto", ...)
 }
 \arguments{
-\item{norm.dat}{A matrix of normalized data}
+\item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).}
 
-\item{select.cells}{A selected subset of sample IDs. Default is colnames(norm.dat).}
+\item{select.cells}{The cells to be clustered. Default: columns of norm.dat}
 
-\item{niter}{Number of bootstrapping rounds to run. Default is 100.}
+\item{niter}{The number of iteractions to run. Default 100.}
 
-\item{sample.frac}{Fraction of samples to use per bootstrapping round. Default is 0.8}
+\item{sample.frac}{The fraction of of cells sampled per run. Default: 0.8.}
 
-\item{de.param}{DE parameters set using `de_param()`.}
+\item{de.param}{The differential gene expression threshold. See de_param() function for details.}
 
-\item{output_dir}{Output directory for intermediate clustering results. Set to NULL to run in memory-only mode. This may take a significant quantity of RAM.}
+\item{output_dir}{The output directory to store clutering results for each iteraction.}
 
-\item{overwrite}{Overwrite flag for file output. Default is FALSE.}
+\item{mc.cores}{The number of cores to be used for parallel processing.}
 
-\item{mc.cores}{Number of cores to use for parallel processing. If set to 1 (default), will use single-core mode. If "auto", will use detected cores - 1.}
+\item{override}{binary variable determine if the clustering results already stored in output_dir should be overriden.}
 
-\item{init.result}{Initial results.}
+\item{init.result}{The pre-set high level clusters. If set, the function will only find finer splits of the current clusters.}
 
-\item{...}{Additional parameters passed to `iter_clust()`}
+\item{...}{Other parameters passed to iter_clust}
 }
 \description{
-Run bootstrapped, iterative consensus clustering
+Wrapper function to repeatively run clustering on subsampled cells and infer consensus clusters
 }

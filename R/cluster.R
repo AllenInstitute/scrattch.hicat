@@ -1,11 +1,4 @@
-# library(Matrix)
-# library(matrixStats)
-# library(Rphenograph)
-# 
-# jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
-# blue.red <-colorRampPalette(c("blue", "white", "red"))
-
-#' Compute jaccard distances for a matrix
+#' Compute jaccard distances between columns of a matrix
 #' 
 #' @param m A matrix or sparse matrix
 #' 
@@ -13,14 +6,19 @@
 #' 
 jaccard <- function(m) {
   library(Matrix)
+  
   ## common values:
   A <-  m %*% t(m)
+  
   ## indexes for non-zero common values
   im <- Matrix::which(A > 0, arr.ind=TRUE)
+  
   ## counts for each row
   b <- Matrix::rowSums(m)  
+  
   ## only non-zero values of common
   Aim <- A[im]
+  
   ## Jacard formula: #common / (#i + #j - #common)
   J <- sparseMatrix(
     i = im[,1],
@@ -28,12 +26,13 @@ jaccard <- function(m) {
     x = Aim / (b[im[,1]] + b[im[,2]] - Aim),
     dims = dim(A)
     )  
-  return( J )
+  return(J)
 }
 
 
 pass_louvain <- function(mod.sc, adj.mat)
 {
+  library(Matrix)
   p <- mean(Matrix::colSums(adj.mat > 0) - 1) / nrow(adj.mat)
   n <- ncol(adj.mat)
   rand.mod1 <- 0.97 * sqrt((1 - p) / (p * n))
@@ -43,48 +42,74 @@ pass_louvain <- function(mod.sc, adj.mat)
   return(mod.sc > rand.mod.max)
 }
 
-###rows are cells, columns are feathers
-#' Find nearest neighbors using Jaccard/Louvain metrics
+#' Perform Jaccard/Louvain clustering based on K-nearest neighbors
 #'
-#' @param dat
-#' @param k
-#' @param knn.matrix
-#'
+#' @param dat A matrix of features (rows) x samples (columns)
+#' @param k K nearest neighbors to use
+#' @param knn.matrix A K-nearest neighbors matrix. If NULL will be computed using FNN::get.knn()
+#' 
+#' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
+#' 
 jaccard_louvain.FNN <- function(dat, 
                                 k = 10, 
                                 knn.matrix = NULL)
   {
-    suppressMessages(require(igraph))
-    suppressMessages(require(matrixStats))
+    library(igraph)
+    library(matrixStats)
+    library(FNN)  
+    
     if(is.null(knn.matrix)){
-      knn.result= FNN::get.knn(dat, k)
-      knn.matrix = knn.result[[1]]
-      suppressMessages(library(FNN))
+        knn.result <- FNN::get.knn(dat, k)
+        knn.matrix <- knn.result[[1]]
     }
-    p = as.vector(t(knn.matrix))
-    edge = cbind(rep(1:nrow(knn.matrix),rep(k, nrow(knn.matrix))),p)
-    edge.unique = cbind(rowMins(edge), rowMaxs(edge))
-    edge.unique=unique(edge.unique)
-    knn.gr = igraph::graph(t(edge))
-    knn.matrix = igraph::get.adjacency(knn.gr)    
-    jaccard.adj  = jaccard(knn.matrix)
-    jaccard.gr = igraph::graph.adjacency(jaccard.adj, mode="undirected",weighted=TRUE)
-    louvain.result= igraph::cluster_louvain(jaccard.gr)
-    mod.sc = igraph::modularity(louvain.result)
-    if(pass_louvain(mod.sc,jaccard.adj)){
-      cl  = setNames(louvain.result$membership,row.names(dat))
-      return(list(cl=cl, result=louvain.result))
-    }
-    else{
+    
+    p <- as.vector(t(knn.matrix))
+    
+    edge <- cbind(rep(1:nrow(knn.matrix), rep(k, nrow(knn.matrix))), p)
+    
+    edge.unique <- cbind(rowMins(edge), rowMaxs(edge))
+    edge.unique <- unique(edge.unique)
+    
+    knn.gr <- igraph::graph(t(edge))
+    knn.matrix <- igraph::get.adjacency(knn.gr)
+    
+    jaccard.adj  <- jaccard(knn.matrix)
+    jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
+                                          mode = "undirected", 
+                                          weighted = TRUE)
+    
+    louvain.result <- igraph::cluster_louvain(jaccard.gr)
+    
+    mod.sc <- igraph::modularity(louvain.result)
+    
+    if(pass_louvain(mod.sc, jaccard.adj)) {
+      
+      cl <- setNames(louvain.result$membership, row.names(dat))
+      
+      return(list(cl = cl, result = louvain.result))
+    
+    } else{
+      
       return(NULL)
+      
     }
   }
 
-jaccard_louvain <- function(dat, k=10)
+#' Perform Jaccard/Louvain clustering using Rphenograph
+#' 
+#' @param dat A matrix of features (rows) x samples (columns)
+#' @param k K-nearest neighbors to use for clustering
+#' 
+#' @return A list object with the cluster factor object and (cl) and Rphenograph results (result)
+#' 
+jaccard_louvain <- function(dat, k = 10)
 {
-  suppressMessages(library(Rphenograph))
+  suppressPackageStartupMessages(library(Rphenograph))
+  
   rpheno <- Rphenograph(dat, k = k)
+  
   cl <- setNames(rpheno[[2]]$membership, row.names(dat)[as.integer(rpheno[[2]]$names)])
+  
   return(list(cl = cl, result = rpheno))
 }
 
@@ -275,8 +300,8 @@ onestep_clust <- function(norm.dat,
 #'         cl: cluster membership for each cell
 #'         markers: top markers that seperate clusters     
 #'         
-#' @examples clust.result = iter_clust(norm.dat)
-#'           clust.result = iter_clust(norm.dat, de.param = de_param(q1.th=0.5, de.score.th=100))
+#' @examples clust.result <- iter_clust(norm.dat)
+#'           clust.result <- iter_clust(norm.dat, de.param = de_param(q1.th = 0.5, de.score.th = 100))
 iter_clust <- function(norm.dat, 
                        select.cells = colnames(norm.dat),
                        prefix = NULL, 
