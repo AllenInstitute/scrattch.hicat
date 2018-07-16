@@ -7,7 +7,7 @@
 cpm <- function(counts)
   {
     library(Matrix)
-    t(t(counts)*10^6/colSums(counts))
+    t(t(counts) * 10^6 / colSums(counts))
   }
 
 #' Convert matrix row/column positions to vector position
@@ -113,115 +113,219 @@ convert_pair_matrix <- function(pair.num,
     return(pair.num.mat)
   }
 
+#' Generate a sparse matrix one-hot representation of clusters x samples
+#' 
+#' @param cl a cluster factor object
+#' 
+#' @return a sparse, one-hot matrix indicating which cluster(columns) each sample (rows) belongs to.
+#' 
 get_cl_mat <- function(cl)
   {
+    library(Matrix)
+  
     if(!is.factor(cl)){
-      cl <- factor(cl)
+      cl <- as.factor(cl)
     }
+  
     cl.mat <- sparseMatrix(i = 1:length(cl),  
                            j = as.integer(cl), 
                            x = 1)
+    
     rownames(cl.mat) <- names(cl)
     colnames(cl.mat) <- levels(cl)
+    
     return(cl.mat)
   }
 
+#' Compute cluster sums for each row in a matrix
+#' 
+#' @param mat A gene (rows) x samples (columns) sparse matrix
+#' @param cl A cluster factor object
+#' 
+#' @return a matrix of genes (rows) x clusters (columns) with sums for each cluster
+#' 
 get_cl_sums <- function(mat, cl)
   {
-    require(Matrix)
+    library(Matrix)
+  
     cl.mat <- get_cl_mat(cl)
-    tmp <- Matrix::tcrossprod(mat[,rownames(cl.mat)], Matrix::t(cl.mat))
-    cl.sums <- as.matrix(tmp)
+    
+    cl.sums <- Matrix::tcrossprod(mat[,rownames(cl.mat)], Matrix::t(cl.mat))
+    
+    cl.sums <- as.matrix(cl.sums)
+    
     return(cl.sums)
   }
 
+#' Compute cluster means for each row in a matrix
+#' 
+#' @param mat A gene (rows) x samples (columns) sparse matrix
+#' @param cl A cluster factor object
+#' 
+#' @return a matrix of genes (rows) x clusters (columns) with means for each cluster
+#'
 get_cl_means <- function(mat, cl)
   {
+    library(Matrix)
+  
     cl.sums <- get_cl_sums(mat, cl)
+    
     cl.size <- table(cl)
+    
     cl.means <- as.matrix(Matrix::t(Matrix::t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
+    
     return(cl.means)
 }
 
-
+#' Compute cluster medians for each row in a matrix
+#' 
+#' @param mat A gene (rows) x samples (columns) sparse matrix
+#' @param cl A cluster factor object
+#' 
+#' @return a matrix of genes (rows) x clusters (columns) with edians for each cluster
+#'
 get_cl_medians <- function(mat, cl)
 {
+  library(Matrix)
   library(matrixStats)
-  cl.med = do.call("cbind",tapply(names(cl), cl, function(x){
-    rowMedians(as.matrix(mat[,x]))
-  }))
-  row.names(cl.med)=row.names(mat)
+  
+  cl.med <- do.call("cbind",
+                    tapply(names(cl), 
+                           cl, 
+                           function(x){
+                             rowMedians(as.matrix(mat[,x]))
+                           }
+                    )
+  )
+  
+  rownames(cl.med) <- rownames(mat)
+  
   return(cl.med)
 }
 
-
-sparse_cor <- function(x){
-  n <- nrow(x)
-  m <- ncol(x)
-  ii <- unique(x@i)+1 # rows with a non-zero element
+#' Compute correlation scores for columns of a sparse matrix
+#' 
+#' @param m a sparse matrix, preferrably dgCMatrix
+#' 
+#' @return a matrix of correlation values between each column of m
+#'  
+sparse_cor <- function(m){
+  library(Matrix)
   
-  Ex <- colMeans(x)
-  nozero <- as.vector(x[ii,]) - rep(Ex,each=length(ii))        # colmeans
+  n_rows <- nrow(m)
+  n_cols <- ncol(m)
   
-  covmat <- ( crossprod(matrix(nozero,ncol=m)) +
-             crossprod(t(Ex))*(n-length(ii))
-             )/(n-1)
+  ii <- unique(m@i) + 1 # rows with a non-zero element
+  
+  Ex <- colMeans(m)
+  
+  nozero <- as.vector(m[ii,]) - rep(Ex, each = length(ii))        # colmeans
+  
+  covmat <- (crossprod(matrix(nozero, ncol = n_cols)) +
+             crossprod(t(Ex)) * (n_rows - length(ii))
+             ) / (n_rows - 1)
+  
   sdvec <- sqrt(diag(covmat))
-  covmat/crossprod(t(sdvec))
-}
+  
+  cormat <- covmat / crossprod(t(sdvec))
 
-calc_tau <- function(m, byRow=TRUE)
+  return(cormat)
+  }
+
+#' Calculate Tau scores for each gene
+#' 
+#' @param m Matrix of expression values
+#' @param byRow if TRUE, treats genes as row values and samples as columns.
+#' 
+#' @return a vector of Tau scores
+#' 
+calc_tau <- function(m, byRow = TRUE)
 {
   if(!byRow){
-    m = t(m)
+    m <- t(m)
   }
-  m = m/rowMaxs(m)
-  tau = rowSums(1 - m)/(ncol(m) - 1)
-  tau[is.na(tau)]=0
+  m <- m / rowMaxs(m)
+  tau <- rowSums(1 - m) / (ncol(m) - 1)
+  tau[is.na(tau)] <- 0
   return(tau)
 }
 
-
-sample_cells <- function(cl,sample.size, weights=NULL)
+#' Downsample cells from each cluster
+#' 
+#' @param cl A cluster factor object
+#' @param sample.size A maximum number of cells to take from each cluster, or a named numeric object with the number of cells to be sampled and names matching cluster levels
+#' 
+#' @return A cluster factor object containing sampled cells
+#' 
+sample_cells <- function(cl, sample.size, weights = NULL)
 {
-  tmp = unique(cl)
-  if(length(sample.size)==1){
-    sample.size = setNames(rep(sample.size, length(tmp)), tmp)
+  
+  n_cl <- unique(cl)
+  
+  if(length(sample.size) == 1) {
+    
+    sample.size <- setNames(rep(sample.size, length(n_cl)), n_cl)
+  
   }
-  cl.cells= split(names(cl),cl)
-  sampled.cells = unlist(sapply(names(cl.cells), function(x){
-    cells= cl.cells[[x]]
-    if(sample.size[[x]]==length(cells)){
+  
+  cl.cells <- split(names(cl), cl)
+  
+  sampled.cells <- unlist(sapply(names(cl.cells), 
+                                 function(x){
+    cells <- cl.cells[[x]]
+    if(sample.size[[x]] == length(cells)){
       return(cells)
     }
-    to.sample = pmin(sample.size[[x]], length(cells))
+    
+    to.sample <- pmin(sample.size[[x]], length(cells))
+    
     if(!is.null(weights)){
-      sampled= sample(cells, to.sample, prob= weights[x])
+      sampled <- sample(cells, to.sample, prob <- weights[x])
     }
+    
     else{
-      sampled= sample(cells, to.sample)
+      sampled <- sample(cells, to.sample)
     }
+    
     sampled
-  },simplify=FALSE))
+    
+  }, simplify = FALSE))
+  
+  return(sampled.cells)
 }
   
-
+#' Sample cells from each cluster weighted by gene count
+#' 
+#' @param cl A cluster factor object
+#' @param norm.dat normalized gene expression matrix
+#' @param max.cl.size The maximum number of cells to sample for each cluster
+#' 
+#' @return A downsampled cluster factor object
+#' 
 sample_cells_by_genecounts <- function(cl, norm.dat, max.cl.size=200)
 {
-  select.cells=names(cl)
+  
+  select.cells <- names(cl)
+  
   if(is.matrix(norm.dat)){
-    cell.gene.counts= colSums(norm.dat[,select.cells]>0)
+    
+    cell.gene.counts <- colSums(norm.dat[ ,select.cells] > 0)
+  
+  } else {
+    
+    cell.gene.counts <- Matrix::colSums(norm.dat[,select.cells] > 0)
+  
   }
-  else{
-    cell.gene.counts= Matrix::colSums(norm.dat[,select.cells]>0)
-  }
-  cell.weights = cell.gene.counts - min(cell.gene.counts)+1
-  sample_cells(cl, weights=cell.weights, max.cl.size=max.cl.size)  
+  
+  cell.weights <- cell.gene.counts - min(cell.gene.counts) + 1
+  
+  sample_cells(cl, sample.size = max.cl.size, weights = cell.weights)  
+
 }
 
 translate_pair_name <- function(pairs, id.map)
 {
-  pairs.df = do.call("rbind", strsplit(pairs,"_"))
-  new.pairs  = paste(id.map[as.character(pairs.df[,1])], id.map[as.character(pairs.df[,2])],sep="_")
+  pairs.df <- do.call("rbind", strsplit(pairs,"_"))
+  new.pairs <- paste(id.map[as.character(pairs.df[,1])], id.map[as.character(pairs.df[,2])],sep="_")
   return(new.pairs)
 }
