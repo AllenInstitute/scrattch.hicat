@@ -127,29 +127,6 @@ calc_tau <- function(m, byRow=TRUE)
   return(tau)
 }
 
-
-sample_cells <- function(cl,sample.size, weights=NULL)
-{
-  tmp = unique(cl)
-  if(length(sample.size)==1){
-    sample.size = setNames(rep(sample.size, length(tmp)), tmp)
-  }
-  cl.cells= split(names(cl),cl)
-  sampled.cells = unlist(sapply(names(cl.cells), function(x){
-    cells= cl.cells[[x]]
-    if(sample.size[[x]]==length(cells)){
-      return(cells)
-    }
-    to.sample = pmin(sample.size[[x]], length(cells))
-    if(!is.null(weights)){
-      sampled= sample(cells, to.sample, prob= weights[x])
-    }
-    else{
-      sampled= sample(cells, to.sample)
-    }
-    sampled
-  },simplify=FALSE))
-}
   
 
 sample_cells_by_genecounts <- function(cl, norm.dat, max.cl.size=200)
@@ -171,3 +148,28 @@ translate_pair_name <- function(pairs, id.map)
   new.pairs  = paste(id.map[as.character(pairs.df[,1])], id.map[as.character(pairs.df[,2])],sep="_")
   return(new.pairs)
 }
+
+
+sample_cells <- function(cl,max.cl.size, weights=NULL) 
+{
+  tmp = unique(cl)
+  if(length(max.cl.size)==1){
+    max.cl.size = setNames(rep(max.cl.size, length(tmp)), tmp)
+  }
+  cl.cells= split(names(cl),cl)
+  sampled.cells = unlist(sapply(names(cl.cells), function(x){
+    cells= cl.cells[[x]]
+    if(max.cl.size[[x]]==length(cells)){
+      return(cells)
+    }
+    to.sample = pmin(max.cl.size[[x]], length(cells))
+    if(!is.null(weights)){
+      sampled= sample(cells, to.sample, prob= weights[x])
+    }
+    else{
+      sampled= sample(cells, to.sample)
+    }
+    sampled
+  },simplify=FALSE))
+}
+

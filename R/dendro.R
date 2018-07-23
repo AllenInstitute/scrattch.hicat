@@ -204,7 +204,7 @@ cutree_dend <- function(dend, h)
   {
     if(length(dend)>1){
       for(i in 1:length(dend)){
-        dend[[i]]=cutree_dend(dend[[i]],length.th)
+        dend[[i]]=cutree_dend(dend[[i]],h)
       }
       child.h = get_childrens_heights(dend)
       select= child.h < h

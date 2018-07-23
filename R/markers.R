@@ -268,12 +268,11 @@ node_vs_sibling_markers <- function(dend.list, norm.dat, cl,cl.df,...)
   }
 
 
-node_specific_markers <- function(dend.list, norm.dat, cl,cl.df,...)
+node_specific_markers <- function(dend.list, norm.dat, cl,...)
   {    
     do.call("rbind",sapply(names(dend.list), function(x){
       print(x)
-      cl.g = row.names(cl.df)[cl.df$cluster_label %in% labels(dend.list[[x]])]      
-      df=group_specific_markers(cl.g, norm.dat, cl,...)
+      df=group_specific_markers(labels(dend.list[[x]]), norm.dat, cl,...)
       if(!is.null(df)){
         df$cl = x
       }
