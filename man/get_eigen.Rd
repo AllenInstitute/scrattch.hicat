@@ -16,7 +16,7 @@ get_eigen(gene.mod, norm.dat, select.cells = colnames(norm.dat),
 
 \item{prefix}{Default NULL. If not NULL, a heatmap of the gene module eigen genes will be produced with "prefix" as the prefix for the pdf file.}
 
-\item{method}{Default "ward". Used by hclust method to create the cell dendrogram for the heatmap display.}
+\item{method}{Default "ward.D". Used by hclust method to create the cell dendrogram for the heatmap display.}
 
 \item{hc}{Precomputed cell dendrogram for heatmap display. Default NULL.}
 

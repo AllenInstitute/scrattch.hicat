@@ -11,7 +11,7 @@ get_cell.cl.co.ratio(cl, co.ratio = NULL, cl.mat = NULL)
 
 \item{co.ratio}{coclustering ratio results}
 
-\item{cl.mat}{A matrix of cluster results?}
+\item{cl.mat}{Cluster membership matrix for all cells and all clusters from all bootstrapping iterations.}
 }
 \description{
 Get cell co-clustering ratios

@@ -2,13 +2,20 @@
 % Please edit documentation in R/cluster.R
 \name{jaccard_louvain.FNN}
 \alias{jaccard_louvain.FNN}
-\title{Find nearest neighbors using Jaccard/Louvain metrics}
+\title{Perform Jaccard/Louvain clustering based on K-nearest neighbors}
 \usage{
 jaccard_louvain.FNN(dat, k = 10, knn.matrix = NULL)
 }
 \arguments{
-\item{knn.matrix}{}
+\item{dat}{A matrix of features (rows) x samples (columns)}
+
+\item{k}{K nearest neighbors to use}
+
+\item{knn.matrix}{A K-nearest neighbors matrix. If NULL will be computed using FNN::get.knn()}
+}
+\value{
+A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
 }
 \description{
-Find nearest neighbors using Jaccard/Louvain metrics
+Perform Jaccard/Louvain clustering based on K-nearest neighbors
 }
