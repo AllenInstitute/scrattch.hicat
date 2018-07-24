@@ -5,7 +5,7 @@ selectMarkersPair <- function(norm.dat, add.genes,de.genes=NULL, gene.score=NULL
   de.genes.list=list()
   if(is.null(gene.score)){
     de.genes= de.genes[names(add.genes)]
-    tmp=getGeneScore(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
+    tmp=get_gene_score(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
     up.gene.score=tmp$up.gene.score
     down.gene.score=tmp$down.gene.score      
     gene.score=pmin(up.gene.score, down.gene.score)
@@ -37,7 +37,7 @@ selectMarkersPairDirection <- function(add.up,add.down,de.genes=NULL, up.gene.sc
     pairs =do.call("rbind",strsplit(gsub("cl","",pairs.n), "_"))
     row.names(pairs)= pairs.n
     de.genes= de.genes[pairs.n]
-    tmp=getGeneScore(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
+    tmp=get_gene_score(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
     up.gene.score=tmp$up.gene.score
     down.gene.score=tmp$down.gene.score      
   }

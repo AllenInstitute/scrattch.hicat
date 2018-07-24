@@ -1,5 +1,5 @@
 library(ggplot2)
-plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, ...)
+plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, alpha.val=1, ...)
   {
     require(Rtsne)
     if(is.null(tsne.df)){
@@ -24,7 +24,7 @@ plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
     cl.col = setNames(as.character(cl.df$cluster_color),cl.df$cluster_label)
     shape = setNames(1:length(levels(tsne.df$cl_label)) %% 20 + 1,levels(tsne.df$cl_label))
     g=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
-    g = g+ scale_color_manual(values=as.vector(cl.col[levels(tsne.df$cl_label)]))+ scale_shape_manual(values=as.vector(shape[levels(tsne.df$cl_label)]))
+    g = g+ scale_color_manual(values=alpha(as.vector(cl.col[levels(tsne.df$cl_label)]),alpha.val))+ scale_shape_manual(values=as.vector(shape[levels(tsne.df$cl_label)]))
     for(i in 1:nrow(cl.center)){
       g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color="black")
     }

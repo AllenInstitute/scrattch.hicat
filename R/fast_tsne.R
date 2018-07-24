@@ -5,3 +5,4 @@ fast_tsne <- function(dat,theta=0.05, nthreads=12, perplexity=20,...){
   colnames(fast.tsne.df)=c("Lim1","Lim2")
   fast.tsne.df = as.data.frame(fast.tsne.df)
 }
+

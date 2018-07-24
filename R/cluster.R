@@ -434,7 +434,7 @@ merge_cl<- function(norm.dat,
     while(length(unique(cl)) > 1){
       cl.size = table(cl)
       ##Down sample cells for efficiency   
-      tmp.cells = sample_cells(cl, weights=cell.weights, max.cl.size=max.cl.size)
+      tmp.cells = sample_cells(cl,  max.cl.size,weights=cell.weights)
       tmp.dat = as.matrix(norm.dat[,tmp.cells])
       ###Merge small clusters with the closest neighbors first.
       cl.rd = Matrix::t(get_cl_means(Matrix::t(rd.dat),cl))
