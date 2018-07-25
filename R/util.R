@@ -257,7 +257,7 @@ calc_tau <- function(m, byRow = TRUE)
 #' 
 #' @return A cluster factor object containing sampled cells
 #' 
-sample_cells <- function(cl, sample.size, weights = NULL)
+sample_cells<- function(cl, sample.size, weights = NULL)
 {
   
   n_cl <- unique(cl)
@@ -280,7 +280,7 @@ sample_cells <- function(cl, sample.size, weights = NULL)
     to.sample <- pmin(sample.size[[x]], length(cells))
     
     if(!is.null(weights)){
-      sampled <- sample(cells, to.sample, prob = weights[x])
+      sampled <- sample(cells, to.sample, prob = weights[cells])
     }
     
     else{
