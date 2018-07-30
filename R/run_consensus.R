@@ -49,7 +49,10 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
     stopCluster(cl)
   }
   result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))
-  if(length(all.cells) < 100000){
+  load(result.files[[1]])
+  cl.size = table(result$cl)
+  graph.size = sum(cl.size^2)
+  if(graph.size < 10^8){
     co.result <- collect_co_matrix_sparseM(norm.dat, result.files, all.cells)
     co.ratio = co.result$co.ratio 
     consensus.result = iter_consensus_clust(co.ratio, co.result$cl.list, norm.dat, select.cells=all.cells, de.param = de.param, method=cut.method)
