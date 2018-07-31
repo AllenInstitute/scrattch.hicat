@@ -61,7 +61,7 @@ display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL,
     select.cells=names(cl)        
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
     if(!is.null(max.cl.size)){    
-      tmp.cells = sample_cells(cl,  max.cl.size=max.cl.size)
+      tmp.cells = sample_cells(cl,  max.cl.size)
       cl = cl[tmp.cells]
     }
     select.cells=names(cl)
