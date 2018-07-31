@@ -167,11 +167,14 @@ QC-related factors, such as sequencing depth, gene detection limits, and fractio
 You can directly use proper transformation of these QC-related variables, or use the first principle component of the genes that correlate with these QC factors. The latter approach tends to work better with real datasets. When **rm.eigen** is specified, any reduced-dimension vectors during clustering that have correlation greater than **rm.th** with any columns of **rm.eigen** are ignored during clustering. 
 
 We recommend that users to first explore their data by running the clustering pipeline without setting **rm.eigen**. If any batch specific or QC-driven clusters appear to cause problems, the user can create **rm.eigen** as demonstrated below, and rerun the pipeline. 
-```{r, eval=FALSE}
+```{r, message=FALSE, warning=FALSE, results="hide"}
 gene.counts <- colSums(norm.dat > 0)
 rm.eigen <- matrix(log2(gene.counts), ncol = 1)
 row.names(rm.eigen) <- names(gene.counts)
 colnames(rm.eigen) <- "log2GeneCounts"
+```
+
+```{r, eval=FALSE}
 WGCNA.clust.result <- iter_clust(norm.dat, 
                                select.cells = select.cells, 
                                dim.method = "WGCNA", 
