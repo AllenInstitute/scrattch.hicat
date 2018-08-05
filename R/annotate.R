@@ -1,45 +1,114 @@
-
-map_by_cor <- function(train.dat, train.cl, test.dat,method="median")
+#' Map samples to a training dataset by correlation
+#' 
+#' @param train.dat Training data matrix, usually log-transformed CPM
+#' @param train.cl Training cluster factor object
+#' @param test.dat Data for cells to map to the training set. Should have the same genes as train.dat.
+#' @param method Which statistic to compare. "median" or "mean". Default is "median".
+#' 
+#' @return a list object containing two objects:
+#' \itemize{
+#' \item pred.df: a data.frame with two columns, pred.cl and pred.score with the predicted cluster and correlation scores.
+#' \item cor.matrix: a matrix object with correlation scores for each cluster.
+#' }
+#' 
+map_by_cor <- function(train.dat, 
+                       train.cl, 
+                       test.dat,
+                       method = "median")
   {
-    if(method=="median"){
-      require(matrixStats)
-      cl.dat= do.call("cbind",tapply(names(train.cl), train.cl, function(x){
-        rowMedians(as.matrix(train.dat[,x,drop=F]))
-      }))
+    # Get medians or means for each cluster
+    if(method == "median"){
+      library(matrixStats)
+      cl.meds <- tapply(names(train.cl), 
+                        train.cl, 
+                        function(x) {
+                          train.mat <- train.dat[, x, drop = F]
+                          train.mat <- as.matrix(train.mat)
+                          rowMedians(train.mat)
+                        }
+      )
+      
+      cl.dat <- do.call("cbind", cl.meds)
+    } else {
+      cl.dat <- get_cl_means(train.dat, train.cl)
     }
-    else{
-      cl.dat = get_cl_means(train.dat, train.cl)
-    }
-    row.names(cl.dat)=row.names(train.dat)
-    test.cl.cor = cor(as.matrix(test.dat), cl.dat)
-    test.cl.cor[is.na(test.cl.cor)]=0
-    pred.cl= setNames(colnames(test.cl.cor)[apply(test.cl.cor, 1, which.max)], row.names(test.cl.cor))
-    pred.score = apply(test.cl.cor, 1, max)
+    row.names(cl.dat) <- row.names(train.dat)
+    
+    # Perform correlations
+    test.cl.cor <- cor(as.matrix(test.dat), cl.dat)
+    test.cl.cor[is.na(test.cl.cor)] <- 0
+    
+    # Find maximum correlation
+    max.cl.cor <- apply(test.cl.cor, 1, which.max)
+    pred.cl <- colnames(test.cl.cor)[max.cl.cor]
+    pred.cl <- setNames(pred.cl, row.names(test.cl.cor))
+    
+    # Get maximum correlation values
+    pred.score <- apply(test.cl.cor, 1, max)
+    
+    # Convert to factor if train.cl was a factor and match levels.
     if(is.factor(train.cl)){
-      pred.cl = setNames(factor(pred.cl, levels=levels(train.cl)), names(pred.cl))
+      pred.cl <- setNames(factor(pred.cl, levels = levels(train.cl)), names(pred.cl))
     }
-    return(list(pred.df= data.frame(pred.cl=pred.cl,pred.score=pred.score), cor.matrix=test.cl.cor))
+    
+    # Output results
+    pred.df <- data.frame(pred.cl = pred.cl,
+                          pred.score = pred.score)
+    
+    out_list <- list(pred.df = pred.df,
+                     cor.matrix = test.cl.cor)
+
+    return(out_list)    
   }
 
-map_cl_summary <- function(ref.dat, ref.cl, map.dat, map.cl)
+#' Map a dataset to a reference, and compare existing cluster calls to the reference comparison
+#' 
+#' @param ref.dat Training data matrix, usually log-transformed CPM
+#' @param ref.cl Training cluster factor object
+#' @param map.dat Data for cells to map to the training set. Should have the same genes as train.dat.
+#' @param map.cl Cluster assignments for the training set to compare to results of mapping.
+#' 
+#' @return a list object with two objects:  
+#' \itemize{
+#' \item map.df: A data.frame with the mapping results for each sample in map.dat to the reference
+#' \item cl.map.df: A data.frame with cluster-level frequency of mapping for each cluster in map.cl to ref.cl
+#' }
+map_cl_summary <- function(ref.dat, 
+                           ref.cl, 
+                           map.dat, 
+                           map.cl)
   {
-    map.result = map_by_cor(ref.dat, ref.cl, map.dat)
-    cor.matrix = map.result$cor.matrix
-    map.df = map.result$pred.df
-    colnames(map.df)[1] = "map.cl"
-    map.df$org.cl = map.cl[row.names(map.df)]
-    cl.size= table(map.cl)
-    cl.map.df = as.data.frame(with(map.df,table(org.cl,  map.cl)))
-    cl.map.df$Prob = round(cl.map.df$Freq/ cl.size[as.character(cl.map.df$org.cl)], digits=2)
-    cl.map.df$pred.score=0
+    # Map the training set to the reference
+    map.result <- map_by_cor(ref.dat, ref.cl, map.dat)
+    cor.matrix <- map.result$cor.matrix
+    
+    map.df <- map.result$pred.df
+    colnames(map.df)[1] <- "map.cl"
+    map.df$org.cl <- map.cl[row.names(map.df)]
+    
+    # Compute the fraction of times each sample was mapped to each cluster
+    cl.size <- table(map.cl)
+    cl.map.df <- as.data.frame(with(map.df, table(org.cl, map.cl)))
+    cl.map.df$Prob <- round(cl.map.df$Freq / cl.size[as.character(cl.map.df$org.cl)], digits = 2)
+    
+    # Compute the mean fraction of mapping for all samples in the training set clusters
+    # to the training set clusters.
+    cl.map.df$pred.score <- 0
     for(i in 1:nrow(cl.map.df)){
-      select=names(map.cl)[map.cl== as.character(cl.map.df[i, "org.cl"])]
-      cl.map.df[i,"pred.score"] = mean(cor.matrix[select, as.character(cl.map.df[i,"map.cl"])])
+      select <- names(map.cl)[map.cl == as.character(cl.map.df$org.cl[i])]
+      cl.map.df$pred.score[i] <- mean(cor.matrix[select, as.character(cl.map.df$map.cl[i])])
     }
-    cl.map.df$pred.score= round(cl.map.df$pred.score, digits=2)
-    cl.map.df = cl.map.df[cl.map.df$Freq > 0,]
-    return(list(map.df=map.df, cl.map.df=cl.map.df))
-  }
+    cl.map.df$pred.score <- round(cl.map.df$pred.score, digits = 2)
+    
+    # Remove comparisons with no mapping
+    cl.map.df <- cl.map.df[cl.map.df$Freq > 0, ]
+    
+    # Return output
+    out_list <- list(map.df = map.df,
+                     cl.map.df = cl.map.df)
+    
+    return(out_list)
+    }
 
 
 predict_annotate_cor <- function(cl, norm.dat, ref.markers, ref.cl, ref.cl.df, ref.norm.dat, method="median", reorder=FALSE)
