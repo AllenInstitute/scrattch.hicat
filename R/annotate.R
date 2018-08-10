@@ -125,10 +125,7 @@ predict_annotate_cor <- function(cl,
                             norm.dat[ref.markers, names(cl)],
                             method = method)
   
-  map.cl <- factor(as.character(map_results$pred.df$pred.cl))
-  
-  pred.cl <- setNames(map.cl,
-                      levels = row.names(ref.cl.df), row.names(map_results$pred.df))
+  pred.cl <- setNames(factor(as.character(map_result$pred.df$pred.cl), levels = row.names(ref.cl.df)), row.names(map_results$pred.df))
   
   results <- compare_annotate(cl, 
                               pred.cl, 
