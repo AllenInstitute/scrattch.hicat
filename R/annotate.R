@@ -323,8 +323,8 @@ compare_annotate <- function(cl,
     tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
   }
   
-  tb.df$ref.cl.label <- factor(ref.cl.df$cluster_label[as.character(tb.df$ref.cl)], 
-                               levels = ref.cl.df$cluster_label)
+  tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels = ref.cl.df$cluster_label)
+                               
   
   g <- ggplot(tb.df, 
               aes(x = cl, 

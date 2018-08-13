@@ -1,15 +1,3 @@
-#' Convert a matrix of count values to CPM (Counts per Million)
-#' 
-#' @param counts a standard or sparse matrix
-#' 
-#' @return a matrix object of the same type as counts with normalized values
-#' 
-cpm <- function(counts)
-  {
-    library(Matrix)
-    t(t(counts) * 10^6 / colSums(counts))
-  }
-
 #' Convert matrix row/column positions to vector position
 #' 
 #' @param m a matrix object
@@ -293,3 +281,59 @@ sample_cells<- function(cl, sample.size, weights = NULL)
   
   return(sampled.cells)
 }
+
+
+
+get_cols <- function(big.dat, cols)
+  {
+    p = big.dat$p
+    if(is.character(cols)){
+      cols = match(cols, big.dat$col_id)
+    }
+    select = sapply(cols, function(col){
+      (p[col]+1):(p[col+1])
+    })
+    select.index = do.call("c", select)
+    l = sapply(select, length)
+    p = c(0,cumsum(l))
+    i= (big.dat$i)[select.index]
+    x = (big.dat$x)[select.index]
+    mat=sparseMatrix(i=as.integer(i+1), x=as.double(x), p=p, dims=c(big.dat$dim[1],length(l)))
+    colnames(mat) = big.dat$col_id[cols]
+    row.names(mat) = big.dat$row_id
+    return(mat)
+  }
+
+
+cpm <- function(counts)
+  {
+    require(Matrix)
+    sf = Matrix::colSums(counts)/10^6
+    if(is.matrix(counts)){    
+      return(t(t(counts) /sf))
+    }
+    else if(class(counts)=="dgCMatrix"){
+      require(IRanges)                  
+      sep = counts@p
+      sep = sep[-1] - sep[-length(sep)]
+      j = Rle(1:length(sep), sep)
+      counts@x = counts@x/sf[as.integer(j)]
+    }
+    else if(class(counts)=="dgTMatrix"){
+      j = counts@j
+      counts@x = counts@x/sf[j]
+    }
+    else{
+      stop(paste("cpm function for", class(counts)[1], "not supported"))
+    }
+    return(counts)
+  }
+
+logCPM <- function(counts)
+  {
+    norm.dat = cpm(counts)
+    norm.dat@x = log2(norm.dat@x + 1)
+    norm.dat
+  }
+
+
