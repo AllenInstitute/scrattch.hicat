@@ -114,7 +114,7 @@ get_cl_mat <- function(cl)
     if(!is.factor(cl)){
       cl <- as.factor(cl)
     }
-  
+    cl = droplevels(cl)
     cl.mat <- sparseMatrix(i = 1:length(cl),  
                            j = as.integer(cl), 
                            x = 1)

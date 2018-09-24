@@ -262,12 +262,12 @@ map_cv <- function(norm.dat,
 compare_annotate <- function(cl, 
                              ref.cl, 
                              ref.cl.df, 
-                             reorder = TRUE)
+                             reorder = TRUE,
+                             rename = reorder)
 {
   library(ggplot2)
   
   common.cells <- intersect(names(cl),names(ref.cl))
-  
   # compare predicted cluster member with the new clustering result 
   tb <- table(cl[common.cells], ref.cl[common.cells])
   cl.id.map <- NULL
@@ -278,9 +278,11 @@ compare_annotate <- function(cl,
     cl_names <- names(cl)
     cl <- factor(as.character(cl), levels = row.names(tb)[order(tmp)])
     cl <- setNames(cl, cl_names)
-    cl.id.map <- data.frame(new = 1:length(levels(cl)),
-                            old = levels(cl))
-    levels(cl) <- 1:length(levels(cl))
+    if(rename){
+      cl.id.map <- data.frame(new = 1:length(levels(cl)),
+                              old = levels(cl))
+      levels(cl) <- 1:length(levels(cl))
+    }
   }
   
   # Assign the best matching old cluster to each new cluster. 
@@ -317,8 +319,8 @@ compare_annotate <- function(cl,
   # Compute Jaccard statistics for each pair of clusters
   tb.df$jaccard <- 0
   for(i in 1:nrow(tb.df)){
-    n_ol <- length(union(names(cl)[cl == as.character(tb.df[i,1])],
-                         names(ref.cl)[ref.cl == as.character(tb.df[i,2])]))
+    n_ol <- length(union(common.cells[cl[common.cells] == as.character(tb.df[i,1])],
+                         common.cells[ref.cl[common.cells] == as.character(tb.df[i,2])]))
     
     tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
   }
