@@ -7,7 +7,6 @@
 `scrattch.hicat` has several dependencies, including two from BioConductor and one from Github:
 ```
 source("https://bioconductor.org/biocLite.R")
-biocLite("WGCNA")
 biocLite("limma")
 
 devtools::install_github("JinmiaoChenLab/Rphenograph")
