@@ -205,7 +205,7 @@ map_cv <- function(norm.dat,
                    cl, 
                    markers, 
                    n.bin = 5,
-                   g.perc = 1) {
+                   g.perc = 1, method="median") {
   
   bins <- tapply(names(cl), 
                  cl, 
@@ -233,7 +233,8 @@ map_cv <- function(norm.dat,
     map.result <- map_by_cor(norm.dat[select.markers,], 
                              cl[train.cells], 
                              norm.dat[select.markers, 
-                                      test.cells])$pred.df
+                                      test.cells],
+                             method=method)$pred.df
     
     pred.cl[test.cells] <- as.character(map.result[test.cells, "pred.cl"])
   }
