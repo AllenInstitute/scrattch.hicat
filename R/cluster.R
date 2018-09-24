@@ -391,6 +391,7 @@ reorder_cl <- function(cl, dat)
   cl = setNames(as.integer(cl),names(cl))
 }
 
+
 #' Merge clusters based on pairwise differential expressed genes. 
 #'
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)
@@ -572,4 +573,28 @@ merge_cl<- function(norm.dat,
     return(list(cl=cl, de.genes=de.genes,sc=sc, markers=markers))
   }
 
+
+
+combine_result <- function(result, split.result)
+  {
+    cl = result$cl
+    markers=result$markers
+    n.cl = 1
+    new.cl = setNames(rep(1, length(cl)), names(cl))
+    for(x in as.character(sort(unique(cl)))){
+      tmp.cells = names(cl)[cl==x]
+      if(!x %in% names(split.result)){
+        new.cl[tmp.cells]=n.cl
+        n.cl = n.cl+1
+      }
+      else{
+        print("finer split")       
+        tmp.cl = split.result[[x]]$cl.result$cl
+        new.cl[names(tmp.cl)] = n.cl + as.integer(tmp.cl)
+        markers=union(markers, split.result[[x]]$markers)
+        n.cl = max(new.cl)
+      }
+    }
+    return(list(cl = new.cl, markers=markers))
+  }
 

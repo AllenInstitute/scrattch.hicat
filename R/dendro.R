@@ -271,10 +271,10 @@ get_dend_parent <- function(dend)
   }
 
 ####get dendrogram precomputed markers
-get_dend_markers <- function(dend)
+get_dend_markers <- function(dend, n = 20)
   {
     if(length(dend)>1){
-      m = head(names(sort(-attr(dend, "markers"))), 20)
+      m = head(names(sort(-attr(dend, "markers"))), n)
       markers=list()   
       markers[[attr(dend, "label")]]= m
       for(i in 1:length(dend)){
@@ -284,6 +284,22 @@ get_dend_markers <- function(dend)
     }
     return(NULL)
   }
+
+####get dendrogram precomputed markers
+get_dend_markers_direction <- function(dend, n = 20)
+  {
+    if(length(dend)>1){
+      m = unique(unlist(lapply(attr(dend, "markers.byCl"), head, n)))
+      markers=list()   
+      markers[[attr(dend, "label")]]= m
+      for(i in 1:length(dend)){
+        markers = c(markers, get_dend_markers(dend[[i]]))
+      }
+      return(markers)
+    }
+    return(NULL)
+  }
+
 
 
 plot_dend <- function(dend, dendro_data=NULL,node_size=1,r=c(-0.1,1))
