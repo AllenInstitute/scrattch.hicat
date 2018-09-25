@@ -22,6 +22,9 @@ de_param(low.th = 1, padj.th = 0.01, lfc.th = 1, q1.th = 0.5,
 
 \item{de.score.th}{To determine whether two clusters are seperable based on DE genes, we define de.score as the sum of -log10(adjusted Pvalub) for all DE genes. Each gene contributes at most 20 towards the sum. All clusters should have pairwise de.score greater than de.score.th.}
 }
+\value{
+returns a data frame
+}
 \description{
 Set differential expression (DE) threshold for genes and clusters.
 }
