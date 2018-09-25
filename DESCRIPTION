@@ -10,8 +10,9 @@ Depends: R (>= 3.3.0)
 License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true
-Imports: limma, WGCNA, matrixStats, Matrix, Rphenograph, dendextend, ggplot2, WGCNA, pvclust, Rtsne, grid, dplyr, foreach, doParallel
-RoxygenNote: 6.0.1
+Imports: limma, WGCNA, matrixStats, Matrix, Rphenograph, dendextend, ggplot2, WGCNA, pvclust, Rtsne, grid, dplyr, data.table, foreach, doParallel
+RoxygenNote: 6.1.0
 Suggests: knitr,
-    rmarkdown
+    rmarkdown,
+    testthat
 VignetteBuilder: knitr

@@ -128,7 +128,7 @@ de.param <- de_param(padj.th     = 0.05,
 We recommend using WGCNA for smaller, high-depth datasets (< 4,000 samples; > 5,000 genes detecter per sample), and PCA for large or low-coverage datasets (> 4,000 samples or < 5,000 genes detected per sample). Another consideration is that WGCNA is considerably slower than PCA. Note that while the whole clustering pipeline scales quite well with the number of cells, the running time heavily depends on the cell type complexity as clustering is iterative.
 
 First, let us just run one round of clustering using WGCNA mode using high stringency to check the broad cell types 
-```{r Run iter_clust, message=FALSE, warning=FALSE, echo=TRUE, include=FALSE}
+```{r Run iter_clust, message=FALSE, warning=FALSE, echo=TRUE}
 onestep.result <- onestep_clust(norm.dat, 
                                select.cells = select.cells, 
                                dim.method = "WGCNA", 

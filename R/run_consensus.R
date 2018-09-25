@@ -11,10 +11,9 @@
 #' @param init.result The pre-set high level clusters. If set, the function will only find finer splits of the current clusters.  
 #' @param ... Other parameters passed to iter_clust
 #'
-#' @return
+
 #' @export
-#'
-#' @examples
+
 run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, de.param=de_param(), output_dir="subsample_result",mc.cores=1, override=FALSE, init.result=NULL, cut.method="auto",...)
 {
   if(!dir.exists(output_dir)){
