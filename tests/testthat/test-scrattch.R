@@ -43,6 +43,7 @@ test_PCA_ward_consistent <- function()
 
 test_markers <- function()
 {
+  de.param = de_param(q1.th=0.5, de.score.th=40)
   display.result= display_cl(tasic16.cl, tasic16.dat, de.param = de.param)
   return(length(display.result$markers))
 }
@@ -70,6 +71,7 @@ test_WGCNA_iterclust_consistent <- function()
   print(adj.rand.index)
   adj.rand.index
 }
+
 
 
 test_that("Test clustering", {
