@@ -17,3 +17,6 @@ Reorder cluster membership vector. The cluster id start from 1 to the number of 
 \description{
 Reorder cluster based on hiearchical clustering of clusters based on average cluster values for the input data matrix
 }
+\examples{
+reorder_cl()
+}

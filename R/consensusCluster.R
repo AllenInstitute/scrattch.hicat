@@ -315,7 +315,7 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
-##' @title 
+##' @title this refines cluster
 ##' @param cl Cluster membership cluster
 ##' @param co.ratio cell-cell co-clustering matrix. 
 ##' @param cl.mat cell-cluster matrix collected from bootstrapping iterations. Either co.ratio or cl.mat should not be NULL. 
@@ -324,7 +324,7 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
 ##' @param niter maxmimal mumber of refinement iterations. 
 ##' @param tol.th If improvement is smaller than this threshold, terminate refinement step.  
 ##' @param verbose If true, print out step-by-step improvement. 
-##' @return 
+##' @return returns a list
 ##' @author Zizhen Yao
 refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells=4, niter=50, tol.th=0.02, verbose=0)
 {

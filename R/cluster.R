@@ -382,12 +382,12 @@ iter_clust <- function(norm.dat,
 #' @return Reorder cluster membership vector. The cluster id start from 1 to the number of clusters.
 #' @export 
 #'
-#' @examples 
+#' @examples reorder_cl()
 reorder_cl <- function(cl, dat)
 {
   cl.means = get_cl_means(dat,cl)
-  cl.hc = hclust(as.dist(1- cor(cl.means)),method="average")
-  cl = setNames(factor(as.character(cl), levels=cl.hc$labels[cl.hc$order]),names(cl))
+  cl.hc = hclust(as.dist(1 - cor(cl.means)),method = "average")
+  cl = setNames(factor(as.character(cl), levels = cl.hc$labels[cl.hc$order]),names(cl))
   cl = setNames(as.integer(cl),names(cl))
 }
 

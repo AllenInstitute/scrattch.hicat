@@ -14,7 +14,7 @@
 #' @return A list with cl (cluster membership), de.genes (differentially expressed genes), sc (cluster pairwise de.score), markers (top cluster pairwise markers)
 #' @export
 #'
-#' @examples
+
 
 merge_cl_fast<- function(norm.dat,
                     cl, 
