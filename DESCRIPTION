@@ -12,6 +12,8 @@ Encoding: UTF-8
 LazyData: true
 Imports: limma, WGCNA, matrixStats, Matrix, Rphenograph, dendextend, ggplot2, WGCNA, pvclust, Rtsne, grid, dplyr, foreach, doParallel
 RoxygenNote: 6.0.1
-Suggests: knitr,
-    rmarkdown
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat
 VignetteBuilder: knitr
