@@ -416,3 +416,4 @@ combine_result <- function(result, split.result)
     return(list(cl = new.cl, markers=markers))
   }
 
+>>>>>>> cff1992a83e99bc9fbc9955cfdb8738f3d8504d4
