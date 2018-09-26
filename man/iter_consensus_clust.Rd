@@ -6,9 +6,8 @@
 \usage{
 iter_consensus_clust(co.ratio, cl.list, norm.dat,
   select.cells = colnames(co.ratio), all.col = NULL, diff.th = 0.25,
-  prefix = NULL, method = c("auto", "louvain", "ward.D"),
-  verbose = FALSE, de.param = de.param, result = NULL,
-  rd.dat = NULL)
+  prefix = NULL, method = c("auto", "louvain", "ward.D"), verbose = FALSE,
+  de.param = de.param, result = NULL, rd.dat = NULL)
 }
 \arguments{
 \item{co.ratio}{cell cell co-clustering matrix}

@@ -5,10 +5,9 @@
 \title{check for outlier clusters}
 \usage{
 check_outlier(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
-  keep.cl = NULL, neun.thresh = 0.5,
-  qc.metrics = c("Genes.Detected.CPM", "percent_reads_aligned_total",
-  "complexity_cg"), test.genes = c("SNAP25", "GAD1", "GAD2", "SLC17A7",
-  "SLC17A6"), plot = TRUE, plot.path = "output/")
+  keep.cl = NULL, neun.thresh = 0.5, qc.metrics = c("Genes.Detected.CPM",
+  "percent_reads_aligned_total", "complexity_cg"), test.genes = c("SNAP25",
+  "GAD1", "GAD2", "SLC17A7", "SLC17A6"), plot = TRUE, plot.path = "output/")
 }
 \arguments{
 \item{anno}{anno dataframe with the following required columns - facs_population_plan", "cluster"}
