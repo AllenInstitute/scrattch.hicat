@@ -178,7 +178,7 @@ getTopMarkersByPropNew <- function(
 #'   range]_[broad marker gene]_[specific marker gene]_[brain region with most cells (and
 #'   scaled fraction of cells)]_[best matched type from previous taxonomy]_[number of cells
 #'   in cluster].  The output is a data frame with information about each cluster, including
-#'   the new cluster names.  `updateSampDat` needs to be run after `renameAndOrderClusters`
+#'   the new cluster names.  \code{updateSampDat} needs to be run after \code{renameAndOrderClusters}
 #'   to apply the new cluster names to each sample.  If a dendrogram has already been
 #'   created, the dendrogram labels will also need to be changed separately.
 #'
@@ -186,29 +186,29 @@ getTopMarkersByPropNew <- function(
 #'   All samples in sampleInfo are used for renaming (so subset prior to running this function
 #'   if desired). Columns must include "cluster_id", "cluster_label", and "cluster_color".
 #' @param classNameColumn Column name where class information is stored (e.g., inh/exc/glia),
-#'   or NULL if you'd like it to be defined based on `classGenes`
+#'   or NULL if you'd like it to be defined based on \code{classGenes}
 #' @param classGenes Set of genes for defining classes (which is ignored in this context
-#'   if `classNameColumn`!=NULL). Also used if `broadClass` gene is not expressed.
+#'   if \code{classNameColumn!=NULL}). Also used if \code{broadClass} gene is not expressed.
 #' @param classLevels A vector of the levels for classes of the same length (and in the same
 #'   order) as classGenes.  Either include all relevant levels or set to NA for none if using
-#'   `classNameColumn`
+#'   \code{classNameColumn}
 #' @param layerNameColumn Column name where the (numeric) layer info is stored (NA if none)
 #' @param regionNameColumn Column name where the (character) region info is stored (NA if none)
 #' @param matchNameColumn Column name where the (character) comparison info stored (e.g.,
 #'   closest mapping cell type for each cell pre-calculated against a previous taxonomy; NA if none)
 #' @param newColorNameColumn Column name where the new cluster colors are found (e.g., color
-#'   column corresponding to `matchNameColumn`). NA keeps the current colors.
+#'   column corresponding to \code{matchNameColumn}). NA keeps the current colors.
 #' @param otherColumns Other columns to transfer to the output variable.  Note that the value from
 #'   a random sample in the cluster is returned, so this usually should be left as default (NULL).
 #' @param propLayer Proportion of cells (relative to max) must be higher than this for a cluster
 #'   to be considered as expressed in a particular layer (default is 0.3).
 #' @param dend Dendrogram object, only used for ordering of clusters (NULL as default)
 #' @param includeClusterCounts Should the number of cells in each cluster be included in name?
-#' @param includeBroadGenes Should broad genes be included in the name (if so, `broadGenes`
+#' @param includeBroadGenes Should broad genes be included in the name (if so, \code{broadGenes}
 #'   must be provided)?
 #' @param broadGenes List of broad genes, where the top median CPM in cluster is included in name
 #' @param includeSpecificGenes Should specific genes be included in the name?  If TRUE, the next
-#'   seven parameters are used to call `getTopMarkersByPropNew`.
+#'   seven parameters are used to call \code{getTopMarkersByPropNew}.
 #' @param propExpr matrix of proportions of cells expressing a gene in each cluster
 #'   (genes=rows, clusters=columns)
 #' @param medianExpr matrix of median expression per cluster (genes=rows, clusters=columns)
@@ -224,7 +224,7 @@ getTopMarkersByPropNew <- function(
 #'
 #' @return A data frame of cluster information, which includes the new and old names, the
 #'   requested variables from sampleInfo, and all the specific components of the new name.
-#'   This is the required input for `updateSampDat` in the appropriate format.
+#'   This is the required input for \code{updateSampDat} in the appropriate format.
 #' @export
 #'
 renameAndOrderClusters <- function(
@@ -458,7 +458,7 @@ renameAndOrderClusters <- function(
 #' Update cluster names in annotation data frame
 #'
 #' @param Samp.dat Sample information with rows as samples and columns for annotations.
-#' @param clusterInfo Output cluster information data frame from `renameAndOrderClusters`
+#' @param clusterInfo Output cluster information data frame from \code{renameAndOrderClusters}
 #'
 #' @return Samp.dat variable but with updated cluster names
 #' @export
