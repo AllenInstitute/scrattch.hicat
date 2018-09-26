@@ -9,7 +9,7 @@ updateSampDat(Samp.dat, clusterInfo)
 \arguments{
 \item{Samp.dat}{Sample information with rows as samples and columns for annotations.}
 
-\item{clusterInfo}{Output cluster information data frame from `renameAndOrderClusters`}
+\item{clusterInfo}{Output cluster information data frame from \code{renameAndOrderClusters}}
 }
 \value{
 Samp.dat variable but with updated cluster names

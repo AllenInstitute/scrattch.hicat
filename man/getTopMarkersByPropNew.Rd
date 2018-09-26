@@ -4,8 +4,9 @@
 \alias{getTopMarkersByPropNew}
 \title{Find specific marker gene for each cluster}
 \usage{
-getTopMarkersByPropNew(propExpr, medianExpr, propDiff = 0, propMin = 0.5,
-  medianFC = 1, excludeGenes = NULL, sortByMedian = TRUE)
+getTopMarkersByPropNew(propExpr, medianExpr, propDiff = 0,
+  propMin = 0.5, medianFC = 1, excludeGenes = NULL,
+  sortByMedian = TRUE)
 }
 \arguments{
 \item{propExpr}{matrix of proportions of cells expressing a gene in each cluster
@@ -13,28 +14,28 @@ getTopMarkersByPropNew(propExpr, medianExpr, propDiff = 0, propMin = 0.5,
 
 \item{medianExpr}{matrix of median expression per cluster (genes=rows, clusters=columns)}
 
-\item{propDiff}{Must have difference in proportion higher than this value in "on" cluster 
+\item{propDiff}{Must have difference in proportion higher than this value in "on" cluster
 compared with each other cluster}
 
 \item{propMin}{Must have higher proportion in "on" cluster}
 
-\item{medianFC}{Must have median fold change greater than this value in "on" group vs. 
+\item{medianFC}{Must have median fold change greater than this value in "on" group vs.
 each other cluster}
 
 \item{excludeGenes}{Genes exlcuded from marker consideration (NULL by default)}
 
-\item{sortByMedian}{Should genes passing all filters be prioritized by median fold 
+\item{sortByMedian}{Should genes passing all filters be prioritized by median fold
 change (TRUE, default) or by difference in proportion between clusters (FALSE)}
 }
 \value{
 a vector of the top marker gene per cluster (or "none" for clusters with none)
 }
 \description{
-This function identifies the top marker gene (or "none") for each cluster 
-based on the cluster medians and proportions of cells expressing a gene 
-and based on various parameters.
+This function identifies the top marker gene (or "none") for each cluster
+  based on the cluster medians and proportions of cells expressing a gene
+  and based on various parameters.
 }
 \details{
 Note: this could potentially be replaced by an existing hicat function for
-identifying marker genes.  This function is fast and chooses 'reasonable" genes.
+  identifying marker genes.  This function is fast and chooses 'reasonable" genes.
 }

@@ -12,11 +12,11 @@ makeColorsUnique(colorVector, seed = 1)
 \item{seed}{random seem for reproducibility}
 }
 \value{
-a color vector very close to the initial colorVector, but 
-where all color values are unique
+a color vector very close to the initial colorVector, but
+  where all color values are unique
 }
 \description{
-This function converts any vector of colors to a new vector where each 
-element is unique but the elements overall are as close as possible to 
-the original elements.
+This function converts any vector of colors to a new vector where each
+  element is unique but the elements overall are as close as possible to
+  the original elements.
 }

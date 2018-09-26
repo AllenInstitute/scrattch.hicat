@@ -4,10 +4,11 @@
 \alias{renameAndOrderClusters}
 \title{Rename clusters using genes and metadata}
 \usage{
-renameAndOrderClusters(sampleInfo, classNameColumn = "cluster_type_label",
-  classGenes = c("GAD1", "SLC17A7", "SLC1A3"), classLevels = c("inh", "exc",
-  "glia"), layerNameColumn = "layer_label",
-  regionNameColumn = "Region_label", matchNameColumn = "cellmap_label",
+renameAndOrderClusters(sampleInfo,
+  classNameColumn = "cluster_type_label", classGenes = c("GAD1",
+  "SLC17A7", "SLC1A3"), classLevels = c("inh", "exc", "glia"),
+  layerNameColumn = "layer_label", regionNameColumn = "Region_label",
+  matchNameColumn = "cellmap_label",
   newColorNameColumn = "cellmap_color", otherColumns = NULL,
   propLayer = 0.3, dend = NULL, includeClusterCounts = FALSE,
   includeBroadGenes = FALSE, broadGenes = NULL,
@@ -20,25 +21,25 @@ renameAndOrderClusters(sampleInfo, classNameColumn = "cluster_type_label",
 All samples in sampleInfo are used for renaming (so subset prior to running this function
 if desired). Columns must include "cluster_id", "cluster_label", and "cluster_color".}
 
-\item{classNameColumn}{Column name where class information is stored (e.g., inh/exc/glia), 
-or NULL if you'd like it to be defined based on `classGenes`}
+\item{classNameColumn}{Column name where class information is stored (e.g., inh/exc/glia),
+or NULL if you'd like it to be defined based on \code{classGenes}}
 
 \item{classGenes}{Set of genes for defining classes (which is ignored in this context
-if `classNameColumn`!=NULL). Also used if `broadClass` gene is not expressed.}
+if \code{classNameColumn!=NULL}). Also used if \code{broadClass} gene is not expressed.}
 
-\item{classLevels}{A vector of the levels for classes of the same length (and in the same 
+\item{classLevels}{A vector of the levels for classes of the same length (and in the same
 order) as classGenes.  Either include all relevant levels or set to NA for none if using
-`classNameColumn`}
+\code{classNameColumn}}
 
 \item{layerNameColumn}{Column name where the (numeric) layer info is stored (NA if none)}
 
 \item{regionNameColumn}{Column name where the (character) region info is stored (NA if none)}
 
-\item{matchNameColumn}{Column name where the (character) comparison info stored (e.g., 
+\item{matchNameColumn}{Column name where the (character) comparison info stored (e.g.,
 closest mapping cell type for each cell pre-calculated against a previous taxonomy; NA if none)}
 
-\item{newColorNameColumn}{Column name where the new cluster colors are found (e.g., color 
-column corresponding to `matchNameColumn`). NA keeps the current colors.}
+\item{newColorNameColumn}{Column name where the new cluster colors are found (e.g., color
+column corresponding to \code{matchNameColumn}). NA keeps the current colors.}
 
 \item{otherColumns}{Other columns to transfer to the output variable.  Note that the value from
 a random sample in the cluster is returned, so this usually should be left as default (NULL).}
@@ -50,49 +51,49 @@ to be considered as expressed in a particular layer (default is 0.3).}
 
 \item{includeClusterCounts}{Should the number of cells in each cluster be included in name?}
 
-\item{includeBroadGenes}{Should broad genes be included in the name (if so, `broadGenes` 
+\item{includeBroadGenes}{Should broad genes be included in the name (if so, \code{broadGenes}
 must be provided)?}
 
 \item{broadGenes}{List of broad genes, where the top median CPM in cluster is included in name}
 
 \item{includeSpecificGenes}{Should specific genes be included in the name?  If TRUE, the next
-seven parameters are used to call `getTopMarkersByPropNew`.}
+seven parameters are used to call \code{getTopMarkersByPropNew}.}
 
 \item{propExpr}{matrix of proportions of cells expressing a gene in each cluster
 (genes=rows, clusters=columns)}
 
 \item{medianExpr}{matrix of median expression per cluster (genes=rows, clusters=columns)}
 
-\item{propDiff}{Must have difference in proportion higher than this value in "on" cluster 
+\item{propDiff}{Must have difference in proportion higher than this value in "on" cluster
 compared with each other cluster}
 
 \item{propMin}{Must have higher proportion in "on" cluster}
 
-\item{medianFC}{Must have median fold change greater than this value in "on" group vs. 
+\item{medianFC}{Must have median fold change greater than this value in "on" group vs.
 each other cluster}
 
 \item{excludeGenes}{Genes exlcuded from marker consideration (NULL by default)}
 
-\item{sortByMedian}{Should genes passing all filters be prioritized by median fold 
+\item{sortByMedian}{Should genes passing all filters be prioritized by median fold
 change (TRUE, default) or by difference in proportion between clusters (FALSE)}
 
 \item{sep}{Separation character for renaming (default is "_")}
 }
 \value{
 A data frame of cluster information, which includes the new and old names, the
-requested variables from sampleInfo, and all the specific components of the new name.
-This is the required input for `updateSampDat` in the appropriate format.
+  requested variables from sampleInfo, and all the specific components of the new name.
+  This is the required input for \code{updateSampDat} in the appropriate format.
 }
 \description{
-This function uses information from both the data (gene expression) and meta-data 
-(annotation) objects to build a useful automated cluster name.
+This function uses information from both the data (gene expression) and meta-data
+  (annotation) objects to build a useful automated cluster name.
 }
 \details{
 When all options are selected, the outputed format is as follows: [cell class]_[layer
-range]_[broad marker gene]_[specific marker gene]_[brain region with most cells (and
-scaled fraction of cells)]_[best matched type from previous taxonomy]_[number of cells
-in cluster].  The output is a data frame with information about each cluster, including
-the new cluster names.  `updateSampDat` needs to be run after `renameAndOrderClusters`
-to apply the new cluster names to each sample.  If a dendrogram has already been 
-created, the dendrogram labels will also need to be changed separately.
+  range]_[broad marker gene]_[specific marker gene]_[brain region with most cells (and
+  scaled fraction of cells)]_[best matched type from previous taxonomy]_[number of cells
+  in cluster].  The output is a data frame with information about each cluster, including
+  the new cluster names.  \code{updateSampDat} needs to be run after \code{renameAndOrderClusters}
+  to apply the new cluster names to each sample.  If a dendrogram has already been
+  created, the dendrogram labels will also need to be changed separately.
 }

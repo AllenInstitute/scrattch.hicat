@@ -16,8 +16,8 @@ incrementHex(col, r = 0, g = 0, b = 0)
 \item{b}{integer value to increment blue (-255 to 255)}
 }
 \value{
-a vector with all colors adjusted by the r, g, b integer 
-values and in #xxxxxx format.
+a vector with all colors adjusted by the r, g, b integer
+  values and in #xxxxxx format.
 }
 \description{
 Note: This function is an internal function
