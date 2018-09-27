@@ -1,26 +1,24 @@
-####Identify high variability genes using Brennecke's method#####
+####Identify high variability genes using loess method#####
 findVG<-function(dat, plot.fig=NULL) {
-        require(Matrix)
-        require(ggplot2)
-        if(!is.matrix(dat)){
-          sf =Matrix::colSums(dat)
-        }
-        else{
-          sf = colSums(dat)
-        }
+        library(Matrix)
+        library(ggplot2)
+  
+        # Compute the median of gene count for each cell
+        sf = Matrix::colSums(dat)
         sf = sf/median(sf)
-	tmp.dat <- t( t(dat) / sf)
-        if(is.matrix(dat)){
-          g.means <- rowMeans(tmp.dat)
-          g.vars <-  rowMeans(tmp.dat^2) - g.means^2
-        }
-        else{
-          g.means <- Matrix::rowMeans(tmp.dat)
-          g.vars <- Matrix::rowMeans(tmp.dat^2) - g.means^2
-        }
-	dispersion <- log10(g.vars/g.means)
+        
+        # divide the counts by the median of gene counts per cell
+	      tmp.dat <- t( t(dat) / sf)
+	      
+	      # Compute the mean  and variance of gene counts for the new normalized count matrix  
+	      g.means <- Matrix::rowMeans(tmp.dat)
+	      g.vars <- Matrix::rowMeans(tmp.dat ^ 2) - g.means ^ 2
+	      g.vars <- g.vars * (ncol(tmp.dat) / (ncol(tmp.dat) - 1))
+	      
+	      # Compute the dispersion
+	      dispersion <- log10(g.vars/g.means)
         g.df = data.frame(g.means, g.vars, dispersion)
-	#####test samples####
+	      #####test samples####
         dispersion = dispersion[!is.na(dispersion)]
         ###fit normal with 25% to 75%
         IQR = quantile(dispersion, c(0.25, 0.75))
