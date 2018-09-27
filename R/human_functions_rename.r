@@ -422,12 +422,11 @@ renameAndOrderClusters <- function(
   }
 
   # Postprocessing things for cluster names, which probably should be removed
-  clNames <- clusterInfo[i, "cluster_label"]
+  clNames <- clusterInfo[, "cluster_label"]
   clNames <- gsub("Exc L1", "Exc L2", clNames) # Ensure that no excitatory clusters are included in layer 1
   clNames <- gsub("exc L1", "exc L2", clNames) # Ensure that no excitatory clusters are included in layer 1
   clNames <- gsub("L2-2", "L2", clNames) # Ensure that no excitatory clusters are included in layer 1
-  clNames <- gsub("-", "~", clNames) # To avoid shiny crashing
-  clusterInfo[i, "cluster_label"] <- clNames
+  clusterInfo[, "cluster_label"] <- clNames
 
   ## Determine a new optimal order based on inputted parameters (default broad class, then layer, then region)
   ordVal <- paste0(
