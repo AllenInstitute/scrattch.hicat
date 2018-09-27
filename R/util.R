@@ -334,13 +334,13 @@ get_cols <- function(big.dat, cols)
 
 cpm <- function(counts)
   {
-    require(Matrix)
+    library(Matrix)
     sf = Matrix::colSums(counts)/10^6
     if(is.matrix(counts)){    
       return(t(t(counts) /sf))
     }
     else if(class(counts)=="dgCMatrix"){
-      require(IRanges)                  
+      library(IRanges)                  
       sep = counts@p
       sep = sep[-1] - sep[-length(sep)]
       j = Rle(1:length(sep), sep)
@@ -348,7 +348,7 @@ cpm <- function(counts)
     }
     else if(class(counts)=="dgTMatrix"){
       j = counts@j
-      counts@x = counts@x/sf[j]
+      counts@x = counts@x/sf[j+1]
     }
     else{
       stop(paste("cpm function for", class(counts)[1], "not supported"))
