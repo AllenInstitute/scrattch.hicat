@@ -2,31 +2,37 @@
 % Please edit documentation in R/human_functions.R
 \name{group_cl}
 \alias{group_cl}
-\title{Title}
+\title{This function assigns each cluster to a predefined set of classes}
 \usage{
 group_cl(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
-  neun.thresh = 0.5, outlier.cl = NULL, donor.cl = NULL)
+  neun.thresh = 0.5, neun.colname = "facs_population_plan",
+  outlier.cl = NULL, donor.cl = NULL)
 }
 \arguments{
-\item{anno}{anno dataframe with the following required columns - facs_population_plan", "cluster"}
+\item{anno}{anno dataframe which must include column names listed in `neun.colname`
+"cluster" is added from `cluster` parameter below.}
 
 \item{cluster}{clusters labels for all cells along with sample_id as their names}
 
-\item{norm.dat}{expression dataframe with columns as cells and rows as gene names and cpm normalized}
+\item{norm.dat}{expression dataframe with columns as cells and rows as gene names 
+and cpm normalized}
 
-\item{select.cells}{column nmaes of norm.dat}
+\item{select.cells}{column names of norm.dat}
 
-\item{neun.thresh}{default 0.5}
+\item{neun.thresh}{fraction of cells expressing NeuN to be considered 
+NeuN positive (default is 0.5)}
 
-\item{outlier.cl}{default is NULL}
+\item{neun.colname}{column name in anno with the Neun information}
 
-\item{donor.cl}{default is NULL}
+\item{outlier.cl}{vector of clusters previously defined as "outlier" (default is NULL)}
+
+\item{donor.cl}{vector of clusters previously defined as "donor" (default is NULL)}
 }
 \value{
 gives the clusters names in each class (exc, inh, etc. ) as a list
 }
 \description{
-Title
+This function assigns each cluster to a predefined set of classes
 }
 \examples{
 group_cl()

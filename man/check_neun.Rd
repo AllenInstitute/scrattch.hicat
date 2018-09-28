@@ -4,17 +4,21 @@
 \alias{check_neun}
 \title{Check whether clusters are neun/non-neun}
 \usage{
-check_neun(anno, cluster, neun.thresh = 0.5)
+check_neun(anno, cluster, neun.thresh = 0.5,
+  neun.colname = "facs_population_plan")
 }
 \arguments{
-\item{anno}{anno dataframe with the following required colnames - "facs_population_plan", "cluster"}
+\item{anno}{anno dataframe which must include column name listed in `neun.colname`}
 
-\item{cluster}{"cluster" column from anno dataframe}
+\item{cluster}{cluster labels for all cells along with sample_id as their names}
 
-\item{neun.thresh}{default is 0.5}
+\item{neun.thresh}{fraction of cells expressing NeuN to be considered 
+NeuN positive (default is 0.5)}
+
+\item{neun.colname}{column name in `anno` with the Neun information}
 }
 \value{
-returns all the clusters and true/false of whether they are neun positive
+returns all the clusters and true/false of whether they are Neun positive
 }
 \description{
 Check whether clusters are neun/non-neun

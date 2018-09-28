@@ -9,15 +9,18 @@ check_donor(anno, cluster, norm.dat, select.cells = names(cluster),
   plot = TRUE, plot.path = "output/")
 }
 \arguments{
-\item{anno}{anno dataframe with the following required columns - facs_population_plan", "cluster"}
+\item{anno}{anno dataframe which must include column names listed in `neun.colname`
+`meta1` and `meta2` below. "cluster" is added from `cluster` parameter below.}
 
 \item{cluster}{clusters labels for all cells along with sample_id as their names}
 
-\item{norm.dat}{expression dataframe with columns as cells and rows as gene names and cpm normalized}
+\item{norm.dat}{expression dataframe with columns as cells and rows as gene names 
+and cpm normalized}
 
 \item{select.cells}{column nmaes of norm.dat}
 
-\item{keep.cl}{default is NULL}
+\item{keep.cl}{clusters to definitely keep in analysis (e.g., to exclude from 
+consideration as a donor cluster) default is NULL}
 
 \item{meta1}{default is "roi" (colname should be present in anno dataframe)}
 
