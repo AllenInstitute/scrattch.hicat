@@ -268,7 +268,7 @@ renameAndOrderClusters <- function(
   kpColumns   <- unique(c("cluster_id", "cluster_label", "cluster_color", classNameColumn, matchNameColumn, regionNameColumn, otherColumns))
   kpColumns   <- intersect(kpColumns, colnames(sampleInfo))
   clusterInfo <- t(sampleInfo[, kpColumns])
-  colnames(clusterInfo) <- clusterInfo["cluster_label", ]
+  colnames(clusterInfo) <- sampleInfo[,"cluster_label"]
   clusterInfo <- clusterInfo[, unique(colnames(clusterInfo))]
   clusterInfo <- t(clusterInfo)
   clusterInfo <- as.data.frame(clusterInfo)
@@ -305,7 +305,7 @@ renameAndOrderClusters <- function(
     broadProp <- apply(propExpr[broadGenes, ], 2, max)
     broadLab[broadProp < propMin] <- classLab[broadProp < propMin]
     names(broadLab) <- colnames(propExpr)
-    clusterInfo$broadGene <- broadLab
+    clusterInfo$broadGene <- broadLab[clusterInfo$old_cluster_label]  # FIX
   }
 
   ###### (BEGIN: THIS PART COULD BE REPLACED BY OTHER HICAT MARKER GENE SELECTION STRATEGY) ######
@@ -333,14 +333,14 @@ renameAndOrderClusters <- function(
         specGenes[s] <- specGenes0[s]
       }
     }
-    clusterInfo$specificGene <- specGenes
+    clusterInfo$specificGene <- specGenes[clusterInfo$old_cluster_label] # FIX
   }
   ###### (END: THIS PART COULD BE REPLACED BY OTHER HICAT MARKER GENE SELECTION STRATEGY) ######
 
   ## Add additional cluster information for renaming
-  cl3 <- sampleInfo[, "cluster_id"]
-  names(cl3) <- sampleInfo$sample_id
-  cl3 <- factor(cl3, levels = as.numeric(clusterInfo$cluster_id))
+  cl3 <- sampleInfo[, "cluster_label"] # FIX
+  names(cl3) <- sampleInfo$sample_id # FIX
+  cl3 <- factor(cl3, levels = clusterInfo$cluster_label) # FIX
 
   ## Match cluster color to desired cluster color column
   if (is.null(newColorNameColumn)) newColorNameColumn <- NA
