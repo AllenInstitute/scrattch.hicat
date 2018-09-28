@@ -1,6 +1,10 @@
 # 1. check_neun
 
-#' Check whether clusters are neun/non-neun
+#' Check whether clusters are Neun+/Neun-
+#' 
+#' This function is very specific to brain cell/nuclear data where Neun is used as a
+#'   stain for neuronal vs. non-neuronal identity.  This function determine's whether 
+#'   a cluster is predicted to be neuronal or non-neuronal based on expression of Neun.
 #'
 #' @param anno anno dataframe which must include column name listed in `neun.colname`
 #' @param cluster cluster labels for all cells along with sample_id as their names
@@ -28,10 +32,13 @@ check_neun <- function(anno, cluster,
 #---------------------------------------------------------------------------------------------------------------------------
 # 2. check_qc
 
-#' Check qc of some numeric metrics
+#' Check qc of numeric metric
+#' 
+#' Identifies values in a numeric vector that are sufficiently higher than expected.
 #'
-#' @param x numeric metric to check qc on
-#' @param qc.iqr.mult default is 3
+#' @param x numeric vector corresponding to metric to check qc on
+#' @param qc.iqr.mult How many interquartile ranges about the median must a value 
+#'   be to be considered an outlier? (default is 3)
 #'
 #' @return returns binary result of whether qc failed or passed
 #' @export
@@ -47,7 +54,14 @@ check_qc <- function(x, qc.iqr.mult = 3) {
 #---------------------------------------------------------------------------------------------------------------------------
 # 3. check_outlier
 
-#' check for outlier clusters
+#' Check for outlier clusters
+#' 
+#' This function checks for outliers looks for unexpected combinations of marker gene 
+#'   expression (e.g., GAD1 + SLC17A7) and for particularly high or low expression of
+#'   indicated QC metrics, and flags any of the clusters meeting those criteria as 
+#'   potential outliers.  This should (in theory) find things like poor quality 
+#'   clusters and clusters of doublets.  Specific genes and thresholds currnetly
+#'   hard-coded in, but might be updated in later iterations.
 #'
 #' @param anno anno dataframe which must include column names listed in `neun.colname`
 #'   and `qc.metrics`.  "cluster" is added from `cluster` parameter below.
@@ -93,8 +107,8 @@ check_outlier <- function(anno, cluster, norm.dat,
   qc.median    <- apply(anno[, qc.metrics], 2, function(x) {
     tapply(x, cluster, function(y) median(as.numeric(y), na.rm = TRUE))
   })
-  qc.check <- apply(qc.median, 2, check_qc)
-  qc.outlier <- neuronal.cl & apply(qc.check, 1, sum) > 0
+  qc.check     <- apply(qc.median, 2, check_qc)
+  qc.outlier   <- neuronal.cl & apply(qc.check, 1, sum) > 0
   if (plot == TRUE & sd(qc.check) > 0) {
     pdf(
       file = paste0(plot.path, "/cluster_qc_check.pdf"),
@@ -136,7 +150,11 @@ check_outlier <- function(anno, cluster, norm.dat,
 #---------------------------------------------------------------------------------------------------------------------------
 # 4. group_cl
 
-#' This function assigns each cluster to a predefined set of classes 
+#' Assign clusters to a group
+#' 
+#' This function assigns each cluster to a predefined set of classes (exc, inh, glia, 
+#'   donor, outlier) using a predefined set of genes (GAD1, GAD2, SLC17A7, SLC17A6).
+#'   Later iterations of the function will allow for user-defined classes and genes.
 #'
 #' @param anno anno dataframe which must include column names listed in `neun.colname`
 #'   "cluster" is added from `cluster` parameter below.
@@ -150,7 +168,8 @@ check_outlier <- function(anno, cluster, norm.dat,
 #' @param outlier.cl vector of clusters previously defined as "outlier" (default is NULL)
 #' @param donor.cl vector of clusters previously defined as "donor" (default is NULL)
 #'
-#' @return gives the clusters names in each class (exc, inh, etc. ) as a list
+#' @return gives the clusters names in each class (exc, inh, glia, donor, outlier)
+#'   as a list
 #' @export
 #'
 #' @examples group_cl()
@@ -196,7 +215,12 @@ group_cl <- function(anno, cluster, norm.dat,
 #---------------------------------------------------------------------------------------------------------------------------
 # 5. check_donor
 
-#' Title
+#' Find donor clusters
+#' 
+#' This function identifies clusters that are nearly exclusively expressed in one donor.
+#'   Currently it is hard-coded to define clusters with >90% enrichment in a single donor
+#'   or >50% more than expected based on the total number of cells per donor.  Later
+#'   function iterations will include these options as parameters.
 #'
 #' @param anno anno dataframe which must include column names listed in `neun.colname`
 #'   `meta1_area` and `meta2_donor` below. "cluster" is added from `cluster` parameter below.

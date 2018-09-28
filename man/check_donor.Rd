@@ -2,7 +2,7 @@
 % Please edit documentation in R/human_functions.R
 \name{check_donor}
 \alias{check_donor}
-\title{Title}
+\title{Find donor clusters}
 \usage{
 check_donor(anno, cluster, norm.dat, select.cells = names(cluster),
   keep.cl = NULL, meta1_area = "roi",
@@ -37,7 +37,10 @@ default is "external_donor_name"}
 Gives cluster ids vs donor expression/region heatmap
 }
 \description{
-Title
+This function identifies clusters that are nearly exclusively expressed in one donor.
+  Currently it is hard-coded to define clusters with >90% enrichment in a single donor
+  or >50% more than expected based on the total number of cells per donor.  Later
+  function iterations will include these options as parameters.
 }
 \examples{
 check_donor()

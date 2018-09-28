@@ -2,7 +2,7 @@
 % Please edit documentation in R/human_functions.R
 \name{check_neun}
 \alias{check_neun}
-\title{Check whether clusters are neun/non-neun}
+\title{Check whether clusters are Neun+/Neun-}
 \usage{
 check_neun(anno, cluster, neun.thresh = 0.5,
   neun.colname = "facs_population_plan")
@@ -21,7 +21,9 @@ NeuN positive (default is 0.5)}
 returns all the clusters and true/false of whether they are Neun positive
 }
 \description{
-Check whether clusters are neun/non-neun
+This function is very specific to brain cell/nuclear data where Neun is used as a
+  stain for neuronal vs. non-neuronal identity.  This function determine's whether 
+  a cluster is predicted to be neuronal or non-neuronal based on expression of Neun.
 }
 \examples{
 check_neun(anno, anno$cluster, neun.thresh = 0.5)

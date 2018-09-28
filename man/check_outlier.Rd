@@ -2,7 +2,7 @@
 % Please edit documentation in R/human_functions.R
 \name{check_outlier}
 \alias{check_outlier}
-\title{check for outlier clusters}
+\title{Check for outlier clusters}
 \usage{
 check_outlier(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
   keep.cl = NULL, neun.thresh = 0.5,
@@ -45,7 +45,12 @@ pre-defined set of genes to be entered. default is "SNAP25", "GAD1", "GAD2",
 gives outlier clusters and exploratory plots
 }
 \description{
-check for outlier clusters
+This function checks for outliers looks for unexpected combinations of marker gene 
+  expression (e.g., GAD1 + SLC17A7) and for particularly high or low expression of
+  indicated QC metrics, and flags any of the clusters meeting those criteria as 
+  potential outliers.  This should (in theory) find things like poor quality 
+  clusters and clusters of doublets.  Specific genes and thresholds currnetly
+  hard-coded in, but might be updated in later iterations.
 }
 \examples{
 check_outlier()

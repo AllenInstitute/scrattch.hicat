@@ -2,7 +2,7 @@
 % Please edit documentation in R/human_functions.R
 \name{group_cl}
 \alias{group_cl}
-\title{This function assigns each cluster to a predefined set of classes}
+\title{Assign clusters to a group}
 \usage{
 group_cl(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
   neun.thresh = 0.5, neun.colname = "facs_population_plan",
@@ -29,10 +29,13 @@ NeuN positive (default is 0.5)}
 \item{donor.cl}{vector of clusters previously defined as "donor" (default is NULL)}
 }
 \value{
-gives the clusters names in each class (exc, inh, etc. ) as a list
+gives the clusters names in each class (exc, inh, glia, donor, outlier)
+  as a list
 }
 \description{
-This function assigns each cluster to a predefined set of classes
+This function assigns each cluster to a predefined set of classes (exc, inh, glia, 
+  donor, outlier) using a predefined set of genes (GAD1, GAD2, SLC17A7, SLC17A6).
+  Later iterations of the function will allow for user-defined classes and genes.
 }
 \examples{
 group_cl()
