@@ -4,29 +4,24 @@
 #' 
 #' @return a sparse matrix of Jaccard distances.
 #' 
-jaccard <- function(m) {
+jaccard <-  function(m) {
   library(Matrix)
-  
-  ## common values:
-  A <-  m %*% t(m)
-  
-  ## indexes for non-zero common values
-  im <- Matrix::which(A > 0, arr.ind=TRUE)
-  
-  ## counts for each row
-  b <- Matrix::rowSums(m)  
-  
-  ## only non-zero values of common
-  Aim <- A[im]
-  
-  ## Jacard formula: #common / (#i + #j - #common)
-  J <- sparseMatrix(
-    i = im[,1],
-    j = im[,2],
-    x = Aim / (b[im[,1]] + b[im[,2]] - Aim),
-    dims = dim(A)
-    )  
-  return(J)
+  ## common values:                                                                                                                                              
+  A <-  tcrossprod(m)
+  A <- as(A, "dgTMatrix")
+  ## counts for each row                                                                                                                                         
+  b <- Matrix::rowSums(m)
+  ## Jacard formula: #common / (#i + #j - #common)                                                                                                               
+  x = A@x / (b[A@i+1] + b[A@j+1] - A@x)
+  A@x = x
+  return(A)
+}  
+
+knn_jaccard <- function(knn)
+{
+  knn.df = data.frame(i = rep(1:nrow(knn), ncol(knn)), j=as.vector(knn))
+  knn.mat = sparseMatrix(i = knn.df[[1]], j=knn.df[[2]], x=1)
+  jaccard(knn.mat)
 }
 
 
@@ -42,44 +37,27 @@ pass_louvain <- function(mod.sc, adj.mat)
   return(mod.sc > rand.mod.max)
 }
 
-#' Perform Jaccard/Louvain clustering based on K-nearest neighbors
+#' Perform Jaccard/Louvain clustering based on RANN
 #'
 #' @param dat A matrix of features (rows) x samples (columns)
 #' @param k K nearest neighbors to use
-#' @param knn.matrix A K-nearest neighbors matrix. If NULL will be computed using FNN::get.knn()
 #' 
 #' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
 #' 
-jaccard_louvain.FNN <- function(dat, 
-                                k = 10, 
-                                knn.matrix = NULL)
+jaccard_louvain.RANN <- function(dat, 
+                                k = 10)
   {
     library(igraph)
     library(matrixStats)
-    library(FNN)  
+    library(RANN)  
+  
+    knn.matrix = nn2(dat, k = k)[[1]]
     
-    if(is.null(knn.matrix)){
-        knn.result <- FNN::get.knn(dat, k)
-        knn.matrix <- knn.result[[1]]
-    }
-    
-    p <- as.vector(t(knn.matrix))
-    
-    edge <- cbind(rep(1:nrow(knn.matrix), rep(k, nrow(knn.matrix))), p)
-    
-    edge.unique <- cbind(rowMins(edge), rowMaxs(edge))
-    edge.unique <- unique(edge.unique)
-    
-    knn.gr <- igraph::graph(t(edge))
-    knn.matrix <- igraph::get.adjacency(knn.gr)
-    
-    jaccard.adj  <- jaccard(knn.matrix)
+    jaccard.adj  <- knn_jaccard(knn.matrix)
     jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
                                           mode = "undirected", 
                                           weighted = TRUE)
-    
     louvain.result <- igraph::cluster_louvain(jaccard.gr)
-    
     mod.sc <- igraph::modularity(louvain.result)
     
     if(pass_louvain(mod.sc, jaccard.adj)) {
@@ -89,9 +67,7 @@ jaccard_louvain.FNN <- function(dat,
       return(list(cl = cl, result = louvain.result))
     
     } else{
-      
       return(NULL)
-      
     }
   }
 
@@ -231,7 +207,8 @@ onestep_clust <- function(norm.dat,
     }
     max.cl = ncol(rd.dat)*2 + 1
     if(method=="louvain"){
-      tmp = jaccard_louvain(rd.dat, 15)
+      k = pmin(15, round(nrow(rd.dat)/2))
+      tmp = jaccard_louvain(rd.dat, k)
       if(is.null(tmp)){
         return(NULL)
       }
