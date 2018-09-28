@@ -23,18 +23,18 @@ context("Testing Human Functions")
 # 1. First ever test
 test_that("test check_qc function", {
   
-  # loading input and output
+  # loading input
   load(system.file("testdata", "glia_anno.Rdata", package = "scrattch.hicat"))
   load(system.file("testdata", "check_qc_result_1.RData", package = "scrattch.hicat"))
-  load(system.file("testdata", "check_qc_result_2.RData", package = "scrattch.hicat"))
+  load(system.file("testdata", "check_qc_result_2.RData", package = "scrattch.hicat")) 
   
   # running fnction
   result_inside_test_1 <- check_qc(anno$genes_detected_cpm_criterion, qc.iqr.mult = 3)
   result_inside_test_2 <- check_qc(anno$percent_aligned_reads_total, qc.iqr.mult = 3)
   
   # testing
-  expect_known_output(result_inside_test_1, check_qc_result_1 ) 
-  expect_known_output(result_inside_test_2, check_qc_result_2 )
+  expect_known_output(result_inside_test_1, check_qc_result_1) 
+  expect_known_output(result_inside_test_2, check_qc_result_2) 
 })
 
 
