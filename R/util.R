@@ -283,55 +283,6 @@ sample_cells<- function(cl, sample.size, weights = NULL)
 }
 
 
-combine_dat <- function(dat.list)
-{
-  library(bit64)
-  total.size = sum(sapply(dat.list, function(dat)length(dat@x)))
-  x = integer64(total.size)
-  i = integer64(total.size)
-  p = 0
-  k=0
-  for(dat in dat.list){
-    n = length(dat@x)
-    x[(k+1):(k+n)] = dat@x
-    i[(k+1):(k+n)] = dat@i
-    p = c(p, dat@p[-1] + k)
-    k = k + n 
-  }
-  comb.dat = list(i=i, x=x, p=p)
-  comb.dat$row_id = row.names(dat.list[[1]])
-  comb.dat$col_id = unlist(lapply(dat.list, colnames))
-  ncol = sum(sapply(dat.list, ncol))
-  comb.dat$dim = c(nrow(dat.list[[1]]),ncol)
-  return(comb.dat)
-}
-
-get_cols <- function(big.dat, cols)
-  {
-    p = big.dat$p
-    if(is.character(cols)){
-      cols = match(cols, big.dat$col_id)
-    }
-    select = lapply(cols, function(col){
-      if(p[col]+1 <= p[col+1]){
-        (p[col]+1):(p[col+1])
-      }
-      else{
-        NULL
-      }
-    })
-    select.index = do.call("c", select)
-    l = sapply(select, length)
-    p = c(0,cumsum(l))
-    i= (big.dat$i)[select.index]
-    x = (big.dat$x)[select.index]
-    mat=sparseMatrix(i=as.integer(i+1), x=as.double(x), p=p, dims=c(big.dat$dim[1],length(l)))
-    colnames(mat) = big.dat$col_id[cols]
-    row.names(mat) = big.dat$row_id
-    return(mat)
-  }
-
-
 cpm <- function(counts)
   {
     require(Matrix)
