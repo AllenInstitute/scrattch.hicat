@@ -465,13 +465,11 @@ renameAndOrderClusters <- function(
 updateSampDat <- function(Samp.dat, 
                           clusterInfo) {
   lab   <- as.character(Samp.dat$cluster_label)
-  id    <- as.numeric(Samp.dat$cluster_id)
-  color <- as.character(Samp.dat$cluster_color)
   for (i in 1:dim(clusterInfo)[1]) {
     kp <- lab == clusterInfo$old_cluster_label[i]
-    Samp.dat$cluster_label[kp] <- lab[i]
-    Samp.dat$cluster_id[kp]    <- id[i]
-    Samp.dat$cluster_color[kp] <- color[i]
+    Samp.dat$cluster_label[kp] <- clusterInfo$cluster_label[i]
+    Samp.dat$cluster_id[kp]    <- clusterInfo$cluster_id[i]
+    Samp.dat$cluster_color[kp] <- clusterInfo$cluster_color[i]
   }
   Samp.dat
 }
