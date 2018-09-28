@@ -199,15 +199,17 @@ group_cl <- function(anno, cluster, norm.dat,
 #' Title
 #'
 #' @param anno anno dataframe which must include column names listed in `neun.colname`
-#'   `meta1` and `meta2` below. "cluster" is added from `cluster` parameter below.
+#'   `meta1_area` and `meta2_donor` below. "cluster" is added from `cluster` parameter below.
 #' @param cluster clusters labels for all cells along with sample_id as their names
 #' @param norm.dat expression dataframe with columns as cells and rows as gene names 
 #'   and cpm normalized
 #' @param select.cells column nmaes of norm.dat
 #' @param keep.cl clusters to definitely keep in analysis (e.g., to exclude from 
 #'   consideration as a donor cluster) default is NULL
-#' @param meta1 default is "roi" (colname should be present in anno dataframe)
-#' @param meta2 default is "external_donor_name" (colname should be present in anno dataframe)
+#' @param meta1_area The metadata column that contains information about the area 
+#'   (e.g. cortical region and layer).  default is "roi" 
+#' @param meta2_donor The metadata column that contains information about the donor. 
+#'   default is "external_donor_name" 
 #' @param plot default is TRUE
 #' @param plot.path path of plot, default is "./output/"
 #'
@@ -216,22 +218,16 @@ group_cl <- function(anno, cluster, norm.dat,
 #'
 #' @examples check_donor()
 check_donor <- function(anno, cluster, norm.dat, select.cells = names(cluster),
-                        keep.cl = NULL, meta1 = "roi", meta2 = "external_donor_name",
+                        keep.cl = NULL, meta1_area = "roi", meta2_donor = "external_donor_name",
                         plot = TRUE, plot.path = "output/") {
   select.cells <- intersect(names(cluster), select.cells)
-  select.id <- match(select.cells, colnames(norm.dat))
-  norm.dat <- norm.dat[, select.id]
-  anno <- droplevels(anno[select.id, ])
-  layer.donor <- as.matrix(table(anno[, meta1], anno[, meta2]))
-  layer.donor.prop <- sweep(
-    layer.donor, 1, rowSums(layer.donor),
-    "/"
-  )
+  select.id    <- match(select.cells, colnames(norm.dat))
+  norm.dat     <- norm.dat[, select.id]
+  anno         <- droplevels(anno[select.id, ])
+  layer.donor  <- as.matrix(table(anno[, meta1_area], anno[, meta2_donor]))
+  layer.donor.prop <- sweep(layer.donor, 1, rowSums(layer.donor),"/")
   if (plot == TRUE & sd(layer.donor.prop) > 0) {
-    hm.colors <- colorRampPalette(c("white", RColorBrewer::brewer.pal(
-      9,
-      "YlOrRd"
-    )))(100)
+    hm.colors <- colorRampPalette(c("white", RColorBrewer::brewer.pal(9,"YlOrRd")))(100)
     pdf(
       file = paste0(plot.path, "/layer_donor_prop.pdf"),
       width = nrow(layer.donor.prop) / 6 + 1, height = ncol(layer.donor.prop) / 6 +
@@ -243,41 +239,30 @@ check_donor <- function(anno, cluster, norm.dat, select.cells = names(cluster),
     )
     dev.off()
   }
-  layer.cl <- as.matrix(table(anno[, meta1], cluster))
-  layer.cl.prop <- sweep(layer.cl, 2, colSums(layer.cl), "/")
-  cl.donor.exp.cnt <- round(t(t(layer.cl.prop) %*% layer.donor))
-  cl.donor.exp.prop <- sweep(
-    cl.donor.exp.cnt, 2, colSums(cl.donor.exp.cnt),
-    "/"
-  )
-  cl.donor.obs.cnt <- t(as.matrix(table(cluster, anno[, meta2])))
-  cl.donor.obs.prop <- sweep(
-    cl.donor.obs.cnt, 2, colSums(cl.donor.obs.cnt),
-    "/"
-  )
+  layer.cl          <- as.matrix(table(anno[, meta1_area], cluster))
+  layer.cl.prop     <- sweep(layer.cl, 2, colSums(layer.cl), "/")
+  cl.donor.exp.cnt  <- round(t(t(layer.cl.prop) %*% layer.donor))
+  cl.donor.exp.prop <- sweep(cl.donor.exp.cnt, 2, colSums(cl.donor.exp.cnt), "/")
+  cl.donor.obs.cnt  <- t(as.matrix(table(cluster, anno[, meta2_donor])))
+  cl.donor.obs.prop <- sweep(cl.donor.obs.cnt, 2, colSums(cl.donor.obs.cnt), "/")
   if (plot == TRUE & sd(cl.donor.obs.prop) > 0) {
-    hm.colors <- colorRampPalette(c("white", RColorBrewer::brewer.pal(
-      9,
-      "YlOrRd"
-    )))(100)
+    hm.colors <- colorRampPalette(c("white", RColorBrewer::brewer.pal(9,"YlOrRd")))(100)
     pdf(
       file = paste0(plot.path, "/cluster_donor_prop.pdf"),
-      width = nrow(cl.donor.obs.prop) / 6 + 1, height = ncol(cl.donor.obs.prop) / 6 +
-        1, onefile = FALSE
+      width = nrow(cl.donor.obs.prop) / 6 + 1, 
+      height = ncol(cl.donor.obs.prop) / 6 + 1, 
+      onefile = FALSE
     )
     pheatmap::pheatmap(t(cl.donor.obs.prop),
-      cluster_rows = FALSE,
-      cluster_cols = FALSE, color = hm.colors
+      cluster_rows = FALSE, cluster_cols = FALSE, color = hm.colors
     )
     dev.off()
   }
   cl.donor.prop.dev <- cl.donor.obs.prop - cl.donor.exp.prop
   cl.donor.prop.dev.bin <- ifelse(cl.donor.prop.dev > 0.5,
-    1, ifelse(cl.donor.prop.dev < -0.5, -1, ifelse(cl.donor.obs.prop >
-      0.9, 1, 0))
+    1, ifelse(cl.donor.prop.dev < -0.5, -1, ifelse(cl.donor.obs.prop > 0.9, 1, 0))
   )
-  donor.cl <- names(which(apply(cl.donor.prop.dev.bin, 2, function(x) any(x ==
-      1))))
+  donor.cl <- names(which(apply(cl.donor.prop.dev.bin, 2, function(x) any(x == 1))))
   donor.cl.final <- setdiff(donor.cl, keep.cl)
   return(donor.cl.final)
 }

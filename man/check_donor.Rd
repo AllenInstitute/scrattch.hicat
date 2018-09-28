@@ -5,12 +5,13 @@
 \title{Title}
 \usage{
 check_donor(anno, cluster, norm.dat, select.cells = names(cluster),
-  keep.cl = NULL, meta1 = "roi", meta2 = "external_donor_name",
-  plot = TRUE, plot.path = "output/")
+  keep.cl = NULL, meta1_area = "roi",
+  meta2_donor = "external_donor_name", plot = TRUE,
+  plot.path = "output/")
 }
 \arguments{
 \item{anno}{anno dataframe which must include column names listed in `neun.colname`
-`meta1` and `meta2` below. "cluster" is added from `cluster` parameter below.}
+`meta1_area` and `meta2_donor` below. "cluster" is added from `cluster` parameter below.}
 
 \item{cluster}{clusters labels for all cells along with sample_id as their names}
 
@@ -22,9 +23,11 @@ and cpm normalized}
 \item{keep.cl}{clusters to definitely keep in analysis (e.g., to exclude from 
 consideration as a donor cluster) default is NULL}
 
-\item{meta1}{default is "roi" (colname should be present in anno dataframe)}
+\item{meta1_area}{The metadata column that contains information about the area 
+(e.g. cortical region and layer).  default is "roi"}
 
-\item{meta2}{default is "external_donor_name" (colname should be present in anno dataframe)}
+\item{meta2_donor}{The metadata column that contains information about the donor. 
+default is "external_donor_name"}
 
 \item{plot}{default is TRUE}
 
