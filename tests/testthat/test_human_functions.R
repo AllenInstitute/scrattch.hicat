@@ -20,22 +20,43 @@ context("Testing Human Functions")
 
 #-------------------------------------------------------------------------------------------------------------------
 
-# 1. First ever test
+# 1. First ever test on check_qc function
 test_that("test check_qc function", {
   
-  # loading input
+  # loading input and output
   load(system.file("testdata", "glia_anno.Rdata", package = "scrattch.hicat"))
-  load(system.file("testdata", "check_qc_result_1.RData", package = "scrattch.hicat"))
-  load(system.file("testdata", "check_qc_result_2.RData", package = "scrattch.hicat")) 
+  result_1 <- readRDS(system.file("testdata", "check_qc_result_1.RData", package = "scrattch.hicat"))
+  result_2 <- readRDS(system.file("testdata", "check_qc_result_2.RData", package = "scrattch.hicat"))
   
-  # running fnction
+  # running function
   result_inside_test_1 <- check_qc(anno$genes_detected_cpm_criterion, qc.iqr.mult = 3)
   result_inside_test_2 <- check_qc(anno$percent_aligned_reads_total, qc.iqr.mult = 3)
   
   # testing
-  expect_known_output(result_inside_test_1, check_qc_result_1) 
-  expect_known_output(result_inside_test_2, check_qc_result_2) 
+  expect_equal(result_inside_test_1, result_1) 
+  expect_equal(result_inside_test_2, result_2) 
 })
 
 
+# 2. check_qc sanity test
+test_that("test check_qc sanity", {
+ 
+  # running function
+  result_inside_test_1 <- check_qc(anno$genes_detected_cpm_criterion, qc.iqr.mult = 3)
+  result_inside_test_2 <- check_qc(anno$percent_aligned_reads_total, qc.iqr.mult = 3)
+  check_qc_result_length <- dim(anno)[1]
+
+  # length of output  
+  expect_length(result_inside_test_1, check_qc_result_length)
+  expect_length(result_inside_test_2, check_qc_result_length)
+  
+  # type of output
+  expect_that(result_inside_test_1, is_a("numeric") )
+  expect_that(result_inside_test_2, is_a("numeric") )
+  
+})
+
+#-------------------------------------------------------------------------------------------------------------------
+
+# 3. check_neun function test
 
