@@ -292,3 +292,56 @@ check_donor <- function(anno, cluster, norm.dat, select.cells = names(cluster),
 }
 
 #---------------------------------------------------------------------------------------------------------------------------
+
+
+
+#' Compare and plot two sets of cluster assignments
+#' 
+#' This is the subset of the `compare_annotate` function that does the plotting.
+#' 
+#' @param cl A cluster factor object to compare to a reference
+#' @param ref.cl A cluster factor object for the reference clusters
+#'
+#' @return g A ggplot2 dot plot object for the comparison.
+#'
+#' @export
+compare_plot <- function(cl,ref.cl){
+  
+  library(ggplot2)
+  
+  common.cells <- intersect(names(cl),names(ref.cl))
+  # compare predicted cluster member with the new clustering result 
+  tb <- table(cl[common.cells], ref.cl[common.cells])
+  
+  # Plot the mapping
+  tb.df <- as.data.frame(tb)
+  tb.df <- tb.df[tb.df$Freq > 0,]
+  
+  select.cells <- names(cl)
+  
+  # Compute Jaccard statistics for each pair of clusters
+  tb.df$jaccard <- 0
+  for(i in 1:nrow(tb.df)){
+    n_ol <- length(union(common.cells[cl[common.cells] == as.character(tb.df[i,1])],
+                         common.cells[ref.cl[common.cells] == as.character(tb.df[i,2])]))
+    
+    tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
+  }
+  
+  colnames(tb.df) <- c("cl","ref.cl","Freq","jaccard")
+  
+  g <- ggplot(tb.df, 
+              aes(x = cl, 
+                  y = ref.cl)) + 
+    geom_point(aes(size = sqrt(Freq),
+                   color = jaccard)) + 
+    theme(axis.text.x = element_text(vjust = 0.1,
+                                     hjust = 0.2, 
+                                     angle = 90,
+                                     size = 7),
+          axis.text.y = element_text(size = 6)) + 
+    scale_color_gradient(low = "yellow", high = "darkblue") + 
+    scale_size(range=c(0,3))
+  
+  g
+}
