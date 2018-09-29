@@ -60,3 +60,38 @@ test_that("test check_qc sanity", {
 
 # 3. check_neun function test
 
+test_that("test check_neun function", {
+  
+  # loading input and output
+  load(system.file("testdata", "glia_anno.Rdata", package = "scrattch.hicat"))
+  result <- readRDS(system.file("testdata", "check_neun_result.RData", package = "scrattch.hicat"))
+  
+  # running function
+  cluster_with_names <- setNames(anno$cluster, anno$sample_id)
+  result_inside_test <- check_neun(anno, cluster_with_names, 0.5, "facs_sort_criteria")
+  
+  # testing
+  expect_equal(result_inside_test, result) 
+})
+
+# 4. check_neun sanity test
+
+test_that("test check_neun sanity", {
+  
+  # running function
+  cluster_with_names <- setNames(anno$cluster, anno$sample_id)
+  result_inside_test <-  check_neun(anno, cluster_with_names, 0.5, "facs_sort_criteria")
+  
+  check_neun_result_length <- length(unique(anno$cluster))
+  
+  # length of output test
+  expect_length(result_inside_test, check_neun_result_length)
+  
+  # type of output test
+  expect_is(result_inside_test, "array" )
+  
+})
+
+#-------------------------------------------------------------------------------------------------------------------
+
+
