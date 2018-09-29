@@ -1,6 +1,6 @@
 # 1. check_neun
 
-#' Check whether clusters are Neun+/Neun-
+#' Check whether clusters are Neun+ or Neun- 
 #' 
 #' This function is very specific to brain cell/nuclear data where Neun is used as a
 #'   stain for neuronal vs. non-neuronal identity.  This function determine's whether 
