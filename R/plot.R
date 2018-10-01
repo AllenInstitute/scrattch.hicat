@@ -1,7 +1,7 @@
-blue.red <-colorRampPalette(c("blue", "white", "red"))
-
 plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=NULL,centered=FALSE,labels=names(cl),sorted=FALSE,by.cl=TRUE,ColSideColors=NULL,maxValue=5,min.sep=4,main="", height=13, width=9)
   {
+    library(matrixStats)
+    blue.red <-colorRampPalette(c("blue", "white", "red"))
     select.cells=names(cl)
     tmp.dat = as.matrix(norm.dat[markers,select.cells,drop=F])
     if(!is.null(ColSideColors)){
@@ -113,6 +113,7 @@ display_cl_markers_co.ratio <- function(select.cl, cl, norm.dat, co.ratio, prefi
 
 plot_cl_meta_barplot <- function(cluster, meta, col=NULL)
 {
+  library(ggplot2)
   meta = as.factor(meta)
   final.tbl <- table(cluster, meta)
   final.tbl = final.tbl/rowSums(final.tbl)

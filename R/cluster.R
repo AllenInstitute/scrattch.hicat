@@ -44,7 +44,7 @@ pass_louvain <- function(mod.sc, adj.mat)
 #' 
 #' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
 #' 
-jaccard_louvain.RANN <- function(dat, 
+type.RANN <- function(dat, 
                                 k = 10)
   {
     library(igraph)
@@ -78,7 +78,7 @@ jaccard_louvain.RANN <- function(dat,
 #' 
 #' @return A list object with the cluster factor object and (cl) and Rphenograph results (result)
 #' 
-jaccard_louvain <- function(dat, k = 10)
+type <- function(dat, k = 10)
 {
   suppressPackageStartupMessages(library(Rphenograph))
   
@@ -124,7 +124,7 @@ onestep_clust <- function(norm.dat,
                           rm.th = 0.7, 
                           de.param = de_param(),
                           min.genes = 5, 
-                          type = c("undirectional", "directional"), 
+                          merge.type = c("undirectional", "directional"), 
                           maxGenes = 3000,
                           sampleSize = 4000,
                           max.cl.size = 300, 
@@ -135,7 +135,7 @@ onestep_clust <- function(norm.dat,
     library(matrixStats)
     method=method[1]
     dim.method=dim.method[1]
-    type=type[1]
+    merge.type=merge.type[1]
     
     if(length(select.cells)>sampleSize){
       sampled.cells = sample(select.cells, pmin(length(select.cells),sampleSize))
@@ -208,7 +208,7 @@ onestep_clust <- function(norm.dat,
     max.cl = ncol(rd.dat)*2 + 1
     if(method=="louvain"){
       k = pmin(15, round(nrow(rd.dat)/2))
-      tmp = jaccard_louvain(rd.dat, k)
+      tmp = type(rd.dat, k)
       if(is.null(tmp)){
         return(NULL)
       }
@@ -234,7 +234,7 @@ onestep_clust <- function(norm.dat,
       stop(paste("Unknown clustering method", method))
     }
     #print(table(cl))
-    merge.result=merge_cl(norm.dat, cl=cl, rd.dat=rd.dat, type=type, de.param=de.param, max.cl.size=max.cl.size)
+    merge.result=merge_cl(norm.dat, cl=cl, rd.dat=rd.dat, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
     gc()
     if(is.null(merge.result))return(NULL)
     sc = merge.result$sc

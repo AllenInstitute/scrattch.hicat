@@ -87,10 +87,10 @@ test_directional <- function()
 {
   require(mclust)
   de.param = de_param(q1.th=0.5, de.score.th=40)
-  result = onestep_clust(tasic16.dat, dim.method="WGCNA", method="ward.D", de.param = de.param, type="directional")
+  result = onestep_clust(tasic16.dat, dim.method="WGCNA", method="ward.D", de.param = de.param, merge.type="directional")
   de.param = de_param(q1.th=0.5, de.score.th=200)
-  merge.result = merge_cl(tasic16.dat, cl=result$cl, de.param = de.param, rd.dat= Matrix::t(tasic16.dat[result$markers,]), type="directional")
-  merge.fast.result = merge_cl_fast(tasic16.dat, cl=result$cl, de.param = de.param, rd.dat.t= tasic16.dat[result$markers,], type="directional")
+  merge.result = merge_cl(tasic16.dat, cl=result$cl, de.param = de.param, rd.dat= Matrix::t(tasic16.dat[result$markers,]), merge.type="directional")
+  merge.fast.result = merge_cl_fast(tasic16.dat, cl=result$cl, de.param = de.param, rd.dat.t= tasic16.dat[result$markers,], merge.type="directional")
   adj.rand.index=adjustedRandIndex(merge.result$cl, merge.fast.result$cl)
   adj.rand.index
 }
@@ -105,6 +105,19 @@ test_merge <- function()
   adj.rand.index
 }
 
+
+test_consensus_directional <- function()
+{
+  require(mclust)
+  de.param = de_param(q1.th=0.5, de.score.th=50)
+  consensus.result= run_consensus_clust(tasic16.dat, de.param = de.param, merge.type="directional",niter=20, )
+  cl = consensus.result$cl.result$cl
+  adj.rand.index=adjustedRandIndex(cl, tasic16.cl[names(cl)])
+  print(adj.rand.index)
+  adj.rand.index
+}
+
+
 test_bigMatrix <- function()
 {
   set.seed(1234)
@@ -118,12 +131,12 @@ test_bigMatrix <- function()
   sum(abs(tmp.dat1 - dat1)) + sum(abs(tmp.dat2 - dat2))
 }
 
-test_that("Test clustering", {
-  expect_gt(test_WGCNA_louvain_consistent(), 0.3)
-  expect_gt(test_PCA_louvain_consistent(), 0.3)
-  expect_gt(test_WGCNA_ward_consistent(), 0.3)
-  expect_gt(test_PCA_ward_consistent(), 0.3)
-})
+#test_that("Test clustering", {
+#  expect_gt(test_WGCNA_louvain_consistent(), 0.3)
+#  expect_gt(test_PCA_louvain_consistent(), 0.3)
+#  expect_gt(test_WGCNA_ward_consistent(), 0.3)
+#  expect_gt(test_PCA_ward_consistent(), 0.3)
+#})
 
 test_that("Test merging clusters based on directional DE gene criterion", {
   expect_gt(test_directional(), 0.9)
@@ -132,6 +145,7 @@ test_that("Test merging clusters based on directional DE gene criterion", {
 test_that("Test DE genes calculation", {
   expect_gt(test_markers(), 100)
 })
+
 
 
 test_that("Test Merging", {
@@ -144,6 +158,9 @@ test_that("Test bigMatrix container",{
 
 
 
+test_that("Consensus clustering",{
+  expect_gt(test_consensus_directional(),0.4)
+})
 
 
 

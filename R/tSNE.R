@@ -1,6 +1,6 @@
-library(ggplot2)
 plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, alpha.val=1, ...)
   {
+    library(ggplot2)
     require(Rtsne)
     if(is.null(tsne.df)){
       tsne.result = Rtsne(t(as.matrix(norm.dat[select.genes,names(cl)])),...)$Y
@@ -46,6 +46,7 @@ plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
 ###meta is discretized. 
 plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5)
   {
+    library(ggplot2)
     tsne.df$meta = meta
     p=ggplot(tsne.df, aes(Lim1, Lim2)) + geom_point(aes(color=meta),size=cex)
     if(is.factor(meta)){
@@ -70,6 +71,7 @@ plot_tsne_meta <- function(tsne.df, meta, meta.col=NULL,show.legend=TRUE, cex=0.
 
 plot_tsne_gene <- function(tsne.df, norm.dat, genes, cex=0.15)
   {
+    library(ggplot2)
     plots=list()
     for(g in genes){
       tsne.df$expr = norm.dat[g,row.names(tsne.df)]

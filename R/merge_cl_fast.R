@@ -4,7 +4,7 @@
 #' @param cl A vector of cluster membership with cell index as names, and cluster id as values. 
 #' @param rd.dat Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first. 
 #' @param de.param The DE gene criteria. See de_param for details. 
-#' @param type Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately. 
+#' @param merge.type Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately. 
 #' @param max.cl.size Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.   
 #' @param de.method Use limma by default. We are still testing "chisq" mode.
 #' @param de.genes If not null, use DE genes computated prevoiusly by DE_genes_pw or DE_genes_pairs to avoid recomputing.
@@ -20,7 +20,7 @@ merge_cl_fast<- function(norm.dat,
                     cl, 
                     rd.dat.t, 
                     de.param = de_param(), 
-                    type = c("undirectional","directional"), 
+                    merge.type = c("undirectional","directional"), 
                     max.cl.size = 300,
                     de.method = "limma",
                     de.genes = NULL, 
@@ -32,7 +32,7 @@ merge_cl_fast<- function(norm.dat,
     if(!is.integer(cl)){
       cl = setNames(as.integer(as.character(cl)), names(cl))
     }
-    type=type[1]
+    merge.type=merge.type[1]
     de.df=list()
     pairs=NULL
     if(!is.null(de.genes)){
@@ -138,7 +138,7 @@ merge_cl_fast<- function(norm.dat,
           if(length(x)==0){
             to.merge = TRUE
           }
-          else if(type=="undirectional"){
+          else if(merge.type=="undirectional"){
             to.merge=x$score < de.param$de.score.th    
           }
           else{
