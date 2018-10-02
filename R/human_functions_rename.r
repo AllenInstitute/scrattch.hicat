@@ -434,7 +434,7 @@ renameAndOrderClusters <- function(
 
   ## Determine a new optimal order based on inputted parameters (default broad class, then layer, then region)
   ordNew <- 1:dim(clusterInfo)[1]
-  ordCols<- intersect(orderbyColumns,colnames(clusterInfo)) 
+  ordCols<- intersect(intersect(orderbyColumns,colnames(clusterInfo)),c("topMatch","layer","region"))
   ordVal <- "ordNew = order(clusterInfo[,classNameColumn],"
   if (length(ordCols)>=1) for (i in 1:length(ordCols)){
     ordVal <- paste0(ordVal,"clusterInfo[,\"",ordCols[i],"\"],")
