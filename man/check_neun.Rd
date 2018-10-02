@@ -2,7 +2,7 @@
 % Please edit documentation in R/human_functions.R
 \name{check_neun}
 \alias{check_neun}
-\title{Check whether clusters are Neun+/Neun-}
+\title{Check whether clusters are Neun+ or Neun-}
 \usage{
 check_neun(anno, cluster, neun.thresh = 0.5,
   neun.colname = "facs_population_plan")

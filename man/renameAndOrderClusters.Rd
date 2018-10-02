@@ -10,11 +10,11 @@ renameAndOrderClusters(sampleInfo,
   layerNameColumn = "layer_label", regionNameColumn = "Region_label",
   matchNameColumn = "cellmap_label",
   newColorNameColumn = "cellmap_color", otherColumns = NULL,
-  propLayer = 0.3, dend = NULL, includeClusterCounts = FALSE,
-  includeBroadGenes = FALSE, broadGenes = NULL,
-  includeSpecificGenes = FALSE, propExpr = NULL, medianExpr = NULL,
-  propDiff = 0, propMin = 0.5, medianFC = 1, excludeGenes = NULL,
-  sortByMedian = TRUE, sep = "_")
+  propLayer = 0.3, dend = NULL, orderbyColumns = c("layer", "region",
+  "topMatch"), includeClusterCounts = FALSE, includeBroadGenes = FALSE,
+  broadGenes = NULL, includeSpecificGenes = FALSE, propExpr = NULL,
+  medianExpr = NULL, propDiff = 0, propMin = 0.5, medianFC = 1,
+  excludeGenes = NULL, sortByMedian = TRUE, sep = "_")
 }
 \arguments{
 \item{sampleInfo}{Sample information with rows as samples and columns for annotations.
@@ -48,6 +48,10 @@ a random sample in the cluster is returned, so this usually should be left as de
 to be considered as expressed in a particular layer (default is 0.3).}
 
 \item{dend}{Dendrogram object, only used for ordering of clusters (NULL as default)}
+
+\item{orderbyColumns}{column names indicating the outputted cluster order (not used unless 
+dend=NULL).  Must be some combination of "layer", "region", and "topMatch" in any order (or 
+NULL).  Default is first by "layer" than "region" then "topMatch".}
 
 \item{includeClusterCounts}{Should the number of cells in each cluster be included in name?}
 

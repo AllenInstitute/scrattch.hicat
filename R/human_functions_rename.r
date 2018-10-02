@@ -203,6 +203,9 @@ getTopMarkersByPropNew <- function(
 #' @param propLayer Proportion of cells (relative to max) must be higher than this for a cluster
 #'   to be considered as expressed in a particular layer (default is 0.3).
 #' @param dend Dendrogram object, only used for ordering of clusters (NULL as default)
+#' @param orderbyColumns column names indicating the outputted cluster order (not used unless 
+#'   dend=NULL).  Must be some combination of "layer", "region", and "topMatch" in any order (or 
+#'   NULL).  Default is first by "layer" than "region" then "topMatch".
 #' @param includeClusterCounts Should the number of cells in each cluster be included in name?
 #' @param includeBroadGenes Should broad genes be included in the name (if so, \code{broadGenes}
 #'   must be provided)?
@@ -245,6 +248,7 @@ renameAndOrderClusters <- function(
 
                                    # Other naming and ordering options
                                    dend = NULL,
+                                   orderbyColumns = c("layer", "region", "topMatch"),
                                    includeClusterCounts = FALSE,
 
                                    # Variables for including broad genes
@@ -429,13 +433,14 @@ renameAndOrderClusters <- function(
   clusterInfo[, "cluster_label"] <- clNames
 
   ## Determine a new optimal order based on inputted parameters (default broad class, then layer, then region)
-  ordVal <- paste0(
-    "ordNew = order(clusterInfo[,classNameColumn],",
-    ifelse(is.na(layerNameColumn), "", "clusterInfo[,\"layer\"],"),
-    ifelse(is.na(regionNameColumn), "", "clusterInfo[,\"region\"],"),
-    ifelse(is.na(matchNameColumn), "", "clusterInfo[,\"topMatch\"],"),
-    "clusterInfo[,\"cluster_id\"])"
-  )
+  ordNew <- 1:dim(clusterInfo)[1]
+  ordCols<- intersect(orderbyColumns,colnames(clusterInfo)) 
+  ordVal <- "ordNew = order(clusterInfo[,classNameColumn],"
+  if (length(ordCols)>=1) for (i in 1:length(ordCols)){
+    ordVal <- paste0(ordVal,"clusterInfo[,\"",ordCols[i],"\"],")
+  }
+  ordVal <- paste0(ordVal,"clusterInfo[,\"cluster_id\"])")
+
   eval(parse(text = ordVal))
   clusterInfo <- clusterInfo[ordNew, ]
 
