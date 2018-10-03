@@ -15,7 +15,7 @@
 
 #' @export
 
-run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("directional","undirectional"), override=FALSE, init.result=NULL, cut.method="auto",...)
+run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("undirectional","directional"), override=FALSE, init.result=NULL, cut.method="auto",...)
 {
   if(!dir.exists(output_dir)){
     dir.create(output_dir)
