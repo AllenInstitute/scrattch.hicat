@@ -252,7 +252,7 @@ get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
     return(cell.cl.co.ratio)    
   }
   if(!is.null(cl.mat)){
-    tmp = cl.mat %*% get_cl_sums(t(cl.mat), cl)
+    tmp = cl.mat %*% get_cl_sums(Matrix::t(cl.mat), cl)
     tmp = tmp / Matrix::rowSums(cl.mat)
     cl.size = table(cl)
     cell.cl.co.ratio=as.matrix(t(t(tmp)/as.vector(cl.size[colnames(tmp)])))
