@@ -2,30 +2,40 @@
 % Please edit documentation in R/human_functions.R
 \name{check_outlier}
 \alias{check_outlier}
-\title{check for outlier clusters}
+\title{Check for outlier clusters}
 \usage{
 check_outlier(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
   keep.cl = NULL, neun.thresh = 0.5,
+  neun.colname = "facs_population_plan",
   qc.metrics = c("Genes.Detected.CPM", "percent_reads_aligned_total",
   "complexity_cg"), test.genes = c("SNAP25", "GAD1", "GAD2", "SLC17A7",
   "SLC17A6"), plot = TRUE, plot.path = "output/")
 }
 \arguments{
-\item{anno}{anno dataframe with the following required columns - facs_population_plan", "cluster"}
+\item{anno}{anno dataframe which must include column names listed in `neun.colname`
+and `qc.metrics`.  "cluster" is added from `cluster` parameter below.}
 
-\item{cluster}{clusters labels for all cells along with sample_id as their names}
+\item{cluster}{cluster labels for all cells along with sample_id as their names}
 
-\item{norm.dat}{expression dataframe with columns as cells and rows as gene names and cpm normalized}
+\item{norm.dat}{expression dataframe with columns as cells and rows as gene names 
+and cpm normalized}
 
 \item{select.cells}{column nmaes of norm.dat}
 
-\item{keep.cl}{default NULL}
+\item{keep.cl}{clusters to definitely keep in analysis (e.g., to exclude from 
+consideration as an outlier cluster) default is NULL}
 
-\item{neun.thresh}{default 0.5}
+\item{neun.thresh}{fraction of cells expressing NeuN to be considered 
+NeuN positive (default is 0.5)}
 
-\item{qc.metrics}{required columns from anno dataframe. default is Genes.Detected.CPM", "percent_reads_aligned_total", "complexity_cg"}
+\item{neun.colname}{column name in anno with the Nuen information}
 
-\item{test.genes}{default is "SNAP25", "GAD1", "GAD2", "SLC17A7", "SLC17A6"}
+\item{qc.metrics}{required columns from anno dataframe. default is Genes.Detected.CPM", 
+"percent_reads_aligned_total", "complexity_cg"}
+
+\item{test.genes}{CURRENTLY NOT USED.  This function will eventually allow for a 
+pre-defined set of genes to be entered. default is "SNAP25", "GAD1", "GAD2", 
+"SLC17A7", "SLC17A6"}
 
 \item{plot}{default is TRUE}
 
@@ -35,7 +45,12 @@ check_outlier(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
 gives outlier clusters and exploratory plots
 }
 \description{
-check for outlier clusters
+This function checks for outliers looks for unexpected combinations of marker gene 
+  expression (e.g., GAD1 + SLC17A7) and for particularly high or low expression of
+  indicated QC metrics, and flags any of the clusters meeting those criteria as 
+  potential outliers.  This should (in theory) find things like poor quality 
+  clusters and clusters of doublets.  Specific genes and thresholds currnetly
+  hard-coded in, but might be updated in later iterations.
 }
 \examples{
 check_outlier()

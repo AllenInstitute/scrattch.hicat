@@ -2,20 +2,21 @@
 % Please edit documentation in R/human_functions.R
 \name{check_qc}
 \alias{check_qc}
-\title{Check qc of some numeric metrics}
+\title{Check qc of numeric metric}
 \usage{
 check_qc(x, qc.iqr.mult = 3)
 }
 \arguments{
-\item{x}{numeric metric to check qc on}
+\item{x}{numeric vector corresponding to metric to check qc on}
 
-\item{qc.iqr.mult}{default is 3}
+\item{qc.iqr.mult}{How many interquartile ranges about the median must a value 
+be to be considered an outlier? (default is 3)}
 }
 \value{
 returns binary result of whether qc failed or passed
 }
 \description{
-Check qc of some numeric metrics
+Identifies values in a numeric vector that are sufficiently higher than expected.
 }
 \examples{
 check_qc(x,  qc.iqr.mult = 3)
