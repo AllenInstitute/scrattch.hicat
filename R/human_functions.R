@@ -345,3 +345,32 @@ compare_plot <- function(cl,ref.cl){
   
   g
 }
+
+
+#---------------------------------------------------------------------------------------------------------------------------
+
+
+#' Reorder factors of one annotation to match another
+#' 
+#' This function takes two identical annotations (e.g, two cluster calls for the 
+#'   same cells) and updates the levels of the match cluster to correspond to 
+#'   the levels of the reference cluster.  This is useful to run prior to
+#'   `compare_plot` if clusters are not already ordered.
+#'   
+#' `clRef` and `clMatch` should be factors, but can be coerced from characters
+#'   if needed.
+#' 
+#' @param clMatch A cluster factor object to compare to a reference
+#' @param clRef A cluster factor object for the reference clusters
+#'
+#' @return The `clMatch` vector with levels rearranged to match `clRef` in a 
+#'   reasonable way.
+#'
+#' @export
+reorder_factor <- function(clMatch,clRef){
+  out <- table(clMatch,clRef)
+  out <- t(out)/colSums(out)
+  fac <- apply(out,2,function(x) which.max(x)+0.01*sum(cumsum(x)))
+  fac <- names(sort(fac))
+  factor(clMatch,levels=fac)
+}
