@@ -412,6 +412,7 @@ renameAndOrderClusters <- function(
   }
 
   ## Rename the clusters based on the above info
+  clusterInfo$cluster_label <- as.character(clusterInfo$cluster_label)  # Fixes if it is a factor
   for (i in 1:dim(clusterInfo)[1]) {
     lab <- NULL
     if (!is.null(clusterInfo$class)) lab <- paste(lab, clusterInfo$class[i], sep = sep)
