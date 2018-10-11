@@ -140,10 +140,10 @@ getTopMarkersByPropNew <- function(
   names(specGenes) <- colnames(propExpr)
   propSort  <- t(apply(propExpr, 1, function(x) return(-sort(-x))))
   propWhich <- t(apply(propExpr, 1, function(x, y) return(y[order(-x)]), colnames(propExpr)))
-  medianDif <- apply(cbind(as.numeric(propWhich[, 1]), medianExpr), 1, function(x, y) {
+  medianDif <- apply(data.frame(propWhich[, 1], medianExpr), 1, function(x, y) {
     wIn  <- y == as.character(x[1])
-    mIn  <- x[2:length(x)][wIn]
-    mOut <- max(x[2:length(x)][!wIn])
+    mIn  <- as.numeric(x[2:length(x)])[wIn]
+    mOut <- max(as.numeric(x[2:length(x)])[!wIn])
     return(mIn - mOut)
   }, colnames(propExpr))
   keepProp  <- (propSort[, 1] >= propMin) & ((propSort[, 1] - propSort[, 2]) > propDiff) &
