@@ -108,18 +108,19 @@ merge_co_matrix <- function(co.ratio1, co.ratio2)
 #' @param cl.list  The list of subsampled clustering results. 
 #' @param norm.dat The log2 transformed normalzied expression matrix 
 #' @param select.cells Cells to be clustered
+#' @param de.param Differentiall expressed genes criteria for merging clusters
+#' @param merge.type Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately. 
 #' @param all.col Color bars for plotting heatmap. Default NULL
 #' @param diff.th The difference of co-clustering probablities for splitting a cluster. 
 #' @param prefix Default NULL. 
 #' @param method Clustering methods. Default "auto"
 #' @param verbose Default FALSE
 #' @param result Pre-computed clustering results used for further splitting. Default NULL. 
-#' @param min.cells Minimal number of cells in a cluster. Default 4
 #' @param ... Other parameters passed to merge_cl
 #'
 #' @return A list with cluster membership, and top pairwise marker genes. 
 #' 
-iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward.D"), verbose=FALSE, de.param = de.param, result=NULL, rd.dat = NULL)
+iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colnames(co.ratio), de.param = de_param(), merge.type=c("undirectional", "directional"), all.col=NULL, diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward.D"), verbose=FALSE,  result=NULL, rd.dat = NULL)
 {
   method=method[1]
   require(igraph)
@@ -177,7 +178,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
     if(is.null(rd.dat)){
       rd.dat =get_cell.cl.co.ratio(tmp.cl, co.ratio)
     }
-    tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=rd.dat, verbose=verbose,  de.param = de.param)
+    tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=rd.dat, verbose=verbose,  de.param = de.param, merge.type=merge.type)
     if(is.null(tmp) | !is.list(tmp)) return(NULL)
     if (length(unique(tmp$cl))==1) return(NULL)
     tmp.cl= tmp$cl
@@ -203,7 +204,7 @@ iter_consensus_clust <- function(co.ratio, cl.list, norm.dat, select.cells=colna
     if(uncertain.cells < de.param$min.cells){
       next
     }
-    result= iter_consensus_clust(co.ratio=co.ratio, cl.list=cl.list, norm.dat=norm.dat, select.cells=tmp.cells,prefix=tmp.prefix, all.col=all.col, diff.th =diff.th, method=method, de.param = de.param, verbose=verbose, rd.dat=rd.dat)
+    result= iter_consensus_clust(co.ratio=co.ratio, cl.list=cl.list, norm.dat=norm.dat, select.cells=tmp.cells,prefix=tmp.prefix, all.col=all.col, diff.th =diff.th, method=method, de.param = de.param, merge.type=merge.type, rd.dat=rd.dat,verbose=verbose)
     if(is.null(result)){
       next
     }
@@ -251,7 +252,7 @@ get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
     return(cell.cl.co.ratio)    
   }
   if(!is.null(cl.mat)){
-    tmp = cl.mat %*% get_cl_sums(t(cl.mat), cl)
+    tmp = cl.mat %*% get_cl_sums(Matrix::t(cl.mat), cl)
     tmp = tmp / Matrix::rowSums(cl.mat)
     cl.size = table(cl)
     cell.cl.co.ratio=as.matrix(t(t(tmp)/as.vector(cl.size[colnames(tmp)])))
