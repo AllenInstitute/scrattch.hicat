@@ -376,6 +376,7 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells
 
 plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 {
+  blue.red <- colorRampPalette(c("blue", "white", "red"))
   select.cells = names(cl)
   select.cells = sample_cells(cl, max.cl.size)
   tom  = Matrix::crossprod(co.ratio[select.cells, select.cells])
@@ -398,6 +399,7 @@ plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 
 plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 {
+  blue.red <- colorRampPalette(c("blue", "white", "red"))
   select.cells = sample_cells(cl, max.cl.size)
   co.stats = get_cl_co_stats(cl, co.ratio)
   mat = co.stats$cell.cl.co.ratio
