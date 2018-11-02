@@ -217,10 +217,8 @@ map_cv <- function(norm.dat,
                    }
                    setNames(tmp[sample(length(tmp))], x)
                  })
-  
+  names(bins)=NULL
   bins <- unlist(bins)
-  
-  names(bins) <- gsub(".*\\.", "", names(bins))
   bins <- bins[names(cl)]
   pred.cl <- setNames(rep(NA, length(cl)), names(cl))
   
