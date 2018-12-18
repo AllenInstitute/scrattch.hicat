@@ -362,6 +362,9 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells
     if(length(rm.cl)==0){
       break
     }
+    if(length(rm.cl) == length(cl.size)){
+      return(NULL)
+    }
     tmp.cells = names(cl)[cl %in% rm.cl]
     tmp.dat = cell.cl.co.ratio[tmp.cells,as.character(setdiff(unique(cl),rm.cl)),drop=F]
     pred.cl = setNames(colnames(tmp.dat)[apply(tmp.dat, 1, which.max)], row.names(tmp.dat))
