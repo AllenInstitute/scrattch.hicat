@@ -239,7 +239,8 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells
       break
     }
     if(length(rm.cl) == length(cl.size)){
-      return(NULL)
+      cl[names(cl)] = min(cl) 
+      return(list(cl=cl, co.stats=co.stats))
     }
     tmp.cells = names(cl)[cl %in% rm.cl]
     tmp.dat = cell.cl.co.ratio[tmp.cells,as.character(setdiff(unique(cl),rm.cl)),drop=F]
@@ -261,10 +262,27 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells
 #' @param cl.mat Cluster membership matrix for all cells and all clusters from all bootstrapping iterations. 
 get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
 {
+<<<<<<< HEAD
   require(Matrix)
   if(!is.null(co.ratio)){
     cell.cl.co.ratio=get_cl_means(co.ratio, cl)
     return(cell.cl.co.ratio)    
+=======
+  blue.red <- colorRampPalette(c("blue", "white", "red"))
+  select.cells = names(cl)
+  select.cells = sample_cells(cl, max.cl.size)
+  tom  = Matrix::crossprod(co.ratio[select.cells, select.cells])
+  row.names(tom)=colnames(tom)=select.cells
+  ###
+  all.hc = hclust(as.dist(1-tom),method="average")
+  ord1 = all.hc$labels[all.hc$order]
+  ord1 = ord1[ord1%in% select.cells]
+  ord = ord1[order(cl[ord1])]
+  sep = cl[ord]
+  sep=which(sep[-1]!=sep[-length(sep)])
+  if(is.null(col)){
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
+>>>>>>> e05bbc552338db4c38740a54e2c9cc24de247744
   }
    if(!is.null(cl.mat)){
     tmp1= get_cl_sums(cl.mat[,names(cl)], cl)
@@ -324,6 +342,7 @@ get_cl_co_stats <- function (cl, co.ratio = NULL, cl.mat = NULL)
 
 run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, co.result=NULL, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("undirectional","directional"), override=FALSE, init.result=NULL, cut.method="auto",...)
 {
+<<<<<<< HEAD
   if(!dir.exists(output_dir)){
     dir.create(output_dir)
   }
@@ -343,6 +362,12 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
     result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
     save(result, file=outfile)
   }
+=======
+  blue.red <- colorRampPalette(c("blue", "white", "red"))
+  select.cells = sample_cells(cl, max.cl.size)
+  co.stats = get_cl_co_stats(cl, co.ratio)
+  mat = co.stats$cell.cl.co.ratio
+>>>>>>> e05bbc552338db4c38740a54e2c9cc24de247744
   
   if (mc.cores==1){
     sapply(1:niter, function(i){run(i,...)})

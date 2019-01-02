@@ -154,11 +154,11 @@ onestep_clust <- function(norm.dat,
     if(is.null(counts)){
       counts = 2^(norm.dat[select.genes, sampled.cells])-1
     }
-    plot.fig=NULL
+    plot_file=NULL
     if(verbose & !is.null(prefix)){
-      plot.fig=paste0(prefix,".vg.pdf")
+      plot_file=paste0(prefix,".vg.pdf")
     }
-    vg = findVG(as.matrix(counts[select.genes,sampled.cells]),plot.fig=plot.fig)
+    vg = findVG(as.matrix(counts[select.genes,sampled.cells]),plot_file=plot_file)
     if(dim.method=="auto"){
       if(length(select.cells)> 1000){
         dim.method="pca"
