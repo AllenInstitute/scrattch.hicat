@@ -262,38 +262,22 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells
 #' @param cl.mat Cluster membership matrix for all cells and all clusters from all bootstrapping iterations. 
 get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
 {
-<<<<<<< HEAD
   require(Matrix)
   if(!is.null(co.ratio)){
     cell.cl.co.ratio=get_cl_means(co.ratio, cl)
-    return(cell.cl.co.ratio)    
-=======
-  blue.red <- colorRampPalette(c("blue", "white", "red"))
-  select.cells = names(cl)
-  select.cells = sample_cells(cl, max.cl.size)
-  tom  = Matrix::crossprod(co.ratio[select.cells, select.cells])
-  row.names(tom)=colnames(tom)=select.cells
-  ###
-  all.hc = hclust(as.dist(1-tom),method="average")
-  ord1 = all.hc$labels[all.hc$order]
-  ord1 = ord1[ord1%in% select.cells]
-  ord = ord1[order(cl[ord1])]
-  sep = cl[ord]
-  sep=which(sep[-1]!=sep[-length(sep)])
-  if(is.null(col)){
-    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
->>>>>>> e05bbc552338db4c38740a54e2c9cc24de247744
   }
-   if(!is.null(cl.mat)){
+  else if(!is.null(cl.mat)){
     tmp1= get_cl_sums(cl.mat[,names(cl)], cl)
     tmp = crossprod(tmp1, cl.mat)
     cl.size = table(cl)
     n.times= Matrix::colSums(cl.mat)
     tmp = tmp/ as.vector(cl.size[row.names(tmp)])
     cell.cl.co.ratio = as.matrix(t(tmp)/ n.times )
-    return(cell.cl.co.ratio)
   }
-  stop("Either co.ratio or cl.mat should not be NULL")
+  else{
+    stop("Either co.ratio or cl.mat should not be NULL")
+  }
+  return(cell.cl.co.ratio)
 }
 
 get_cl_co_stats <- function (cl, co.ratio = NULL, cl.mat = NULL) 
