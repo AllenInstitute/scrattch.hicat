@@ -326,7 +326,6 @@ get_cl_co_stats <- function (cl, co.ratio = NULL, cl.mat = NULL)
 
 run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, co.result=NULL, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("undirectional","directional"), override=FALSE, init.result=NULL, cut.method="auto",...)
 {
-<<<<<<< HEAD
   if(!dir.exists(output_dir)){
     dir.create(output_dir)
   }
@@ -345,14 +344,7 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
     save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
     result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
     save(result, file=outfile)
-  }
-=======
-  blue.red <- colorRampPalette(c("blue", "white", "red"))
-  select.cells = sample_cells(cl, max.cl.size)
-  co.stats = get_cl_co_stats(cl, co.ratio)
-  mat = co.stats$cell.cl.co.ratio
->>>>>>> e05bbc552338db4c38740a54e2c9cc24de247744
-  
+  }  
   if (mc.cores==1){
     sapply(1:niter, function(i){run(i,...)})
   }
