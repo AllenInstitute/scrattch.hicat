@@ -1,4 +1,4 @@
-rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cells, max.pca=10, th=2,w=NULL)
+rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2,w=NULL)
 {
   require(Matrix)
   if(is.null(w)){
@@ -42,6 +42,6 @@ rd_PCA <- function(norm.dat, select.genes, select.cells,sampled.cells=select.cel
   else{
     rd.dat=pca$x[,tmp,drop=F]
   }
-  return(rd.dat)
+  return(list(rd.dat=rd.dat, pca=pca))
 }
   

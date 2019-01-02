@@ -101,6 +101,57 @@ convert_pair_matrix <- function(pair.num,
     return(pair.num.mat)
   }
 
+
+
+#' Convert paired cluster comparison values to a matrix
+#' 
+#' @param pair.num a vector of values with names of compared elements separted by "_", e.g. "c1_c2", "c23_c59"
+#' @param l labels for columns. Default is NULL, which will compute them from names(pair.num)
+#' @param directed If FALSE (default), the first value in each split will be used as columns, with the second as rows. 
+#' If TRUE, first values will be rows, and second will be columns.
+#' 
+#' @return a matrix containing values from pair.num, and named for each element separated by "_" in names(pair.num)
+#'  
+#' @examples
+#' 
+#' pair_values <- seq(1,27,3)
+#' names(pair_values) <- paste(rep(letters[1:3], each = 3), rep(letters[1:3], 3), sep = "_")
+#' pair_values
+#' 
+#' pair_matrix <- convert_pair_matrix(pair_values, directed = FALSE)
+#' pair_matrix
+#' 
+#' pair_matrix <- convert_pair_matrix(pair_values, directed = TRUE)
+#' pair_matrix
+#' 
+convert_pair_matrix_str <- function(pair.str, 
+                                l = NULL,
+                                directed = FALSE)
+  {
+    pairs <- do.call("rbind", strsplit(names(pair.str),"_"))
+    
+    if(is.null(l)){
+      l <- sort(unique(as.vector(pairs)))
+    }
+    
+    n.cl <- length(l)
+    
+    pair.str.mat <- matrix("", nrow = n.cl, ncol = n.cl)
+    rownames(pair.str.mat) <- l
+    colnames(pair.str.mat) <- l
+    
+    for(i in 1:nrow(pairs)){
+      if(directed) {
+        pair.str.mat[pairs[i,1], pairs[i,2]] <- pair.str[i]
+      } else if(!directed) {
+        pair.str.mat[pairs[i,2], pairs[i,1]] <- pair.str[i]
+      }
+    }
+    
+    return(pair.str.mat)
+  }
+
+
 #' Generate a sparse matrix one-hot representation of clusters x samples
 #' 
 #' @param cl a cluster factor object
@@ -314,4 +365,15 @@ logCPM <- function(counts)
     norm.dat
   }
 
-
+#' Compute correlation each row of matrix1 with the corresponding row of matrix2 
+#' matrix1 and matrix2 must have the same dimemsion. 
+#' 
+#' 
+pair_cor <- function(mat1, mat2)
+  {
+    mat1 = mat1 - rowMeans(mat1)
+    mat2 = mat2 - rowMeans(mat2)
+    sd1 = rowSds(mat1)
+    sd2 = rowSds(mat2)
+    rowSums(mat1 * mat2)/((ncol(mat1)-1)*sd1*sd2)
+  }

@@ -297,6 +297,8 @@ DE_genes_cat_by_cl <- function(norm.dat, cl, binary.cat, ...)
 
 plot_de_lfc_num <- function(de.genes, top.n=100, select.pair=NULL, cl.label=NULL)
 {
+  tmp = sapply(de.genes, length)
+  de.genes= de.genes[tmp!=0]
   de.score <- sapply(de.genes, function(x){
     x$score
   })

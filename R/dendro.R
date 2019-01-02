@@ -20,11 +20,13 @@ pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp
   dend= dend %>% assign_values_to_branches_edgePar(the_cols, "col") %>% assign_values_to_branches_edgePar(the_lwds, "lwd") %>% assign_values_to_branches_edgePar(pvalue_by_all_nodes, "conf") 
 }
 
-build_dend <- function(cl.dat, l.rank=NULL, l.color=NULL, nboot=100)
+build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100)
   {
     require(dendextend)
     require(dplyr)
-    cl.cor = cor(cl.dat)
+    if(is.null(cl.cor)){
+      cl.cor = cor(cl.dat)
+    }
     pvclust.result=NULL
     if(nboot > 0){
       require(pvclust)

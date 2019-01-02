@@ -201,12 +201,12 @@ group_specific_markers <- function(cl.g, norm.dat, cl, de.param, n.markers=5, cl
     select.cells = names(cl)[cl %in% cl.g]
     not.select.cells = setdiff(names(cl), select.cells)
     if(is.null(cl.present.counts)){
-      fg = rowSums(norm.dat[,select.cells]> de.param$low.th)
-      bg = rowSums(norm.dat[,not.select.cells]> de.param$low.th)
+      fg = Matrix::rowSums(norm.dat[,select.cells]> de.param$low.th)
+      bg = Matrix::rowSums(norm.dat[,not.select.cells]> de.param$low.th)
     }
     else{
-      fg = rowSums(cl.present.counts[,cl.g,drop=F])
-      bg = rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
+      fg = Matrix::rowSums(cl.present.counts[,cl.g,drop=F])
+      bg = Matrix::rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
     }
     bg.freq= bg/length(not.select.cells)
     fg.freq = fg/length(select.cells)
@@ -228,6 +228,7 @@ group_specific_markers <- function(cl.g, norm.dat, cl, de.param, n.markers=5, cl
 
 within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
   {
+    cl = as.factor(cl)
     cl = droplevels(cl[cl %in% cl.g])
     df = do.call("rbind", sapply(cl.g, function(x){
       df=group_specific_markers(x, norm.dat, cl,...)

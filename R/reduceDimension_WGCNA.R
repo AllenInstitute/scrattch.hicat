@@ -197,5 +197,5 @@ rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.
       return(NULL)
     }
     rd.dat = gm$eigen    
-    return(rd.dat)
+    return(list(rd.dat=rd.dat, gm=gm))
   }

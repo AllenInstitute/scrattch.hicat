@@ -44,7 +44,7 @@ pass_louvain <- function(mod.sc, adj.mat)
 #' 
 #' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
 #' 
-type.RANN <- function(dat, 
+jaccard_louvain.RANN <- function(dat, 
                                 k = 10)
   {
     library(igraph)
@@ -78,7 +78,7 @@ type.RANN <- function(dat,
 #' 
 #' @return A list object with the cluster factor object and (cl) and Rphenograph results (result)
 #' 
-type <- function(dat, k = 10)
+jaccard_louvain <- function(dat, k = 10)
 {
   suppressPackageStartupMessages(library(Rphenograph))
   
@@ -171,7 +171,7 @@ onestep_clust <- function(norm.dat,
       ###Ignore vg.padj.th for WGCNA, choose top "maxGgenes" for analysis
       select.genes = row.names(vg)[which(vg$loess.padj < 1)]
       select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
-      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=sampled.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)
+      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=sampled.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)$rd.dat
     }
     else{
        ###If most genes are differentially expressed, then use absolute dispersion value
@@ -183,7 +183,7 @@ onestep_clust <- function(norm.dat,
       if(length(select.genes)< min.genes){
         return(NULL)
       }
-      rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)
+      rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)$rd.dat
     }
     if(is.null(rd.dat)||ncol(rd.dat)==0){
       return(NULL)
@@ -208,7 +208,7 @@ onestep_clust <- function(norm.dat,
     max.cl = ncol(rd.dat)*2 + 1
     if(method=="louvain"){
       k = pmin(15, round(nrow(rd.dat)/2))
-      tmp = type(rd.dat, k)
+      tmp = jaccard_louvain(rd.dat, k)
       if(is.null(tmp)){
         return(NULL)
       }
@@ -234,7 +234,7 @@ onestep_clust <- function(norm.dat,
       stop(paste("Unknown clustering method", method))
     }
     #print(table(cl))
-    merge.result=merge_cl(norm.dat, cl=cl, rd.dat=rd.dat, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
+    merge.result=merge_cl(norm.dat, cl=cl, rd.dat.t=rd.dat.t, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
     gc()
     if(is.null(merge.result))return(NULL)
     sc = merge.result$sc

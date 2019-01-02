@@ -55,7 +55,43 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=
     }
     return(cells.order)
   }
+
+
+display_cl_one_vs_others <- function(select.cl, cl, norm.dat, de.genes,  plot=!is.null(prefix), col=NULL, max.cl.size=NULL,main="",height=13, width=9, min.sep=4, ...)
+  {
+    select.cells=names(cl)        
+    jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+    if(!is.null(max.cl.size)){    
+      tmp.cells = sample_cells(cl,  max.cl.size)
+      cl = cl[tmp.cells]
+    }
+    cl = as.factor(cl)
+    select.cells=names(cl)
+    tmp.col = setNames(jet.colors(length(unique(cl))), levels(cl))
+    tmp.col[select.cl] = "black"
+    cl.col = tmp.col[cl]
     
+    tmp.col =t(as.matrix(cl.col, ncol=1))
+
+    colnames(tmp.col)= select.cells
+    if(!is.null(col)){
+      tmp.col = rbind(tmp.col, col[,select.cells])
+    }
+    tmp.dat = as.matrix(norm.dat[,names(cl)])
+    pairs = intersect(c(paste(select.cl, setdiff(levels(cl), select.cl), sep="_"),
+      paste(setdiff(levels(cl), select.cl), select.cl, sep="_")), names(de.genes))
+    markers = unique(unlist(sapply(de.genes[pairs], function(tmp){
+      c(head(tmp$up.genes, n.markers), head(tmp$down.genes, 
+                                            n.markers))
+    }, simplify = F)))
+    cells_order=NULL
+    if(plot){
+      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width)
+    }
+    return(list(markers=markers,cells_order= cells_order))
+  }
+  
+
 display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9, min.sep=10, ...)
   {
     select.cells=names(cl)        
