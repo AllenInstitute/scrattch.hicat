@@ -234,6 +234,7 @@ onestep_clust <- function(norm.dat,
       stop(paste("Unknown clustering method", method))
     }
     #print(table(cl))
+    rd.dat.t = t(rd.dat)
     merge.result=merge_cl(norm.dat, cl=cl, rd.dat.t=rd.dat.t, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
     gc()
     if(is.null(merge.result))return(NULL)
