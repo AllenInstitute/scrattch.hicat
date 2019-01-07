@@ -268,11 +268,11 @@ get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
   }
   else if(!is.null(cl.mat)){
     tmp1= get_cl_sums(cl.mat[,names(cl)], cl)
-    tmp = crossprod(tmp1, cl.mat)
+    tmp = Matrix::crossprod(tmp1, cl.mat)
     cl.size = table(cl)
     n.times= Matrix::colSums(cl.mat)
     tmp = tmp/ as.vector(cl.size[row.names(tmp)])
-    cell.cl.co.ratio = as.matrix(t(tmp)/ n.times )
+    cell.cl.co.ratio = as.matrix(Matrix::t(tmp)/ n.times)
   }
   else{
     stop("Either co.ratio or cl.mat should not be NULL")
