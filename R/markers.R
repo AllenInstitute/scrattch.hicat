@@ -195,35 +195,54 @@ select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL,
  }
 
 
-group_specific_markers <- function(cl.g, norm.dat, cl, de.param, n.markers=5, cl.present.counts=NULL)
-  {
-    cl= droplevels(cl)
-    select.cells = names(cl)[cl %in% cl.g]
-    not.select.cells = setdiff(names(cl), select.cells)
-    if(is.null(cl.present.counts)){
-      fg = Matrix::rowSums(norm.dat[,select.cells]> de.param$low.th)
-      bg = Matrix::rowSums(norm.dat[,not.select.cells]> de.param$low.th)
-    }
-    else{
-      fg = Matrix::rowSums(cl.present.counts[,cl.g,drop=F])
-      bg = Matrix::rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
-    }
-    bg.freq= bg/length(not.select.cells)
-    fg.freq = fg/length(select.cells)
-    tau = (fg.freq - bg.freq)/pmax(bg.freq,fg.freq)
-    ratio = fg/(fg+bg)
-    stats <- vec_chisq_test(fg, rep(length(select.cells),length(fg)), bg, rep(length(not.select.cells), length(bg)))
-    
-    g = names(fg.freq)[fg.freq > de.param$q1.th & tau > de.param$q.diff.th]
-    g = g[order(tau[g]+ ratio[g]/4 + fg.freq[g]/5,decreasing=T)]
-    select.g = c(g[tau[g]> 0.95], head(g, n.markers))
-    g = g[g %in% select.g]
-    if(length(g > 0)){
-      df=data.frame(g=g,specificity=round(tau[g],digits=2), fg.freq=round(fg.freq[g],digits=2), bg.freq = round(bg.freq[g],digits=2), fg.counts=fg[g],bg.counts=bg[g],pval=stats[g,"pval"])
-      return(df)
-    }
+group_specific_markers <- function(cl.g, 
+                                   norm.dat, 
+                                   cl, 
+                                   de.param, 
+                                   n.markers = 5, 
+                                   cl.present.counts = NULL) {
+  cl <- droplevels(cl)
+  select.cells <- names(cl)[cl %in% cl.g]
+  not.select.cells <- setdiff(names(cl), select.cells)
+  
+  if(is.null(cl.present.counts)){
+    fg <- Matrix::rowSums(norm.dat[, select.cells] > de.param$low.th)
+    bg <- Matrix::rowSums(norm.dat[, not.select.cells] > de.param$low.th)
+  } else{
+    fg <- Matrix::rowSums(cl.present.counts[, cl.g, drop = F])
+    bg <- Matrix::rowSums(cl.present.counts[, levels(cl), drop = F]) - fg
+  }
+  
+  bg.freq <- bg / length(not.select.cells)
+  fg.freq <- fg / length(select.cells)
+  
+  tau <- (fg.freq - bg.freq) / pmax(bg.freq, fg.freq)
+  ratio <- fg / (fg + bg)
+  
+  stats <- vec_chisq_test(fg, 
+                          rep(length(select.cells), length(fg)), 
+                          bg, 
+                          rep(length(not.select.cells), length(bg))
+  )
+  
+  g <- names(fg.freq)[fg.freq > de.param$q1.th & tau > de.param$q.diff.th]
+  g <- g[order(tau[g] + ratio[g] / 4 + fg.freq[g] / 5, decreasing = T)]
+  select.g <- c(g[tau[g] > 0.95], head(g, n.markers))
+  g <- g[g %in% select.g]
+  
+  if(length(g) > 0){
+    df <- data.frame(g = g,
+                     specificity = round(tau[g], digits = 2), 
+                     fg.freq = round(fg.freq[g], digits = 2), 
+                     bg.freq = round(bg.freq[g], digits = 2), 
+                     fg.counts = fg[g],
+                     bg.counts = bg[g],
+                     pval = stats[g, "pval"])
+    return(df)
+  } else {
     return(NULL)
   }
+}
 
 
 within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
