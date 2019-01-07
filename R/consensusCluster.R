@@ -1,3 +1,44 @@
+#' Collect co-clustering matrix from results files
+#'
+#' @param result.files A directory containing results files
+#' @param all.cells The cells to read from results files
+#'
+collect_co_matrix <- function(result.files,all.cells)
+{
+    subsample.cl=list()
+      co.matrix= matrix(0, nrow=length(all.cells),ncol=length(all.cells))
+      pr.matrix = matrix(0, nrow=length(all.cells),ncol=length(all.cells))
+      row.names(co.matrix)=row.names(pr.matrix)=colnames(co.matrix)=colnames(pr.matrix)=all.cells
+      for(f in result.files){
+            tmp=load(f)
+                cl=result$cl
+                cl = cl[intersect(names(cl),all.cells)]
+                pr.matrix[names(cl),names(cl)]=   pr.matrix[names(cl),names(cl)] + 1
+                for(x in unique(cl)){
+                        y=names(cl)[cl==x]
+                              co.matrix[y,y]= co.matrix[y,y]+1
+                      }
+                subsample.cl[[f]]= cl
+          }
+      co.ratio = co.matrix/pr.matrix
+      return(list(co.ratio=co.ratio,cl.list=subsample.cl))
+  }
+
+sample_cl_list <- function(cl.list, max.cl.size=500)
+  {
+    select.cells=c()
+    for(cl in cl.list){
+      cl.size=table(cl)
+      more.cl = cl[setdiff(names(cl), select.cells)]
+      more.size = table(more.cl)
+      add.cells= unlist(lapply(names(more.size), function(x){
+        sample(names(more.cl)[more.cl==x], min(more.size[[x]],max.cl.size))
+      }))
+      select.cells= c(select.cells, add.cells)
+    }
+    return(select.cells)
+  }
+
 
 #' Iterative consensus clustering
 #'
@@ -253,6 +294,26 @@ refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells
   return(list(cl=cl, co.stats=co.stats))
 }
 
+merge_cl_by_co <- function(cl, co.ratio=NULL, cl.mat=NULL, diff.th=0.25, verbose=0){
+  cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.mat=cl.mat)
+  cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,,drop=F])))
+  co.within= diag(cl.co.ratio)
+  co.df <- as.data.frame(as.table(cl.co.ratio),stringsAsFactors=FALSE)
+  co.df = co.df[co.df[,1]<co.df[,2]& co.df[,3]>0.1,]
+  co.df$within1 = co.within[co.df[,1]]
+  co.df$within2 = co.within[co.df[,2]]
+  co.df$diff = pmax(co.df$within1, co.df$within2) - co.df[,3]
+  co.df = co.df[co.df$diff  < diff.th,]
+  co.df = co.df[order(co.df[,1],decreasing=T),]
+  if(verbose > 0){
+    print(co.df)
+  }
+  for(i in 1:nrow(co.df)){
+    cl[cl==co.df[i,2]]=co.df[i,1]
+  }
+  cl = setNames(as.integer(as.character(cl)), names(cl))
+  return(cl)
+}
 
 
 #' Get cell co-clustering ratios
@@ -305,6 +366,71 @@ get_cl_co_stats <- function (cl, co.ratio = NULL, cl.mat = NULL)
     return(list(cell.cl.co.ratio = cell.cl.co.ratio, cl.co.ratio = cl.co.ratio, 
                 cell.co.stats = cell.co.stats, cl.co.stats = cl.co.stats))
 }
+
+init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,method="ward.D",verbose=FALSE)
+{
+  avg.cl.num = mean(sapply(cl.list, function(cl){
+      sum(table(cl[select.cells]) >= min.cells)
+    }))
+  tmp.dat = co.ratio[select.cells, select.cells]
+  hc=  hclust(as.dist(1-as.matrix(crossprod(tmp.dat))), method="ward.D")
+  tmp.cl = cutree(hc, ceiling(avg.cl.num)+2)
+  tmp.cl=refine_cl(tmp.cl, co.ratio=co.ratio, min.cells=min.cells, niter=1, confusion.th=1)$cl
+  if(length(unique(tmp.cl))==1){
+    return(NULL)
+  }
+  tmp.cl=merge_cl_by_co(tmp.cl, tmp.dat, diff.th=th)
+  if(length(unique(tmp.cl))==1){
+    return(NULL)
+  }
+  return(cl=tmp.cl)
+}
+
+plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
+  {
+      blue.red <- colorRampPalette(c("blue", "white", "red"))
+      select.cells = names(cl)
+      select.cells = sample_cells(cl, max.cl.size)
+      tom  = Matrix::crossprod(co.ratio[select.cells, select.cells])
+      row.names(tom)=colnames(tom)=select.cells
+###
+      all.hc = hclust(as.dist(1-tom),method="average")
+      ord1 = all.hc$labels[all.hc$order]
+      ord1 = ord1[ord1%in% select.cells]
+      ord = ord1[order(cl[ord1])]
+      sep = cl[ord]
+      sep=which(sep[-1]!=sep[-length(sep)])
+      if(is.null(col)){
+        heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
+      }
+      else{
+        heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord],labRow="")
+      }
+    }
+
+
+plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
+  {
+    blue.red <- colorRampPalette(c("blue", "white", "red"))
+    select.cells = sample_cells(cl, max.cl.size)
+    co.stats = get_cl_co_stats(cl, co.ratio)
+    mat = co.stats$cell.cl.co.ratio
+    
+    tom  = Matrix::tcrossprod(mat[select.cells,])
+    row.names(tom)=colnames(tom)=select.cells
+###
+    all.hc = hclust(as.dist(1-tom),method="average")
+    ord1 = all.hc$labels[all.hc$order]
+    ord = ord1[order(cl[ord1])]
+    sep = cl[ord]
+    sep=which(sep[-1]!=sep[-length(sep)])
+    if(is.null(col)){
+      heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", dendrogram="none",labRow="")
+    }
+    else{
+      heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", ColSideColors=col[,ord],dendogram="none",labRow="")
+    }
+  }
 
 
 #' Wrapper function to repeatively run clustering on subsampled cells and infer consensus clusters
