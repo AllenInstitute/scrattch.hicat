@@ -349,7 +349,7 @@ compare_annotate <- function(cl,
   return(out_list)
 }
 
-get_color <- function(color.mapping)
+adjust_color <- function(color.mapping)
 {
   while(1){
     tmp.color = which(duplicated(color.mapping))
@@ -372,3 +372,15 @@ get_color <- function(color.mapping)
   return(color.mapping)
 }
 
+
+get_cl_df <- function(cl)
+  {
+    jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+    cl.df = data.frame(cluster_label=sort(unique(cl)))
+    cl.size= table(cl)
+    cl.df$cluster_id = 1:nrow(cl.df)
+    cl.df$cluster_color = jet.colors(nrow(cl.df))
+    cl.df$size = cl.size[row.names(cl.df)]
+    row.names(cl.df) = cl.df$cluster_label
+    return(cl.df)
+  }

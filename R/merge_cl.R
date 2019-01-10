@@ -1,3 +1,30 @@
+
+test_merge <- function(de.pair, de.param, merge.type="undirectional")
+  {
+    if(length(de.pair)==0){
+      return(TRUE)
+    }
+    to.merge = FALSE
+    if(merge.type=="undirectional"){
+      if(!is.null(de.param$de.score.th)){
+        to.merge=de.pair$score < de.param$de.score.th
+      }
+      if(!to.merge & !is.null(de.param$min.genes)){
+        to.merge=de.pair$num < de.param$min.genes
+      }
+    }
+    else{
+      if(!is.null(de.param$de.score.th)){
+        to.merge=de.pair$up.score < de.param$de.score.th | de.pair$down.score < de.param$de.score.th
+      }
+      if(!to.merge & !is.null(de.param$min.genes)){
+        to.merge=de.pair$up.num < de.param$min.genes | de.pair$down.score < de.param$min.genes
+      }
+    }
+    return(to.merge)
+  }
+
+
 #' Merge clusters based on pairwise differential expressed genes. 
 #'
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)
@@ -131,17 +158,7 @@ merge_cl<- function(norm.dat,
         sc = sort(sc)
                                         #print(head(sc,10))      
         to.merge = sapply(names(sc), function(p){
-          x = de.genes[[p]]
-          if(length(x)==0){
-            to.merge = TRUE
-          }
-          else if(merge.type=="undirectional"){
-            to.merge=x$score < de.param$de.score.th    
-          }
-          else{
-            to.merge=x$up.score < de.param$de.score.th | x$down.score < de.param$de.score.th 
-          }
-          to.merge
+          to.merge = test_merge(de.genes[[p]], de.param, merge.type=merge.type)
         })
         if(sum(to.merge)>0){
           sc = sc[to.merge]

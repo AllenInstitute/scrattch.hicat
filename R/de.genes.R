@@ -15,9 +15,9 @@ library(limma)
 #' @export
 #'
 
-de_param <- function(low.th=1, padj.th=0.01, lfc.th=1, q1.th=0.5, q2.th=NULL,q.diff.th=0.7, de.score.th=100, min.cells=4)
+de_param <- function(low.th=1, padj.th=0.01, lfc.th=1, q1.th=0.5, q2.th=NULL,q.diff.th=0.7, de.score.th=100, min.cells=4, min.genes=1)
 {
-  list(low.th=low.th, padj.th=padj.th, lfc.th=lfc.th, q1.th=q1.th, q2.th=q2.th, q.diff.th = q.diff.th, de.score.th=de.score.th, min.cells=min.cells)
+  list(low.th=low.th, padj.th=padj.th, lfc.th=lfc.th, q1.th=q1.th, q2.th=q2.th, q.diff.th = q.diff.th, de.score.th=de.score.th, min.cells=min.cells, min.genes=min.genes)
 }
 
 
@@ -36,7 +36,7 @@ vec_chisq_test <- function(x, x.total, y, y.total)
 
 
 
-DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, cl.present=NULL, use.voom=FALSE, counts=NULL){
+DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, cl.present=NULL, use.voom=FALSE, counts=NULL,mc.cores=1){
   require(limma)
   select.cl = unique(c(pairs[,1],pairs[,2]))
   cl = cl[cl%in% select.cl]
@@ -49,7 +49,6 @@ DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, cl.pres
     cl.present = as.data.frame(get_cl_means(norm.dat >= low.th[row.names(norm.dat)],cl))
   }
   cl.size = table(cl)
-  de.df=list()
   fit = NULL
   if(method=="limma"){
     cl = setNames(as.factor(paste0("cl",cl)),names(cl))
@@ -63,10 +62,10 @@ DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, cl.pres
       fit = lmFit(norm.dat[,names(cl)] , design=design)
     }
   }
-  for(i in 1:nrow(pairs)){
-    x = as.character(pairs[i,1])
-    y = as.character(pairs[i,2])
-    pair=paste(x,y,sep="_")
+  score_pair <- function(pair){
+    library(limma)    
+    x = as.character(pair[1])
+    y = as.character(pair[2])
     if(method=="limma"){
       ctr <<- paste(paste0("cl",x), "- ", paste0("cl",y))
       contrasts.matrix <- makeContrasts(ctr,  levels=design)
@@ -84,7 +83,27 @@ DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, cl.pres
     }
     df = data.frame(padj=padj,pval=pval,lfc=lfc,meanA=cl.means[[x]], meanB=cl.means[[y]],q1=cl.present[[x]], q2=cl.present[[y]])
     row.names(df)= row.names(norm.dat)
-    de.df[[pair]]= df
+    return(df)
+  }
+  if(mc.cores==1){
+    de.df=list()
+    for(i in 1:nrow(pairs)){
+      pair=paste(pairs[i,1],pairs[i,2],sep="_")    
+      de.df[[pair]]= score_pair(pairs[i,])
+    }
+  }
+  else{
+    library(parallel)
+    require(foreach)
+    require(doParallel)
+    cluster <- makeCluster(mc.cores)
+    registerDoParallel(cluster)
+    de.df = foreach(i=1:nrow(pairs), .combine='c') %dopar% list(score_pair(pairs[i,]))
+    stopCluster(cluster)
+    #de.df = mclapply(1:nrow(pairs), function(i){
+    #  score_pair(pairs[i,])
+    #}, mc.cores=mc.cores)
+    names(de.df) = paste(pairs[,1],pairs[,2],sep="_")
   }
   return(de.df)
 }
@@ -190,7 +209,7 @@ de_score <- function(norm.dat, cl,  de.param= de_param(),  method="limma", de.ge
    return(de.genes)
 }
 
-de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, de.param=de_param(), method="limma")
+de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, de.param=de_param(), method="limma", mc.cores=1)
 {
   row.names(pairs) = paste(pairs[,1],pairs[,2], sep="_")
   select.cl = unique(c(pairs[,1],pairs[,2]))
@@ -213,7 +232,7 @@ de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, de.param=de_param(),
     }
     select.genes= row.names(norm.dat)[rowSums(norm.dat[,select.cells] >= low.th[row.names(norm.dat)]) >= de.param$min.cells]
     if(is.null(de.df)){
-      de.df = DE_genes_pairs(norm.dat[select.genes,select.cells], cl[select.cells], pairs[select.pair,,drop=F], low.th=low.th, method=method)
+      de.df = DE_genes_pairs(norm.dat[select.genes,select.cells], cl[select.cells], pairs[select.pair,,drop=F], low.th=low.th, method=method, mc.cores=mc.cores)
     }
     de.genes = sapply(names(de.df), function(x){
       if(is.null(de.df[[x]])){
@@ -242,18 +261,30 @@ de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, de.param=de_param(),
 }
 
 
+get_de_matrix <- function(de.genes, directed =FALSE, field="num")
+  {
+    pairs = get_pairs(names(de.genes))
+    if(directed){
+      f = paste("up", field,sep=".")
+      up.de.num = sapply(de.genes, function(x)x[[f]])
+      f = paste("down", field,sep=".")
+      down.de.num = sapply(de.genes, function(x)x[[f]])
+      head(sort(pmin(up.de.num, down.de.num)))
+      names(down.de.num) = with(pairs[names(down.de.num),],paste0(P2,"_",P1))
+      de.num = c(up.de.num, down.de.num)
+    }
+    else{
+      de.num = sapply(de.genes, function(x)x[[field]])
+    }
+    de.matrix <- convert_pair_matrix(de.num, directed=directed)
+    return(de.matrix)    
+  }
 
 plot_de_num <- function(de.genes, dend, cl.label=NULL, directed=FALSE, file="log10.de.num.pdf", ...)
   {
-    up.de.num = sapply(de.genes, function(x)length(x$up.genes))
-    down.de.num = sapply(de.genes, function(x)length(x$down.genes))
-    head(sort(pmin(up.de.num, down.de.num)))
-    names(down.de.num) = with(pairs[names(down.de.num),],paste0(P2,"_",P1))
-    label = as.hclust(dend)$label 
-    de.num = c(up.de.num, down.de.num)
-    de.num.matrix <- convert_pair_matrix(de.num, directed=directed)
+    label = as.hclust(dend)$label
+    de.num.matrix <- get_de_matrix(de.genes, directed =)
     de.num.matrix <- de.num.matrix[label, label]
-    save(de.num.matrix, file="de.num.matrix.rda")
     breaks=c(-1,seq(0.2,4,length.out=100))
     if(!is.null(cl.label)){
       colnames(de.num.matrix) = row.names(de.num.matrix) = cl.label[row.names(de.num.matrix)]
@@ -293,6 +324,7 @@ DE_genes_cat_by_cl <- function(norm.dat, cl, binary.cat, ...)
     cl.cat.de.df = data.frame(cat1.de.num, cat2.de.num, cat1.de.genes, cat2.de.genes)
     return(list(cl.cat.de.df=cl.cat.de.df, cl.cat.de.genes=cl.cat.de.genes))
   }
+
 
 
 plot_de_lfc_num <- function(de.genes, top.n=100, select.pair=NULL, cl.label=NULL)

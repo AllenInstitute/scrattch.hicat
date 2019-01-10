@@ -53,6 +53,16 @@ set_pair_matrix <- function(m, rows, cols, vals)
     return(m)
   }
 
+
+get_pairs <- function(pairs.str)
+  {
+    pairs=as.data.frame(do.call("rbind",strsplit(pairs.str, "_")),stringsAsFactors=FALSE)
+    row.names(pairs)=pairs.str
+    colnames(pairs) = c("P1", "P2")
+    return(pairs)
+  }
+
+
 #' Convert paired cluster comparison values to a matrix
 #' 
 #' @param pair.num a vector of values with names of compared elements separted by "_", e.g. "c1_c2", "c23_c59"
@@ -78,26 +88,21 @@ convert_pair_matrix <- function(pair.num,
                                 l = NULL,
                                 directed = FALSE)
   {
-    pairs <- do.call("rbind", strsplit(names(pair.num),"_"))
+    pairs <- get_pairs(names(pair.num))
     
     if(is.null(l)){
-      l <- sort(unique(as.vector(pairs)))
+      l <- sort(unique(c(pairs[,1], pairs[,2])))
     }
-    
+
     n.cl <- length(l)
     
     pair.num.mat <- matrix(0, nrow = n.cl, ncol = n.cl)
     rownames(pair.num.mat) <- l
     colnames(pair.num.mat) <- l
-    
-    for(i in 1:nrow(pairs)){
-      if(directed) {
-        pair.num.mat[pairs[i,1], pairs[i,2]] <- pair.num[i]
-      } else if(!directed) {
-        pair.num.mat[pairs[i,2], pairs[i,1]] <- pair.num[i]
-      }
+    pair.num.mat <- set_pair_matrix(pair.num.mat, pairs[,1], pairs[,2], pair.num)
+    if(!directed) {
+      pair.num.mat <- set_pair_matrix(pair.num.mat, pairs[,2], pairs[,1], pair.num)
     }
-    
     return(pair.num.mat)
   }
 
@@ -141,13 +146,11 @@ convert_pair_matrix_str <- function(pair.str,
     colnames(pair.str.mat) <- l
     
     for(i in 1:nrow(pairs)){
-      if(directed) {
-        pair.str.mat[pairs[i,1], pairs[i,2]] <- pair.str[i]
-      } else if(!directed) {
+      pair.str.mat[pairs[i,1], pairs[i,2]] <- pair.str[i]
+      if(!directed) {
         pair.str.mat[pairs[i,2], pairs[i,1]] <- pair.str[i]
       }
     }
-    
     return(pair.str.mat)
   }
 
