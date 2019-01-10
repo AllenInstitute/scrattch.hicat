@@ -4,25 +4,33 @@
 \alias{merge_cl}
 \title{Merge clusters based on pairwise differential expressed genes.}
 \usage{
-merge_cl(norm.dat, cl, rd.dat, de.param = de_param(),
-  type = c("undirectional", "directional"), max.cl.size = 300,
-  de.method = "limma", de.genes = NULL, return.markers = TRUE,
-  verbose = 0)
+merge_cl(norm.dat, cl, rd.dat.t, de.param = de_param(),
+  merge.type = c("undirectional", "directional"), max.cl.size = 300,
+  de.method = "limma", de.genes = NULL, return.markers = FALSE,
+  pairBatch = 40, verbose = 0)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)}
 
-\item{cl}{A vector of cluster membership with cells as names, and cluster id as values.}
-
-\item{rd.dat}{Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first.}
+\item{cl}{A vector of cluster membership with cell index as names, and cluster id as values.}
 
 \item{de.param}{The DE gene criteria. See de_param for details.}
 
-\item{type}{Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately.}
+\item{merge.type}{Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately.}
 
 \item{max.cl.size}{Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.}
 
 \item{de.method}{Use limma by default. We are still testing "chisq" mode.}
+
+\item{de.genes}{If not null, use DE genes computated prevoiusly by DE_genes_pw or DE_genes_pairs to avoid recomputing.}
+
+\item{return.markers}{If TRUE, compute the DE genes between very pairs of clusters as markers}
+
+\item{pairBatch}{The number of pairs to be tested for merging in one batch. Avoid compairing many pairs at the same time to reduce memory comsumption. Default 40}
+
+\item{rd.dat}{Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first.}
+
+\item{sampled}{For big dataset, norm.dat may not include all cells from cl. If TRUE, norm.dat is the data matrix for downsampled cells, and no need for further down sampling.}
 }
 \value{
 A list with cl (cluster membership), de.genes (differentially expressed genes), sc (cluster pairwise de.score), markers (top cluster pairwise markers)

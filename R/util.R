@@ -160,6 +160,7 @@ convert_pair_matrix_str <- function(pair.str,
 #' @param cl a cluster factor object
 #' 
 #' @return a sparse, one-hot matrix indicating which cluster(columns) each sample (rows) belongs to.
+#' @export
 #' 
 get_cl_mat <- function(cl)
   {
@@ -185,6 +186,7 @@ get_cl_mat <- function(cl)
 #' @param cl A cluster factor object
 #' 
 #' @return a matrix of genes (rows) x clusters (columns) with sums for each cluster
+#' @export
 #' 
 get_cl_sums <- function(mat, cl)
   {
@@ -205,11 +207,11 @@ get_cl_sums <- function(mat, cl)
 #' @param cl A cluster factor object
 #' 
 #' @return a matrix of genes (rows) x clusters (columns) with means for each cluster
-#'
+#' @export
+#' 
 get_cl_means <- function(mat, cl)
   {
-    library(Matrix)
-  
+
     cl.sums <- get_cl_sums(mat, cl)
     
     cl.size <- table(cl)
@@ -224,8 +226,9 @@ get_cl_means <- function(mat, cl)
 #' @param mat A gene (rows) x samples (columns) sparse matrix
 #' @param cl A cluster factor object
 #' 
-#' @return a matrix of genes (rows) x clusters (columns) with edians for each cluster
-#'
+#' @return a matrix of genes (rows) x clusters (columns) with medians for each cluster
+#' @export
+#' 
 get_cl_medians <- function(mat, cl)
 {
   library(Matrix)
@@ -244,6 +247,30 @@ get_cl_medians <- function(mat, cl)
   
   return(cl.med)
 }
+
+
+#' Compute cluster proportions for each row in a matrix
+#'
+#' @param mat a gene (rows) x samples(columns) sparse matrix
+#' @param cl A cluster factor object
+#' @param thresshold The minimum expression value used to binarize the results
+#'
+#' @return a matrix of genes (rows) x cluster(columns) with proportions for each cluster
+#' @export
+#' 
+get_cl_prop <- function(mat, 
+                        cl, 
+                        thresshold = 1) {
+  
+  cl.mat <- get_cl_mat(cl)
+  
+  cl.prop <- Matrix::tcrossprod(mat[,rownames(cl.mat)] > thresshold, Matrix::t(cl.mat))
+  
+  cl.prop <- as.matrix(cl.prop) / Matrix::colSums(cl.mat)[col(cl.prop)]
+  
+  return(cl.prop)
+}
+
 
 #' Compute correlation scores for columns of a sparse matrix
 #' 
