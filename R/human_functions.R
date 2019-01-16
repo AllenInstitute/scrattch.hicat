@@ -190,7 +190,7 @@ group_cl <- function(anno, cluster, norm.dat,
                      select.cells = colnames(norm.dat),
                      neun.thresh = 0.5,
                      neun.colname = "facs_population_plan",
-                     neun.val = "NeuN-pos"
+                     neun.val = "NeuN-pos", 
                      test.genes = c("GAD1", "GAD2", "SLC17A7", "SLC17A6"), 
                      expr.th = 3,
                      prop.th = c(0.5, 0.5, 0.2, 0.2), 
