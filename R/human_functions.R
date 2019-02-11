@@ -11,6 +11,7 @@
 #' @param neun.thresh fraction of cells expressing NeuN to be considered 
 #'   NeuN positive (default is 0.5)
 #' @param neun.colname column name in `anno` with the Neun information
+#' @param neun.val value corresponding to non-neuronal marker in neun.colname in anno
 #'
 #' @return returns all the clusters and true/false of whether they are Neun positive
 #' @export
@@ -18,11 +19,12 @@
 #' @examples check_neun(anno, anno$cluster, neun.thresh = 0.5)
 check_neun <- function(anno, cluster,
                        neun.thresh = 0.5,
-                       neun.colname = "facs_population_plan") {
+                       neun.colname = "facs_population_plan",
+                       neun.val = "NeuN-pos") {
   neun.pos.cnt <- tapply(
     anno[, neun.colname], cluster,
     function(x) {
-      sum(grepl("NeuN-pos", x, ignore.case = TRUE), na.rm = TRUE) / length(x[!is.na(x)])
+      sum(grepl(neun.val, x, ignore.case = TRUE), na.rm = TRUE) / length(x[!is.na(x)])
     }
   )
   neun.check <- neun.pos.cnt > neun.thresh
@@ -74,11 +76,15 @@ check_qc <- function(x, qc.iqr.mult = 3) {
 #' @param neun.thresh fraction of cells expressing NeuN to be considered 
 #'   NeuN positive (default is 0.5)
 #' @param neun.colname column name in anno with the Nuen information
+#' @param neun.val value corresponding to non-neuronal marker in neun.colname in anno
 #' @param qc.metrics required columns from anno dataframe. default is Genes.Detected.CPM", 
 #'   "percent_reads_aligned_total", "complexity_cg"
 #' @param test.genes CURRENTLY NOT USED.  This function will eventually allow for a 
 #'   pre-defined set of genes to be entered. default is "SNAP25", "GAD1", "GAD2", 
 #'   "SLC17A7", "SLC17A6"
+#' @param expr.th expression threshold for detecting test genes
+#' @param prop.th proportion threshold of detected genes by cluster (default is 0.5, 0.5, 0.2, 0.2)
+#' @param min.prop.th one of last 4 test genes should have detection at least at this amount
 #' @param plot default is TRUE
 #' @param plot.path path of plot, default is ./output/
 #'
@@ -92,8 +98,12 @@ check_outlier <- function(anno, cluster, norm.dat,
                           keep.cl = NULL,
                           neun.thresh = 0.5,
                           neun.colname = "facs_population_plan",
+                          neun.val = "NeuN-pos", 
                           qc.metrics = c("Genes.Detected.CPM", "percent_reads_aligned_total", "complexity_cg"),
                           test.genes = c("SNAP25", "GAD1", "GAD2", "SLC17A7", "SLC17A6"),
+                          expr.th = 3,
+                          prop.th = c(0.5, 0.5, 0.5, 0.5, 0.5), 
+                          min.prop.th = 0.8,
                           plot = TRUE,
                           plot.path = "output/") {
   select.cells <- intersect(names(cluster), select.cells)
@@ -102,7 +112,7 @@ check_outlier <- function(anno, cluster, norm.dat,
   anno         <- droplevels(anno[select.id, ])
   anno$cluster <- cluster[select.cells]
   neuronal.cl  <- check_neun(anno, cluster, neun.thresh = neun.thresh, 
-                             neun.colname = neun.colname)
+                             neun.colname = neun.colname, neun.val = neun.val)
   qc.metrics   <- intersect(qc.metrics, colnames(anno))
   qc.median    <- apply(anno[, qc.metrics], 2, function(x) {
     tapply(x, cluster, function(y) median(as.numeric(y), na.rm = TRUE))
@@ -119,14 +129,13 @@ check_outlier <- function(anno, cluster, norm.dat,
     dev.off()
   }
   expr.cnt <- apply(norm.dat[test.genes, ], 1, function(x) {
-    expr.thresh <- 3
-    tapply(x, cluster, function(x) sum(x > expr.thresh) / length(x))
+    tapply(x, cluster, function(x) sum(x > expr.th) / length(x))
   })
-  expr.outlier <- neuronal.cl & (expr.cnt[, "SNAP25"] < 0.5 |
-    (expr.cnt[, "GAD1"] > 0.5 | expr.cnt[, "GAD2"] > 0.5) &
-      (expr.cnt[, "SLC17A7"] > 0.5 | expr.cnt[, "SLC17A6"] > 0.5) |
-    (expr.cnt[, "GAD1"] < 0.8 & expr.cnt[, "GAD2"] < 0.8 & 
-       expr.cnt[, "SLC17A7"] < 0.8 & expr.cnt[, "SLC17A6"] < 0.8))
+  expr.outlier <- neuronal.cl & (expr.cnt[, test.genes[1]] < prop.th[1] |
+    (expr.cnt[, test.genes[2]] > prop.th[2] | expr.cnt[, test.genes[3]] > prop.th[3]) &
+      (expr.cnt[, test.genes[4]] > prop.th[4] | expr.cnt[, test.genes[5]] > prop.th[5]) |
+    (expr.cnt[, test.genes[2]] < min.prop.th & expr.cnt[, test.genes[3]] < min.prop.th & 
+       expr.cnt[, test.genes[4]] < min.prop.th & expr.cnt[, test.genes[5]] < min.prop.th))
   if (plot == TRUE) {
     pdf(
       file = paste0(plot.path, "/cluster_marker_check.pdf"),
@@ -153,7 +162,7 @@ check_outlier <- function(anno, cluster, norm.dat,
 #' Assign clusters to a group
 #' 
 #' This function assigns each cluster to a predefined set of classes (exc, inh, glia, 
-#'   donor, outlier) using a predefined set of genes (GAD1, GAD2, SLC17A7, SLC17A6).
+#'   donor, outlier) using test.genes (default GAD1, GAD2, SLC17A7, SLC17A6).
 #'   Later iterations of the function will allow for user-defined classes and genes.
 #'
 #' @param anno anno dataframe which must include column names listed in `neun.colname`
@@ -162,9 +171,13 @@ check_outlier <- function(anno, cluster, norm.dat,
 #' @param norm.dat expression dataframe with columns as cells and rows as gene names 
 #'   and cpm normalized
 #' @param select.cells column names of norm.dat
+#' @param test.genes genes used to define cell classes (default is GAD1, GAD2, SLC17A7, SLC17A6)
+#' @param expr.th expression threshold for detecting test genes
+#' @param prop.th proportion threshold of detected genes by cluster (default is 0.5, 0.5, 0.2, 0.2)
 #' @param neun.thresh fraction of cells expressing NeuN to be considered 
 #'   NeuN positive (default is 0.5)
 #' @param neun.colname column name in anno with the Neun information
+#' @param neun.val value corresponding to non-neuronal marker in neun.colname in anno
 #' @param outlier.cl vector of clusters previously defined as "outlier" (default is NULL)
 #' @param donor.cl vector of clusters previously defined as "donor" (default is NULL)
 #'
@@ -177,6 +190,10 @@ group_cl <- function(anno, cluster, norm.dat,
                      select.cells = colnames(norm.dat),
                      neun.thresh = 0.5,
                      neun.colname = "facs_population_plan",
+                     neun.val = "NeuN-pos", 
+                     test.genes = c("GAD1", "GAD2", "SLC17A7", "SLC17A6"), 
+                     expr.th = 3,
+                     prop.th = c(0.5, 0.5, 0.2, 0.2), 
                      outlier.cl = NULL,
                      donor.cl = NULL) {
   select.cells <- intersect(names(cluster), select.cells)
@@ -184,22 +201,23 @@ group_cl <- function(anno, cluster, norm.dat,
   norm.dat     <- norm.dat[, select.id]
   anno         <- droplevels(anno[select.id, ])
   anno$cluster <- cluster[select.cells]
-  neuronal.cl  <- check_neun(anno, cluster, neun.thresh = neun.thresh, neun.colname = neun.colname)
-  test.genes   <- c("GAD1", "GAD2", "SLC17A7", "SLC17A6")
+  neuronal.cl  <- check_neun(anno, cluster, neun.thresh = neun.thresh, 
+                             neun.colname = neun.colname, neun.val = neun.val)
   expr.cnt     <- apply(norm.dat[test.genes, ], 1, function(x) {
-    expr.thresh <- 3
-    tapply(x, cluster, function(x) sum(x > expr.thresh) / length(x))
+    tapply(x, cluster, function(x) sum(x > expr.th) / length(x))
   })
   cl.class <- list()
   cl.class[["inh"]] <- setdiff(
     names(neuronal.cl)[
-      neuronal.cl & (expr.cnt[, "GAD1"] > 0.5 | expr.cnt[, "GAD2"] > 0.5)
+      neuronal.cl & (expr.cnt[, test.genes[1]] > prop.th[1] | 
+                       expr.cnt[, test.genes[2]] > prop.th[2])
     ],
     c(outlier.cl, donor.cl)
   )
   cl.class[["exc"]] <- setdiff(
     names(neuronal.cl)[
-      neuronal.cl & (expr.cnt[, "SLC17A7"] > 0.2 | expr.cnt[, "SLC17A6"] > 0.2)
+      neuronal.cl & (expr.cnt[, test.genes[3]] > prop.th[3] | 
+                       expr.cnt[, test.genes[4]] > prop.th[4])
     ],
     c(outlier.cl, donor.cl, cl.class[["inh"]])
   )
