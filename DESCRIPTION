@@ -1,4 +1,4 @@
-B1;95;0cPackage: scrattch.hicat
+Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
 Version: 0.0.19
 Authors@R: c(
