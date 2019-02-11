@@ -70,7 +70,7 @@ iter_consensus_clust <- function(cl.list, co.ratio=NULL,  cl.mat=NULL, norm.dat,
   }
   else{
     markers=NULL
-    if(length(select.cells)  < split.size)
+    if(length(select.cells)  < split.size){
       return(NULL)
     }
     co.ratio.sampled = FALSE
