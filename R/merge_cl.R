@@ -95,7 +95,8 @@ merge_cl<- function(norm.dat,
         cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
       }
       cl[cl==x]= y
-      tmp= rowMeans(rd.dat.t[,names(cl)[cl==y],drop=FALSE])
+      tmp.cells = intersect(names(cl)[cl==y], colnames(rd.dat.t))
+      tmp= rowMeans(rd.dat.t[,tmp.cells,drop=FALSE])
       cl.rd[,as.character(y)]= tmp
       cl.rd = cl.rd[,colnames(cl.rd)!=x,drop=F]
     }		
@@ -139,10 +140,13 @@ merge_cl<- function(norm.dat,
         }
       ##Down sample cells for efficiency
       if(!is.null(max.cl.size)){
-        sampled.cells = sample_cells(cl,  max.cl.size)
+        sampled.cells = sample_cells(cl[names(cl) %in% colnames(norm.dat)],  max.cl.size)
         tmp.dat = norm.dat[,sampled.cells]
       }
-
+      else{
+        tmp.dat = norm.dat[,names(cl)]
+      }
+      
       #####Check pairs already known but not yet merged yet.
       new.pairs = setdiff(row.names(merge.pairs),names(de.genes))
       while(length(new.pairs) > 0){

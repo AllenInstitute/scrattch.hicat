@@ -15,7 +15,7 @@ library(limma)
 #' @export
 #'
 
-de_param <- function(low.th=1, padj.th=0.01, lfc.th=1, q1.th=0.5, q2.th=NULL,q.diff.th=0.7, de.score.th=100, min.cells=4, min.genes=1)
+de_param <- function(low.th=1, padj.th=0.01, lfc.th=1, q1.th=0.5, q2.th=NULL,q.diff.th=0.7, de.score.th=100, min.cells=4, min.genes=5)
 {
   list(low.th=low.th, padj.th=padj.th, lfc.th=lfc.th, q1.th=q1.th, q2.th=q2.th, q.diff.th = q.diff.th, de.score.th=de.score.th, min.cells=min.cells, min.genes=min.genes)
 }
@@ -36,19 +36,20 @@ vec_chisq_test <- function(x, x.total, y, y.total)
 
 
 
-DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, cl.present=NULL, use.voom=FALSE, counts=NULL,mc.cores=1){
+DE_genes_pairs <- function(norm.dat, cl,pairs, method="limma", low.th=1, min.cells=4, cl.present=NULL, use.voom=FALSE, counts=NULL,mc.cores=1){
   require(limma)
   select.cl = unique(c(pairs[,1],pairs[,2]))
   cl = cl[cl%in% select.cl]
+  select.genes= row.names(norm.dat)[Matrix::rowSums(norm.dat[,names(cl)] >= low.th[row.names(norm.dat)]) >= min.cells]
+  norm.dat = as.matrix(norm.dat[select.genes,names(cl)])
   cl.means = as.data.frame(get_cl_means(norm.dat, cl))
-  norm.dat = as.matrix(norm.dat[,names(cl)])
   if(length(low.th)==1){
     low.th =setNames(rep(low.th, nrow(norm.dat)),row.names(norm.dat))      
   }
   if(is.null(cl.present)){
     cl.present = as.data.frame(get_cl_means(norm.dat >= low.th[row.names(norm.dat)],cl))
   }
-  cl.size = table(cl)
+  cl.size = table(cl)  
   fit = NULL
   if(method=="limma"){
     cl = setNames(as.factor(paste0("cl",cl)),names(cl))
@@ -230,9 +231,8 @@ de_score_pairs <- function(norm.dat, cl, pairs, de.df=NULL, de.param=de_param(),
     if(length(low.th)==1){
       low.th =setNames(rep(low.th, nrow(norm.dat)),row.names(norm.dat))      
     }
-    select.genes= row.names(norm.dat)[rowSums(norm.dat[,select.cells] >= low.th[row.names(norm.dat)]) >= de.param$min.cells]
     if(is.null(de.df)){
-      de.df = DE_genes_pairs(norm.dat[select.genes,select.cells], cl[select.cells], pairs[select.pair,,drop=F], low.th=low.th, method=method, mc.cores=mc.cores)
+      de.df = DE_genes_pairs(norm.dat, cl[select.cells], pairs[select.pair,,drop=F], low.th=low.th, min.cells=de.param$min.cells, method=method, mc.cores=mc.cores)
     }
     de.genes = sapply(names(de.df), function(x){
       if(is.null(de.df[[x]])){

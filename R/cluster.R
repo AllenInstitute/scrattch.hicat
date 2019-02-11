@@ -101,7 +101,6 @@ jaccard_louvain <- function(dat, k = 10)
 #' @param rm.eigen The reduced dimensions that need to be masked and removed. Default NULL.  
 #' @param rm.th The cutoff for correlation between reduced dimensions and rm.eigen. Reduced dimensions with correlatin with any rm.eigen vectors are not used for clustering. Default 0.7
 #' @param de.param The differential gene expression threshold. See de_param() function for details. 
-#' @param min.genes The minimal number of high variance and differentially expressed genes genes. Default 5. 
 #' @param type Can either be "undirectional" or "directional". If "undirectional", the differential gene threshold de.param is applied to combined up-regulated and down-regulated genes, if "directional", then the differential gene threshold is applied to both up-regulated and down-regulated genes. 
 #' @param maxGenes Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules. 
 #' @param sampleSize The number of sampled cells to compute reduced dimensions.
@@ -123,11 +122,11 @@ onestep_clust <- function(norm.dat,
                           rm.eigen = NULL, 
                           rm.th = 0.7, 
                           de.param = de_param(),
-                          min.genes = 5, 
                           merge.type = c("undirectional", "directional"), 
                           maxGenes = 3000,
                           sampleSize = 4000,
-                          max.cl.size = 300, 
+                          max.cl.size = 300,
+                          k.nn = 15,
                           prefix = NULL, 
                           verbose = FALSE)
                           
@@ -180,7 +179,7 @@ onestep_clust <- function(norm.dat,
       if(verbose){
         cat("Num high variance genes:",length(select.genes),"\n")
       }
-      if(length(select.genes)< min.genes){
+      if(length(select.genes)< de.param$min.genes){
         return(NULL)
       }
       rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)$rd.dat
@@ -207,7 +206,7 @@ onestep_clust <- function(norm.dat,
     }
     max.cl = ncol(rd.dat)*2 + 1
     if(method=="louvain"){
-      k = pmin(15, round(nrow(rd.dat)/2))
+      k = pmin(k.nn, round(nrow(rd.dat)/2))
       tmp = jaccard_louvain(rd.dat, k)
       if(is.null(tmp)){
         return(NULL)

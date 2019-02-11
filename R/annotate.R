@@ -265,8 +265,12 @@ compare_annotate <- function(cl,
                              rename = reorder)
 {
   library(ggplot2)
-  
+  if(!is.factor(cl)){
+    cl = setNames(factor(cl),names(cl))
+  }
   common.cells <- intersect(names(cl),names(ref.cl))
+  ###Find clusters not present in ref.cl
+  
   # compare predicted cluster member with the new clustering result 
   tb <- table(cl[common.cells], ref.cl[common.cells])
   cl.id.map <- NULL
@@ -275,7 +279,7 @@ compare_annotate <- function(cl,
   if(reorder){
     tmp <- apply(tb, 1, which.max)
     cl_names <- names(cl)
-    cl <- factor(as.character(cl), levels = row.names(tb)[order(tmp)])
+    cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)]))
     cl <- setNames(cl, cl_names)
     if(rename){
       cl.id.map <- data.frame(new = 1:length(levels(cl)),
@@ -383,4 +387,46 @@ get_cl_df <- function(cl)
     cl.df$size = cl.size[row.names(cl.df)]
     row.names(cl.df) = cl.df$cluster_label
     return(cl.df)
+  }
+
+match_cl <- function(cl, dat, ref.cl, ref.cl.df, ref.dat, rename=TRUE)
+  {
+    cl.means = get_cl_means(dat,cl)
+    ref.cl.means = get_cl_means(ref.dat, ref.cl)
+    mat = cor(cl.means, ref.cl.means)
+    tmp <- apply(mat, 1, which.max)
+    max.ref.cl = colnames(mat)[tmp]
+    
+    cl_names <- names(cl)
+    cl <- factor(as.character(cl), levels = c(row.names(mat)[order(tmp)]))
+    cl <- setNames(cl, cl_names)
+    
+    cl.df <- data.frame(ref.cl = max.ref.cl)
+    cl.df <- cbind(cl.df, ref.cl.df[max.ref.cl,])
+    row.names(cl.df) = row.names(mat)
+    cl.df = cl.df[levels(cl),]
+    mat = mat[levels(cl),]
+    if(rename){
+      levels(cl) = 1:length(levels(cl))
+      row.names(cl.df) = row.names(mat)= levels(cl)
+    }
+    return(list(cl=cl, cl.df=cl.df, cor = mat))
+  }
+
+find_low_quality_cl <- function(cl.df, de.genes, gc.th=2000, min.gene.th=1)
+  {
+    cl.low = row.names(cl.df)[cl.df$gene.counts < gc.th]
+    cl.high = setdiff(levels(cl), cl.low)
+    de.score.mat <- get_de_matrix(de.genes, directed=TRUE, field="num")
+    tmp.mat = de.score.mat[cl.low, cl.high]
+    library(matrixStats)
+    cl.low = cl.low[rowMins(tmp.mat)  < min.gene.th]
+    tmp.mat = de.score.mat[cl.low, cl.high]
+    low.pair = data.frame(cl.low, cl.high = colnames(tmp.mat)[apply(tmp.mat, 1, which.min)],stringsAsFactors=FALSE)
+    low.pair$low.gene.counts = cl.df[low.pair[,1], "gene.counts"]
+    low.pair$high.gene.counts = cl.df[low.pair[,2], "gene.counts"]
+
+    low.pair$low.size = cl.df[low.pair[,1], "size"]
+    low.pair$high.size = cl.df[low.pair[,2], "size"]
+    return(low.pair)
   }

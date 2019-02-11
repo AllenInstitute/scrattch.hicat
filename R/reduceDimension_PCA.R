@@ -34,9 +34,12 @@ rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=coln
 
   select= which((v - mean(v))/sd(v)>th) 
   tmp = head(select,max.pca)
+  if(length(tmp)==0){
+    return(NULL)
+  }
   if(length(sampled.cells)< length(select.cells)){
-    rot  =  pca$rotatio[,tmp]
-    tmp.dat = norm.dat[row.names(rot), select.cells]
+    rot  =  pca$rotatio[,tmp,drop=F]
+    tmp.dat = norm.dat[row.names(rot), select.cells,drop=F]
     rd.dat = as.matrix(Matrix::t(tmp.dat)  %*% rot)
   }
   else{

@@ -107,14 +107,14 @@ display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL,
     if(!is.null(col)){
       tmp.col = rbind(tmp.col, col[,select.cells])
     }
-    tmp.dat = as.matrix(norm.dat[,names(cl)])
     if(is.null(markers)){
-      tmp = select_markers(tmp.dat,cl, de.genes=de.genes, ...)
+      tmp = select_markers(norm.dat,cl, de.genes=de.genes, ...)
       markers = tmp$markers
       de.genes=tmp$de.genes
     }
     cells_order=NULL
     if(plot & !is.null(markers)){
+      tmp.dat = as.matrix(norm.dat[markers, names(cl)])
       cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width)
     }
     return(list(markers=markers,de.genes=de.genes, cells_order= cells_order))
@@ -147,13 +147,18 @@ display_cl_markers_co.ratio <- function(select.cl, cl, norm.dat, co.ratio, prefi
   return(markers)
 }
 
-plot_cl_meta_barplot <- function(cluster, meta, col=NULL)
+plot_cl_meta_barplot <- function(cluster, meta, col=NULL, drop=FALSE)
 {
   library(ggplot2)
   meta = as.factor(meta)
   final.tbl <- table(cluster, meta)
   final.tbl = final.tbl/rowSums(final.tbl)
-  tb.df = droplevels(as.data.frame(final.tbl))
+  if(drop){
+    tb.df = droplevels(as.data.frame(final.tbl))
+  }
+  else{
+    tb.df = as.data.frame(final.tbl)
+  }
   g=ggplot(data=tb.df, aes(x=cluster,y=Freq,fill=meta))+ geom_bar(stat="identity")+theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),panel.grid.major=element_blank(),panel.background=element_blank())
   if(!is.null(col)){
     g=g + scale_fill_manual(values=col)
@@ -161,4 +166,49 @@ plot_cl_meta_barplot <- function(cluster, meta, col=NULL)
   return(g)
 }
 
+plot_cl_cells <- function(anno)
+  {
+    max.mag=ceiling(max(log10(table(anno$cluster_id))))
+    panel_pad <- 0.05
+    n_clusters = max(anno$cluster_id)
+    n_guides <- data.frame(y = seq(-4 - panel_pad * 4,-3 - panel_pad * 4,by = 1/10),
+                           x = 0.5,
+                           xend = n_clusters + 1,
+                           label = seq(5, 0, by = -0.5)) %>%
+                             mutate(yend = y)
+    
+
+    n_rects <- anno  %>%
+      group_by(cluster_id, cluster_color, cluster_label) %>%
+        summarise(n = n()) %>%
+          ungroup() %>%
+            mutate(adj_n = log10(n)) %>%
+              mutate(xmin = cluster_id - 0.5,
+                     xmax = cluster_id + 0.5,
+                     ymin = -3 - panel_pad * 4 - adj_n / max.mag,
+                     ymax = -3 - panel_pad * 4)
+    
+    g = ggplot(data = n_rects) + geom_rect( aes(xmin = xmin,
+                 xmax = xmax,
+                 ymin = ymin,
+                 ymax = ymax,
+                 fill = cluster_color)) +
+                   geom_segment(data = n_guides,
+                                aes(x = x,
+                                    xend = xend,
+                                    y = y,
+                                    yend = yend),
+                                linetype = "dashed") +
+                                  geom_text(data = n_guides,
+                                            aes(x = 0,
+                                                y = y,
+                                                label = label),
+                                            size = 2,
+                                            hjust = 1) +
+                                              scale_color_identity() +
+                                                scale_fill_identity() +
+                                        #scale_y_continuous(limits = c(-n_clusters - 2,2))+      
+                                                  theme_void()
+    return(g)
+  }
 
