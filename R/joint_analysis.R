@@ -18,7 +18,7 @@ blue.red <-colorRampPalette(c("blue", "white", "red"))
 ###cl.df.list cluster annotations for each dataset (optional) 
 
 
-prepare_joint  <- function(dat.list, ref.sets, ref.de.param.list=NULL, meta.df=NULL, cl.list=NULL, cl.df.list = NULL, de.genes.list=NULL, rename=TRUE)
+prepare_joint  <- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = NULL, de.genes.list=NULL, rename=TRUE)
   {
     common.genes = row.names(dat.list[[1]])
     for(x in 2:length(dat.list)){
@@ -33,9 +33,6 @@ prepare_joint  <- function(dat.list, ref.sets, ref.de.param.list=NULL, meta.df=N
           names(cl.list[[x]]) = paste(x, names(cl.list[[x]]), sep=".")
         }
       }
-    }
-    if(is.null(ref.de.param.list)){
-      ref.de.param.list = sapply(ref.sets, function(ref.set) de_param(), simplify=F)
     }
     platform = do.call("c",lapply(names(dat.list), function(p){
       dat = dat.list[[p]]
@@ -53,7 +50,7 @@ prepare_joint  <- function(dat.list, ref.sets, ref.de.param.list=NULL, meta.df=N
       meta.df = df
     }
     all.cells = unlist(lapply(dat.list, colnames))
-    comb.dat = list(dat.list=dat.list, ref.sets=ref.sets, meta.df = meta.df, ref.de.param.list = ref.de.param.list, cl.list=cl.list, cl.df.list = cl.df.list, de.genes.list = de.genes.list, common.genes=common.genes, all.cells= all.cells)
+    comb.dat = list(dat.list=dat.list, meta.df = meta.df, cl.list=cl.list, cl.df.list = cl.df.list, de.genes.list = de.genes.list, common.genes=common.genes, all.cells= all.cells)
   }
 
 
@@ -188,7 +185,7 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL)
   }
 
 
-select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20)
+select_joint_genes  <-  function(comb.dat, ref.list, ref.de.param.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20)
   {
     with(comb.dat, {
       select.genes = lapply(names(ref.list), function(ref.set){
@@ -201,7 +198,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
           cl = droplevels(cl.list[[ref.set]][tmp.cells])
           cl.size = table(cl)
           cl = droplevels(cl[cl %in% names(cl.size)[cl.size > de.param$min.cells]])
-          if(length(levels(cl))==1){
+          if(length(levels(cl)) <= 1){
             return(NULL)
           }
           de.genes = de.genes.list[[ref.set]]
@@ -246,17 +243,18 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
 ##' @param ... 
 ##' @return 
 ##' @author Zizhen Yao
-knn_joint <- function(comb.dat, select.sets= names(comb.dat$dat.list),select.cells=comb.dat$all.cells, select.genes=NULL, method="cor", self.method = "RANN", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, ...)
+knn_joint <- function(comb.dat, ref.de.param.list, select.sets= names(comb.dat$dat.list),select.cells=comb.dat$all.cells, select.genes=NULL, method="cor", self.method = "RANN", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, ...)
 {
   #attach(comb.dat)
   with(comb.dat,{
+  ref.sets = names(ref.de.param.list)  
   cat("Number of select cells", length(select.cells), "\n")
   cells.list = split(select.cells, meta.df[select.cells, "platform"])[select.sets]
   cells.list =  sample_sets_list(cells.list, cl.list[names(cl.list) %in% select.sets], sample.size=sample.size, cl.sample.size = cl.sample.size)
   ref.list = cells.list[ref.sets]
 ###Select genes for joint analysis
   if(is.null(select.genes)){
-    select.genes = select_joint_genes(comb.dat, ref.list = ref.list, select.cells=select.cells, ...)
+    select.genes = select_joint_genes(comb.dat, ref.list = ref.list, ref.de.param.list = ref.de.param.list, select.cells=select.cells, ...)
   }
   if(length(select.genes) < 5){
     return(NULL)
@@ -347,7 +345,7 @@ knn_joint <- function(comb.dat, select.sets= names(comb.dat$dat.list),select.cel
     cl[names(pred.cl)]= pred.cl
   }
   
-  cl  = merge_cl_multiple(comb.dat, cl, select.genes=select.genes)
+  cl  = merge_cl_multiple(comb.dat, cl, select.genes=select.genes, ref.de.param.list=ref.de.param.list)
   if(length(unique(cl))<=1){
     return(NULL)
   }
@@ -356,6 +354,7 @@ knn_joint <- function(comb.dat, select.sets= names(comb.dat$dat.list),select.cel
   result$cl = cl
   result$markers = select.genes
   result$select.genes= select.genes
+  result$ref.de.param.list = ref.de.param.list
   return(result)
 })
 }
@@ -369,10 +368,11 @@ knn_joint <- function(comb.dat, select.sets= names(comb.dat$dat.list),select.cel
 ##' @param verbose 
 ##' @return 
 ##' @author Zizhen Yao
-merge_cl_multiple <- function(comb.dat, cl,select.genes, verbose=TRUE)
+merge_cl_multiple <- function(comb.dat, cl,ref.de.param.list, select.genes, verbose=TRUE)
 {
   #attach(comb.dat)
   with(comb.dat, {
+  ref.sets = names(ref.de.param.list)
   cl.platform.counts = table(meta.df[names(cl), "platform"],cl)[ref.sets,,drop=F]
   tmp = table(meta.df$platform)[ref.sets]
   cl.platform = cl.platform.counts / as.vector(tmp) 
@@ -399,9 +399,10 @@ merge_cl_multiple <- function(comb.dat, cl,select.genes, verbose=TRUE)
     ref.dat = dat.list[[ref.set]][,names(tmp.cl)]
     rd.dat.t = ref.dat[select.genes, names(tmp.cl)]
     de.param = ref.de.param.list[[ref.set]]
-    merge.result = merge_cl(ref.dat, cl[cl %in% select.cl], rd.dat.t = rd.dat.t, de.param = de.param, max.cl.size = 200, verbose=verbose)
+    merge.result = merge_cl(ref.dat, cl[cl %in% select.cl], rd.dat.t = rd.dat.t, de.param = de.param, max.cl.size = 300, verbose=verbose)
     if(is.null(merge.result)){
       tmp= names(cl)[cl %in% select.cl]
+      cat("Merge", paste(select.cl, collapse=" "), "\n")
       ###all clusters should be merged
       cl[tmp] = min(as.integer(tmp.cl))
       next
@@ -412,6 +413,7 @@ merge_cl_multiple <- function(comb.dat, cl,select.genes, verbose=TRUE)
     cl[names(tmp.cl)] = tmp.cl
   }
   if(!split){
+    cat("Merge", paste(unique(cl), collapse=" "), "\n")
     cl[names(cl)] = min(as.integer(cl))
   }
   return(cl)
@@ -592,12 +594,12 @@ process <- function(comb.dat, prefix, overwrite=TRUE, ...)
 ##' @param ... 
 ##' @return 
 ##' @author Zizhen Yao
-iter_process <- function(comb.dat, select.cells, prefix, result=NULL, overwrite=TRUE, ...)
+iter_process <- function(comb.dat, select.cells, ref.de.param.list, prefix, result=NULL, overwrite=TRUE, ...)
   {
     
     #attach(comb.dat)
     if(is.null(result)){
-      result = process(comb.dat=comb.dat, select.cells=select.cells, prefix=prefix, overwrite=overwrite,...)
+      result = process(comb.dat=comb.dat, select.cells=select.cells, ref.de.param.list=ref.de.param.list, prefix=prefix, overwrite=overwrite,...)
     }
     if(is.null(result)){
       return(NULL)
@@ -605,6 +607,7 @@ iter_process <- function(comb.dat, select.cells, prefix, result=NULL, overwrite=
     all.results= list(result)
     names(all.results) = prefix
     cl = result$cl
+    ref.sets = names(ref.de.param.list)
     for(i in as.character(sort(unique(result$cl)))){
       tmp.result = with(comb.dat, {
         tmp.prefix=paste(prefix, i,sep=".")
@@ -616,7 +619,7 @@ iter_process <- function(comb.dat, select.cells, prefix, result=NULL, overwrite=
         pass.th = sapply(ref.sets, function(set)platform.size[[set]] >= ref.de.param.list[[set]]$min.cells)
         pass.th2 = sapply(ref.sets, function(set)platform.size[[set]] >= ref.de.param.list[[set]]$min.cells*2)
         if(sum(pass.th) == length(ref.sets) & sum(pass.th2) >= 1){
-            tmp.result = iter_process(comb.dat, select.cells=select.cells,  prefix=tmp.prefix, overwrite=overwrite, ...)
+            tmp.result = iter_process(comb.dat, select.cells=select.cells, ref.de.param.list=ref.de.param.list, prefix=tmp.prefix, overwrite=overwrite, ...)
           }
         else{
           tmp.result = NULL
@@ -751,7 +754,7 @@ plot_confusion <- function(consensus.cl, prefix, comb.dat,...)
   })
 }
 
-plot_markers <- function(comb.dat, cl, prefix, sets = names(comb.dat$ref.list), de.param.list = comb.dat$ref.de.param.list,  maxGenes=500, cl.col=NULL, select.genes=NULL, save.matrix=FALSE,...)
+plot_markers <- function(comb.dat, cl, prefix, sets = names(comb.dat$dat.list), de.param.list,  maxGenes=500, cl.col=NULL, select.genes=NULL, save.matrix=FALSE,...)
   {
     with(comb.dat,{
       jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))

@@ -144,7 +144,7 @@ merge_cl<- function(norm.dat,
         tmp.dat = norm.dat[,sampled.cells]
       }
       else{
-        tmp.dat = norm.dat[,names(cl)]
+        tmp.dat = norm.dat[,intersect(names(cl),colnames(norm.dat))]
       }
       
       #####Check pairs already known but not yet merged yet.
