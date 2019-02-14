@@ -18,7 +18,7 @@ test_merge <- function(de.pair, de.param, merge.type="undirectional")
         to.merge=de.pair$up.score < de.param$de.score.th | de.pair$down.score < de.param$de.score.th
       }
       if(!to.merge & !is.null(de.param$min.genes)){
-        to.merge=de.pair$up.num < de.param$min.genes | de.pair$down.score < de.param$min.genes
+        to.merge=de.pair$up.num < de.param$min.genes | de.pair$down.num < de.param$min.genes
       }
     }
     return(to.merge)
