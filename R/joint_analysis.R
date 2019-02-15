@@ -1,8 +1,5 @@
 library(Matrix)
 library(ggplot2)
-source("/allen/programs/celltypes/workgroups/rnaseqanalysis/yzizhen/My_R/scrattch.hicat/R/merge_cl.R")
-source("/allen/programs/celltypes/workgroups/rnaseqanalysis/yzizhen/My_R/scrattch.hicat/R/reduceDimension_PCA.R")
-
 
 jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 blue.red <-colorRampPalette(c("blue", "white", "red"))
@@ -209,7 +206,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, ref.de.param.list, select.c
         else{
           norm.dat = dat.list[[ref.set]][common.genes,ref.cells]
           counts =  2^norm.dat -1
-          vg = findVG(as.matrix(counts[select.genes,sampled.cells]),plot.fig=plot.fig)
+          vg = findVG(as.matrix(counts[select.genes,sampled.cells]))
           select.genes = row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)]
           select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
           rd = rd_PCA(norm.dat,select.genes, select.cells, max.pca = max.dim)
@@ -852,4 +849,57 @@ plot_markers_cl <- function(select.genes, gene.ordered=FALSE, cl.means.list = NU
     }
     dev.off()
   }
+
+
+
+get_set_cl_means <- function(comb.dat, cl, min.cells=4)
+  {
+    cl.means =  with(comb.dat, sapply(names(dat.list), function(x){
+      tmp.cells = intersect(names(cl), colnames(comb.dat$dat.list[[x]]))
+      tmp.cl = cl[tmp.cells]
+      tmp.size = table(tmp.cl)
+      tmp.cl = droplevels(tmp.cl[tmp.cl %in% names(tmp.size)[tmp.size >= min.cells]])
+      get_cl_means(dat.list[[x]], tmp.cl)
+    },simplify=F))
+  }
+
+get_gene_cl_correlation <- function(cl.means.list)
+  {
+    sets=names(cl.means.list)
+    gene.cl.cor = list()
+    for(i in 1:(length(cl.means.list)-1)){
+      for(j in (i+1):length(cl.means.list)){
+        pair= paste(sets[i], sets[j], sep=":")
+        common.cl = intersect(colnames(cl.means.list[[i]]), colnames(cl.means.list[[j]]))
+        gene.cor =  pair_cor(cl.means[[i]][common.genes,common.cl],cl.means[[j]][common.genes,common.cl])
+        gene.cl.cor[[pair]] = gene.cor
+      }
+    }
+    return(gene.cl.cor)
+  }
+
+
+get_de_result  <- function(comb.dat, cl, de.param.list)
+  {
+    de.result <- sapply(names(de.param.list), function(x){
+      tmp.cl = droplevels(cl[names(cl) %in% colnames(dat.list[[x]])])
+      de.result = display_cl(tmp.cl, dat.list[[x]], max.cl.size = 200, de.param= de.param.list[[x]],n.markers=50)
+    },simplify=F)
+    marker.counts <- table(unlist(sapply(de.result,function(x)x$markers,simplify=F)))
+    de.genes.list = sapply(de.result, function(x)x$de.genes, simplify=F)
+    return(list(marker.counts=marker.counts, de.genes.list=de.genes.list))
+  }
+
+
+
+impute_val_cor <- function(dat, impute.dat)
+  {
+    gene.cor = pair_cor(dat, impute.dat)
+    gene.cor[is.na(gene.cor)] = 0
+    return(gene.cor)
+  }
+
+
+
+
 
