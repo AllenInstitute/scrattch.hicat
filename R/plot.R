@@ -91,7 +91,25 @@ display_cl_one_vs_others <- function(select.cl, cl, norm.dat, de.genes,  plot=!i
     return(list(markers=markers,cells_order= cells_order))
   }
   
-
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param cl 
+##' @param norm.dat 
+##' @param prefix 
+##' @param plot 
+##' @param col 
+##' @param max.cl.size 
+##' @param markers 
+##' @param de.genes 
+##' @param main 
+##' @param height 
+##' @param width 
+##' @param min.sep 
+##' @param ... 
+##' @return 
+##' @author Zizhen Yao
 display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9, min.sep=10, ...)
   {
     select.cells=names(cl)        
@@ -113,8 +131,8 @@ display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL,
       de.genes=tmp$de.genes
     }
     cells_order=NULL
-    if(plot & !is.null(markers)){
-      tmp.dat = as.matrix(norm.dat[markers, names(cl)])
+    if(plot & !is.null(markers) & length(markers)>0){
+      tmp.dat = as.matrix(norm.dat[markers, names(cl),drop=F])
       cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width)
     }
     return(list(markers=markers,de.genes=de.genes, cells_order= cells_order))

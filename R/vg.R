@@ -30,7 +30,7 @@ findVG <- function(dat,
     gene_vars <-  rowMeans(scaled_data^2) - gene_means^2
   } else {
     gene_means <- Matrix::rowMeans(scaled_data)
-    gene_vars <- Matrix::rowMeans(scaled_data^2) - scaled_data^2
+    gene_vars <- Matrix::rowMeans(scaled_data^2) - gene_means^2
   }
   
   dispersion <- log10(gene_vars/gene_means)
