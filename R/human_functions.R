@@ -113,16 +113,18 @@ check_outlier <- function(anno, cluster, norm.dat,
   anno$cluster <- cluster[select.cells]
   neuronal.cl  <- check_neun(anno, cluster, neun.thresh = neun.thresh, 
                              neun.colname = neun.colname, neun.val = neun.val)
-
+  anno.n <- droplevels(subset(anno, cluster %in% neuronal.cl))
+  anno.nn <- droplevels(subset(anno, ! cluster %in% neuronal.cl))
+  
   # QC metric check
   qc.metrics   <- intersect(qc.metrics, colnames(anno))
-
-  qc.median.n    <- apply(anno[neuronal.cl, qc.metrics], 2, function(x) {
-    tapply(x, cluster[neuronal.cl], function(y) median(as.numeric(y), na.rm = TRUE))
+  
+  qc.median.n    <- apply(anno.n[, qc.metrics], 2, function(x) {
+    tapply(x, anno.n$cluster, function(y) median(as.numeric(y), na.rm = TRUE))
   })
   qc.check.n     <- apply(qc.median.n, 2, check_qc)
-  qc.median.nn    <- apply(anno[!neuronal.cl, qc.metrics], 2, function(x) {
-    tapply(x, cluster[!neuronal.cl], function(y) median(as.numeric(y), na.rm = TRUE))
+  qc.median.nn    <- apply(anno.nn[, qc.metrics], 2, function(x) {
+    tapply(x, anno.nn$cluster, function(y) median(as.numeric(y), na.rm = TRUE))
   })
   qc.check.nn     <- apply(qc.median.nn, 2, check_qc)
   qc.check <- rbind(qc.check.n, qc.check.nn)
