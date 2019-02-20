@@ -56,7 +56,7 @@ First prepare the datasets
 anno <- tasic_2016_anno
 
 # Make a data.frame of unique cluster id, type, color, and broad type
-ref.cl.df <- as.data.frame(unique(anno[,c("primary_type_id", "primary_type", "primary_type_color", "broad_type")]))
+ref.cl.df <- as.data.frame(unique(anno[,c("primary_type_id", "primary_type_label", "primary_type_color", "broad_type")]))
 
 #standardize cluster annoation with cluster_id, cluster_label and cluster_color. These are the required fields to visualize clusters properly.
 colnames(ref.cl.df)[1:3] <- c("cluster_id", "cluster_label", "cluster_color")
@@ -65,7 +65,7 @@ colnames(ref.cl.df)[1:3] <- c("cluster_id", "cluster_label", "cluster_color")
 ref.cl.df <- ref.cl.df[order(ref.cl.df$cluster_id),]
 row.names(ref.cl.df) <- ref.cl.df$cluster_id
 
-ref.cl <- setNames(factor(anno$primary_type_id), anno$sample_id)
+ref.cl <- setNames(factor(anno$primary_type_id), anno$sample_name)
 ```
 
 Convert counts to CPM and take log2 transformation  
@@ -82,7 +82,7 @@ norm.dat@x <- log2(norm.dat@x+1)
 
 For this demo, we'll select a small subset of CGE-derived interneurons for clustering. This gives us a set of 284 single-cell transcriptomic profiles to work with.   
 ```{r Filter samples}
-select.cells <- with(anno, sample_id[primary_type!="unclassified" & grepl("Igtp|Ndnf|Vip|Sncg|Smad3",primary_type)])
+select.cells <- with(anno, sample_name[primary_type_label!="unclassified" & grepl("Igtp|Ndnf|Vip|Sncg|Smad3",primary_type_label)])
 ```
 
 ## Parameter specification  
