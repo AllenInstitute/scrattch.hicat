@@ -83,7 +83,7 @@ check_qc <- function(x, qc.iqr.mult = 3) {
 #'   pre-defined set of genes to be entered. default is "SNAP25", "GAD1", "GAD2", 
 #'   "SLC17A7", "SLC17A6"
 #' @param expr.th expression threshold for detecting test genes
-#' @param prop.th proportion threshold of detected genes by cluster (default is 0.5, 0.5, 0.2, 0.2)
+#' @param prop.th proportion threshold of detected genes by cluster (default is 0.4, 0.4, 0.4, 0.4, 0.4)
 #' @param min.prop.th one of last 4 test genes should have detection at least at this amount
 #' @param plot default is TRUE
 #' @param plot.path path of plot, default is ./output/
@@ -102,7 +102,7 @@ check_outlier <- function(anno, cluster, norm.dat,
                           qc.metrics = c("Genes.Detected.CPM", "percent_reads_aligned_total", "complexity_cg"),
                           test.genes = c("SNAP25", "GAD1", "GAD2", "SLC17A7", "SLC17A6"),
                           expr.th = 3,
-                          prop.th = c(0.5, 0.5, 0.5, 0.5, 0.5), 
+                          prop.th = c(0.4, 0.4, 0.4, 0.4, 0.4), 
                           min.prop.th = 0.8,
                           plot = TRUE,
                           plot.path = "output/") {
@@ -113,20 +113,30 @@ check_outlier <- function(anno, cluster, norm.dat,
   anno$cluster <- cluster[select.cells]
   neuronal.cl  <- check_neun(anno, cluster, neun.thresh = neun.thresh, 
                              neun.colname = neun.colname, neun.val = neun.val)
-  anno.n <- droplevels(subset(anno, cluster %in% neuronal.cl))
-  anno.nn <- droplevels(subset(anno, ! cluster %in% neuronal.cl))
   
   # QC metric check
   qc.metrics   <- intersect(qc.metrics, colnames(anno))
   
-  qc.median.n    <- apply(anno.n[, qc.metrics], 2, function(x) {
-    tapply(x, anno.n$cluster, function(y) median(as.numeric(y), na.rm = TRUE))
-  })
-  qc.check.n     <- apply(qc.median.n, 2, check_qc)
-  qc.median.nn    <- apply(anno.nn[, qc.metrics], 2, function(x) {
-    tapply(x, anno.nn$cluster, function(y) median(as.numeric(y), na.rm = TRUE))
-  })
-  qc.check.nn     <- apply(qc.median.nn, 2, check_qc)
+  if (sum(neuronal.cl) > 1) {
+    anno.n <- droplevels(subset(anno, cluster %in% names(neuronal.cl)[neuronal.cl]))
+    qc.median.n    <- apply(anno.n[, qc.metrics], 2, function(x) {
+      tapply(x, anno.n$cluster, function(y) median(as.numeric(y), na.rm = TRUE))
+    })
+    qc.check.n     <- apply(qc.median.n, 2, check_qc)
+  } else {
+    qc.check.n <- NULL
+  }
+  
+  if (sum(!neuronal.cl) > 1) {
+    anno.nn <- droplevels(subset(anno, cluster %in% names(neuronal.cl)[!neuronal.cl]))
+    qc.median.nn    <- apply(anno.nn[, qc.metrics], 2, function(x) {
+      tapply(x, anno.nn$cluster, function(y) median(as.numeric(y), na.rm = TRUE))
+    })
+    qc.check.nn     <- apply(qc.median.nn, 2, check_qc)
+  } else {
+    qc.check.nn <- NULL
+  }
+  
   qc.check <- rbind(qc.check.n, qc.check.nn)
   qc.outlier   <-  apply(qc.check, 1, sum) > 0
   if (plot == TRUE & sd(qc.check) > 0) {
