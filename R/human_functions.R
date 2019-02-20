@@ -113,12 +113,20 @@ check_outlier <- function(anno, cluster, norm.dat,
   anno$cluster <- cluster[select.cells]
   neuronal.cl  <- check_neun(anno, cluster, neun.thresh = neun.thresh, 
                              neun.colname = neun.colname, neun.val = neun.val)
+
+  # QC metric check
   qc.metrics   <- intersect(qc.metrics, colnames(anno))
-  qc.median    <- apply(anno[, qc.metrics], 2, function(x) {
-    tapply(x, cluster, function(y) median(as.numeric(y), na.rm = TRUE))
+
+  qc.median.n    <- apply(anno[neuronal.cl, qc.metrics], 2, function(x) {
+    tapply(x, cluster[neuronal.cl], function(y) median(as.numeric(y), na.rm = TRUE))
   })
-  qc.check     <- apply(qc.median, 2, check_qc)
-  qc.outlier   <- neuronal.cl & apply(qc.check, 1, sum) > 0
+  qc.check.n     <- apply(qc.median.n, 2, check_qc)
+  qc.median.nn    <- apply(anno[!neuronal.cl, qc.metrics], 2, function(x) {
+    tapply(x, cluster[!neuronal.cl], function(y) median(as.numeric(y), na.rm = TRUE))
+  })
+  qc.check.nn     <- apply(qc.median.nn, 2, check_qc)
+  qc.check <- rbind(qc.check.n, qc.check.nn)
+  qc.outlier   <-  apply(qc.check, 1, sum) > 0
   if (plot == TRUE & sd(qc.check) > 0) {
     pdf(
       file = paste0(plot.path, "/cluster_qc_check.pdf"),
@@ -128,14 +136,20 @@ check_outlier <- function(anno, cluster, norm.dat,
                        color = c("grey90", "black"), legend = FALSE)
     dev.off()
   }
+  
+  # Expression check
   expr.cnt <- apply(norm.dat[test.genes, ], 1, function(x) {
     tapply(x, cluster, function(x) sum(x > expr.th) / length(x))
   })
-  expr.outlier <- neuronal.cl & (expr.cnt[, test.genes[1]] < prop.th[1] |
-    (expr.cnt[, test.genes[2]] > prop.th[2] | expr.cnt[, test.genes[3]] > prop.th[3]) &
-      (expr.cnt[, test.genes[4]] > prop.th[4] | expr.cnt[, test.genes[5]] > prop.th[5]) |
-    (expr.cnt[, test.genes[2]] < min.prop.th & expr.cnt[, test.genes[3]] < min.prop.th & 
-       expr.cnt[, test.genes[4]] < min.prop.th & expr.cnt[, test.genes[5]] < min.prop.th))
+  expr.outlier <- ((expr.cnt[, test.genes[2]] > prop.th[2] | 
+                      expr.cnt[, test.genes[3]] > prop.th[3]) &
+                     (expr.cnt[, test.genes[4]] > prop.th[4] | 
+                        expr.cnt[, test.genes[5]] > prop.th[5])) |
+    (neuronal.cl & (expr.cnt[, test.genes[1]] < prop.th[1] |
+                      (expr.cnt[, test.genes[2]] < min.prop.th & 
+                         expr.cnt[, test.genes[3]] < min.prop.th & 
+                         expr.cnt[, test.genes[4]] < min.prop.th & 
+                         expr.cnt[, test.genes[5]] < min.prop.th)))
   if (plot == TRUE) {
     pdf(
       file = paste0(plot.path, "/cluster_marker_check.pdf"),
