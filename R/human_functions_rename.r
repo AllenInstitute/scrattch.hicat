@@ -337,6 +337,15 @@ renameAndOrderClusters <- function(
         specGenes[s] <- specGenes0[s]
       }
     }
+    # Find the top gene by tau if the function above fails     # NEW
+    prpMax <- apply(propExpr,1,max)
+    prpWm  <- colnames(propExpr)[apply(propExpr,1,which.max)]
+    names(prpWm) <- names(prpMax)
+    tau    <- calc_tau(propExpr[prpMax>=propMin,])
+    prpWm  <- prpWm[prpMax>=propMin][order(-tau,-prpMax[prpMax>=propMin])]
+    for (s in colnames(propExpr)[(specGenes == "none")]) {
+      specGenes[s] <- names(prpWm[prpWm==s])[1]
+    }
     clusterInfo$specificGene <- specGenes[clusterInfo$old_cluster_label] # FIX
   }
   ###### (END: THIS PART COULD BE REPLACED BY OTHER HICAT MARKER GENE SELECTION STRATEGY) ######
@@ -374,17 +383,18 @@ renameAndOrderClusters <- function(
   if (!is.na(layerNameColumn)) {
     clLayer <- sampleInfo[, layerNameColumn]
     names(clLayer) <- names(cl3)
+    len <- length(unique(clLayer))
     layerVec <- (tapply(names(cl3), cl3, function(x) {
       lyy <- factor(clLayer)[x]
-      if (mean(is.na(lyy)) >= 0.5) return(c(0, 0, 0, 0, 0, 0)) # Address non-cortical areas
+      if (mean(is.na(lyy)) >= 0.5) return(rep(0,len)) # Address non-cortical areas
       lyy <- lyy[!is.na(lyy)] # Address non-cortical areas
       layTab <- cbind(as.numeric(names(table(lyy))), table(lyy), table(clLayer))
       return(((layTab[, 2] / layTab[, 3]) / max(layTab[, 2] / layTab[, 3]))) # replace max with sum?
     }))
     rn <- names(layerVec)
-    layerVec <- matrix(unlist(layerVec), ncol = 6, byrow = TRUE)
+    layerVec <- matrix(unlist(layerVec), ncol = len, byrow = TRUE)
     rownames(layerVec) <- rn
-    colnames(layerVec) <- 1:6
+    colnames(layerVec) <- 1:len
     layLab <- apply(layerVec, 1, function(x, y) {
       z <- as.numeric(colnames(layerVec)[x >= y])
       if (length(z) == 0) return("x") # Replace with whatever we want to call layers outside cortex
