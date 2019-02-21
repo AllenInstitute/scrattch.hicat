@@ -376,12 +376,13 @@ renameAndOrderClusters <- function(
       rg <- -sort(-round(100 * rg / sum(rg)))[1]
       return(paste(names(rg), rg, sep = "~"))
     }))
-    clusterInfo$region <- regionVec
+    clusterInfo$region <- clusterInfo[,regionNameColumn] <- regionVec
   }
 
   ## Include information about layer, if desired
   if (!is.na(layerNameColumn)) {
     clLayer <- sampleInfo[, layerNameColumn]
+    clLayer <- as.numeric(gsub("L","",clLayer))  # NEW
     names(clLayer) <- names(cl3)
     len <- length(unique(clLayer))
     layerVec <- (tapply(names(cl3), cl3, function(x) {
@@ -392,9 +393,10 @@ renameAndOrderClusters <- function(
       return(((layTab[, 2] / layTab[, 3]) / max(layTab[, 2] / layTab[, 3]))) # replace max with sum?
     }))
     rn <- names(layerVec)
+    cn <- names(layerVec[[1]])
     layerVec <- matrix(unlist(layerVec), ncol = len, byrow = TRUE)
     rownames(layerVec) <- rn
-    colnames(layerVec) <- 1:len
+    colnames(layerVec) <- cn
     layLab <- apply(layerVec, 1, function(x, y) {
       z <- as.numeric(colnames(layerVec)[x >= y])
       if (length(z) == 0) return("x") # Replace with whatever we want to call layers outside cortex
@@ -402,7 +404,7 @@ renameAndOrderClusters <- function(
       return(paste(range(z), collapse = "-"))
     }, propLayer)
     layLab <- paste0("L", layLab)
-    clusterInfo$layer <- layLab
+    clusterInfo$layer <- clusterInfo[,layerNameColumn] <- layLab
   }
 
   ## Determine closest matching other column (e.g., MTG cluster) if desired
@@ -413,7 +415,7 @@ renameAndOrderClusters <- function(
       nm <- -sort(-table(sampleInfo[y, matchNameColumn]))
       return(names(nm)[1])
     }))
-    clusterInfo$topMatch <- matchVec
+    clusterInfo$topMatch <- clusterInfo[,matchNameColumn] <- matchVec
   }
 
   ## Count the number of cells per cluster, if desired
