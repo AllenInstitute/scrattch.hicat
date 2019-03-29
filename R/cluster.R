@@ -128,14 +128,18 @@ onestep_clust <- function(norm.dat,
                           max.cl.size = 300,
                           k.nn = 15,
                           prefix = NULL, 
-                          verbose = FALSE)
+                          verbose = FALSE, regress.x=NULL)
                           
   {
     library(matrixStats)
     method=method[1]
     dim.method=dim.method[1]
     merge.type=merge.type[1]
-    
+    if(!is.null(regress.x)){
+      print("regression")
+      tmp =  lm_normalize(as.matrix(norm.dat[,select.cells]), regress.x[select.cells], R_2.th=0.1)
+      norm.dat = tmp[[1]]
+    }
     if(length(select.cells)>sampleSize){
       sampled.cells = sample(select.cells, pmin(length(select.cells),sampleSize))
     }
@@ -168,13 +172,13 @@ onestep_clust <- function(norm.dat,
     }
     if(dim.method=="WGCNA"){
       ###Ignore vg.padj.th for WGCNA, choose top "maxGgenes" for analysis
-      select.genes = row.names(vg)[which(vg$loess.padj < 1)]
+      select.genes = vg[which(vg$loess.padj < 1),"gene"]
       select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
       rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=sampled.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)$rd.dat
     }
     else{
        ###If most genes are differentially expressed, then use absolute dispersion value
-      select.genes = row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)]
+      select.genes = vg[which(vg$loess.padj < vg.padj.th | vg$dispersion >3),"gene"]
       select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
       if(verbose){
         cat("Num high variance genes:",length(select.genes),"\n")
@@ -370,25 +374,16 @@ reorder_cl <- function(cl, dat)
 
 
 
-combine_result <- function(result, split.result)
+combine_finer_split <- function(cl, finer.cl)
   {
-    cl = result$cl
-    markers=result$markers
-    n.cl = 1
-    new.cl = setNames(rep(1, length(cl)), names(cl))
-    for(x in as.character(sort(unique(cl)))){
-      tmp.cells = names(cl)[cl==x]
-      if(!x %in% names(split.result)){
-        new.cl[tmp.cells]=n.cl
-        n.cl = n.cl+1
-      }
-      else{
-        print("finer split")       
-        tmp.cl = split.result[[x]]$cl.result$cl
-        new.cl[names(tmp.cl)] = n.cl + as.integer(tmp.cl)
-        markers=union(markers, split.result[[x]]$markers)
-        n.cl = max(new.cl)
-      }
+    if(is.factor(cl)){
+      cl = setNames(as.integer(cl), names(cl))
     }
-    return(list(cl = new.cl, markers=markers))
+    if(is.factor(finer.cl)){
+      finer.cl = setNames(as.integer(finer.cl), names(finer.cl))
+    }
+    max.cl = max(cl)
+    finer.cl = finer.cl + max.cl
+    cl[names(finer.cl)] = finer.cl
+    return(cl)
   }

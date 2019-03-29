@@ -35,7 +35,15 @@ map_by_cor <- function(train.dat,
   row.names(cl.dat) <- row.names(train.dat)
   
   # Perform correlations
-  test.cl.cor <- cor(as.matrix(test.dat), cl.dat)
+  if(!is.matrix(test.dat) & nrow(test.dat)*ncol(test.dat) > 10^8){
+    library(qlcMatrix)
+    test.cl.cor <- corSparse(test.dat, cl.dat)
+    colnames(test.cl.cor) = colnames(cl.dat)
+    row.names(test.cl.cor) = colnames(test.dat)
+  }
+  else{
+    test.cl.cor <- cor(as.matrix(test.dat), cl.dat)
+  }
   test.cl.cor[is.na(test.cl.cor)] <- 0
   
   # Find maximum correlation
@@ -118,21 +126,21 @@ predict_annotate_cor <- function(cl,
                                  ref.cl.df, 
                                  ref.norm.dat, 
                                  method = "median", 
-                                 reorder = FALSE)
+                                 reorder = TRUE)
 {
   map_results <- map_by_cor(ref.norm.dat[ref.markers,], 
                             ref.cl, 
                             norm.dat[ref.markers, names(cl)],
                             method = method)
   
-  pred.cl <- setNames(factor(as.character(map_result$pred.df$pred.cl), levels = row.names(ref.cl.df)), row.names(map_results$pred.df))
+  pred.cl <- setNames(factor(as.character(map_results$pred.df$pred.cl), levels = row.names(ref.cl.df)), row.names(map_results$pred.df))
   
-  results <- compare_annotate(cl, 
-                              pred.cl, 
-                              ref.cl.df, 
-                              reorder = reorder)
+  map_results$annoate  <- compare_annotate(cl, 
+                                           pred.cl, 
+                                           ref.cl.df, 
+                                           reorder = reorder)
   
-  return(results)
+  return(map_results)
 }
 
 #' Perform bootstrapped mapping using a fraction of provided marker genes.
@@ -268,11 +276,15 @@ compare_annotate <- function(cl,
   if(!is.factor(cl)){
     cl = setNames(factor(cl),names(cl))
   }
+  if(!is.factor(ref.cl)){
+    ref.cl = setNames(factor(as.character(ref.cl),levels=row.names(ref.cl.df)),names(ref.cl))
+  }
   common.cells <- intersect(names(cl),names(ref.cl))
   ###Find clusters not present in ref.cl
-  
+  cl = droplevels(cl[common.cells])
+  ref.cl = droplevels(ref.cl[common.cells])
   # compare predicted cluster member with the new clustering result 
-  tb <- table(cl[common.cells], ref.cl[common.cells])
+  tb <- table(cl, ref.cl)
   cl.id.map <- NULL
   
   # Reorder clusters by size of overlap if reorder == TRUE
@@ -289,8 +301,7 @@ compare_annotate <- function(cl,
   }
   
   # Assign the best matching old cluster to each new cluster. 
-  tb <- table(cl = cl[common.cells],
-              ref.cl = ref.cl[common.cells])
+  tb <- table(cl = cl,ref.cl = ref.cl)
   max.ref.cl <- colnames(tb)[apply(tb, 1, which.max)]
   
   cl.df <- data.frame(ref.cl = max.ref.cl)
@@ -318,31 +329,33 @@ compare_annotate <- function(cl,
   tb.df <- tb.df[tb.df$Freq > 0,]
   
   select.cells <- names(cl)
-  
+
+  cl.size = table(cl)
+  ref.cl.size = table(ref.cl)
+  tb.df$jaccard = as.vector(tb.df$Freq/(cl.size[as.character(tb.df[,1])] + ref.cl.size[as.character(tb.df[,2])] - tb.df$Freq))
   # Compute Jaccard statistics for each pair of clusters
-  tb.df$jaccard <- 0
-  for(i in 1:nrow(tb.df)){
-    n_ol <- length(union(common.cells[cl[common.cells] == as.character(tb.df[i,1])],
-                         common.cells[ref.cl[common.cells] == as.character(tb.df[i,2])]))
-    
-    tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
-  }
+  #tb.df$jaccard <- 0
+  #for(i in 1:nrow(tb.df)){
+  #  n_ol <- length(union(common.cells[cl[common.cells] == as.character(tb.df[i,1])],
+  #                       common.cells[ref.cl[common.cells] == as.character(tb.df[i,2])]))
+  #  
+  #  tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
+  #}
   
   tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels = ref.cl.df$cluster_label)
                                
-  
   g <- ggplot(tb.df, 
               aes(x = cl, 
                   y = ref.cl.label)) + 
-    geom_point(aes(size = sqrt(Freq),
-                   color = jaccard)) + 
-    theme(axis.text.x = element_text(vjust = 0.1,
-                                     hjust = 0.2, 
-                                     angle = 90,
-                                     size = 7),
-          axis.text.y = element_text(size = 6)) + 
-    scale_color_gradient(low = "yellow", high = "darkblue") + 
-    scale_size(range=c(0,3))
+                    geom_point(aes(size = sqrt(Freq),
+                                   color = jaccard)) + 
+                                     theme(axis.text.x = element_text(vjust = 0.1,
+                                             hjust = 0.2, 
+                                             angle = 90,
+                                             size = 7),
+                                           axis.text.y = element_text(size = 6)) + 
+                                             scale_color_gradient(low = "yellow", high = "darkblue") + 
+                                               scale_size(range=c(0,3))
   
   out_list <- list(cl = cl,
                    cl.df = cl.df,
@@ -413,20 +426,37 @@ match_cl <- function(cl, dat, ref.cl, ref.cl.df, ref.dat, rename=TRUE)
     return(list(cl=cl, cl.df=cl.df, cor = mat))
   }
 
-find_low_quality_cl <- function(cl.df, de.genes, gc.th=2000, min.gene.th=1)
+find_low_quality_cl <- function(cl.df, cl.good, de.score.mat=NULL, de.genes)
   {
-    cl.low = row.names(cl.df)[cl.df$gene.counts < gc.th]
-    cl.high = setdiff(levels(cl), cl.low)
-    de.score.mat <- get_de_matrix(de.genes, directed=TRUE, field="num")
-    tmp.mat = de.score.mat[cl.low, cl.high]
+    if(is.null(de.score.mat)){
+      de.score.mat <- get_de_matrix(de.genes, directed=TRUE, field="num")
+    }
+    diag(de.score.mat) = max(de.score.mat)
     library(matrixStats)
-    cl.low = cl.low[rowMins(tmp.mat)  < min.gene.th]
-    tmp.mat = de.score.mat[cl.low, cl.high]
-    low.pair = data.frame(cl.low, cl.high = colnames(tmp.mat)[apply(tmp.mat, 1, which.min)],stringsAsFactors=FALSE)
+    tmp.mat = de.score.mat[, cl.good]
+    low.pair = data.frame(cl.low=row.names(tmp.mat), cl.good = colnames(tmp.mat)[apply(tmp.mat, 1, which.min)],stringsAsFactors=FALSE)
     low.pair$low.gene.counts = cl.df[low.pair[,1], "gene.counts"]
     low.pair$high.gene.counts = cl.df[low.pair[,2], "gene.counts"]
 
     low.pair$low.size = cl.df[low.pair[,1], "size"]
     low.pair$high.size = cl.df[low.pair[,2], "size"]
+    low.pair$up.genes = get_pair_matrix(de.score.mat, low.pair$cl.low, low.pair$cl.good)
+    low.pair$cl.low.label = cl.df[as.character(low.pair$cl.low),"cluster_label"]
+    low.pair$cl.good.label = cl.df[as.character(low.pair$cl.good),"cluster_label"]
+    row.names(low.pair) = low.pair$cl.low
     return(low.pair)
+  }
+
+
+plot_low_qc <- function(norm.dat, cl, low.df, nn.df, de.genes, all.col)
+  {
+    for(i in 1:nrow(low.df)){
+      x = low.df[i, "cl.low"]
+      y = low.df[i, "cl.good"]
+      i = nn.df[x, "nn.cl"]
+      j = nn.df[y, "nn.cl"]      
+      tmp.cl = droplevels(cl[cl %in% c(x,y,i,j)])
+      tmp.cl = tmp.cl[names(tmp.cl) %in% colnames(norm.dat)]
+      tmp=display_cl(tmp.cl, norm.dat, prefix=paste(levels(tmp.cl), collapse="_"), col=all.col, max.cl.size=100, de.genes=de.genes)
+    }
   }

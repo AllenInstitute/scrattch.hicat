@@ -141,19 +141,19 @@ merge_cl<- function(norm.dat,
       ##Down sample cells for efficiency
       if(!is.null(max.cl.size)){
         sampled.cells = sample_cells(cl[names(cl) %in% colnames(norm.dat)],  max.cl.size)
-        tmp.dat = norm.dat[,sampled.cells]
+        tmp.cl= cl[sampled.cells]
       }
       else{
-        tmp.dat = norm.dat[,intersect(names(cl),colnames(norm.dat))]
+        tmp.cl= cl
       }
-      
       #####Check pairs already known but not yet merged yet.
       new.pairs = setdiff(row.names(merge.pairs),names(de.genes))
       while(length(new.pairs) > 0){
         new.pairs = new.pairs[head(order(merge.pairs[new.pairs,"sim"],decreasing=T), pairBatch)]
         pairs = rbind(pairs, merge.pairs[new.pairs,,drop=F])
-        tmp.de.genes =de_score_pairs(tmp.dat, cl=cl[colnames(tmp.dat)], pairs=merge.pairs[new.pairs,,drop=F], de.param= de.param, method=de.method)$de.genes
+        tmp.de.genes =de_score_pairs(norm.dat, cl=tmp.cl, pairs=merge.pairs[new.pairs,,drop=F], de.param= de.param, method=de.method)$de.genes
         de.genes[names(tmp.de.genes)] = tmp.de.genes
+        gc()
         tmp.pairs= intersect(names(de.genes), row.names(merge.pairs))
         sc = sapply(de.genes[tmp.pairs], function(x){
           if(length(x)>0){x$score}
@@ -205,7 +205,14 @@ merge_cl<- function(norm.dat,
     }
     markers = NULL
     if(return.markers){
-      de.genes = de_score(tmp.dat, cl[colnames(tmp.dat)], de.genes=de.genes, de.param=de.param)
+      if(!is.null(max.cl.size)){
+        sampled.cells = sample_cells(cl[names(cl) %in% colnames(norm.dat)],  max.cl.size)
+        tmp.cl= cl[sampled.cells]
+      }
+      else{
+        tmp.cl= cl
+      }
+      de.genes = de_score(norm.dat, cl=tmp.cl, de.genes=de.genes, de.param=de.param)
     }
     markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=50)$markers
     sc = sapply(de.genes, function(x){

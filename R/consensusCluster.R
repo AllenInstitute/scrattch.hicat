@@ -5,23 +5,23 @@
 #'
 collect_co_matrix <- function(result.files,all.cells)
 {
-    subsample.cl=list()
-      co.matrix= matrix(0, nrow=length(all.cells),ncol=length(all.cells))
-      pr.matrix = matrix(0, nrow=length(all.cells),ncol=length(all.cells))
-      row.names(co.matrix)=row.names(pr.matrix)=colnames(co.matrix)=colnames(pr.matrix)=all.cells
-      for(f in result.files){
-            tmp=load(f)
-                cl=result$cl
-                cl = cl[intersect(names(cl),all.cells)]
-                pr.matrix[names(cl),names(cl)]=   pr.matrix[names(cl),names(cl)] + 1
-                for(x in unique(cl)){
-                        y=names(cl)[cl==x]
-                              co.matrix[y,y]= co.matrix[y,y]+1
-                      }
-                subsample.cl[[f]]= cl
-          }
-      co.ratio = co.matrix/pr.matrix
-      return(list(co.ratio=co.ratio,cl.list=subsample.cl))
+  subsample.cl=list()
+  co.matrix= matrix(0, nrow=length(all.cells),ncol=length(all.cells))
+  pr.matrix = matrix(0, nrow=length(all.cells),ncol=length(all.cells))
+  row.names(co.matrix)=row.names(pr.matrix)=colnames(co.matrix)=colnames(pr.matrix)=all.cells
+  for(f in result.files){
+    tmp=load(f)
+    cl=result$cl
+    cl = cl[intersect(names(cl),all.cells)]
+    pr.matrix[names(cl),names(cl)]=   pr.matrix[names(cl),names(cl)] + 1
+    for(x in unique(cl)){
+      y=names(cl)[cl==x]
+      co.matrix[y,y]= co.matrix[y,y]+1
+    }
+    subsample.cl[[f]]= cl
+  }
+  co.ratio = co.matrix/pr.matrix
+  return(list(co.ratio=co.ratio,cl.list=subsample.cl))
   }
 
 sample_cl_list <- function(cl.list, max.cl.size=500)
@@ -193,11 +193,10 @@ iter_consensus_clust <- function(cl.list, co.ratio=NULL,  cl.mat=NULL, norm.dat,
 
 
 
-collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.size=NULL)
+collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.size=NULL,mc.cores=1)
 {
   select.cells=c()
-  cl.list=list()
-  for(f in result.files){
+  run <- function(f){
     print(f)
     tmp=load(f)
     cl= result$cl
@@ -206,7 +205,18 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
     test.cl = setNames(map.df$pred.cl, row.names(map.df))
     all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
-    cl.list[[f]] = all.cl
+    return(all.cl)
+  }
+  if (mc.cores==1){
+    cl.list=sapply(result.files, function(f){run(f)})
+  }
+  else{
+    require(foreach)
+    require(doParallel)
+    cl <- makeCluster(mc.cores)
+    registerDoParallel(cl)
+    cl.list= foreach(i=1:niter, .combine='c') %dopar% run(f)
+    stopCluster(cl)
   }
   if(!is.null(max.cl.size)){
     select.cells= sample_cl_list(cl.list, max.cl.size=max.cl.size)
@@ -490,7 +500,7 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
     co.result <- collect_subsample_cl_matrix(norm.dat,result.files,all.cells)
   }
   if(graph.size < 10^9){
-    consensus.result = iter_consensus_clust(cl.list=co.result$cl.list, cl.mat = co.result$cl.mat, norm.dat=norm.dat, select.cells=all.cells, de.param = de.param, merge.type=merge.type, method=cut.method, result=init.result)
+    consensus.result = iter_consensus_clust(cl.list=co.result$cl.list, cl.mat = co.result$cl.mat, norm.dat=norm.dat, select.cells=all.cells, de.param = de.param, merge.type=merge.type, method=cut.method, result= init.result)
     refine.result = refine_cl(consensus.result$cl, cl.mat = co.result$cl.mat, tol.th=0.01, confusion.th=0.6, min.cells= de.param$min.cells)
     markers = consensus.result$markers
   }

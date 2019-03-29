@@ -363,3 +363,26 @@ dend_lca <- function(dend, l1, l2, l=rep(attr(dend,"label"),length(l1)))
 
 
 
+
+dend_match <- function(dend.list, cl.group){
+  dend_group=sapply(dend.list, function(d){
+    table(cl.group[labels(d)])
+  })
+  dend_group.df = as.data.frame(as.table(dend_group))
+  colnames(dend_group.df) = c("group","node","intersect")
+  dend_group.df = dend_group.df %>% filter(intersect > 0)
+  group_size=table(cl.group)
+  dend_size = sapply(dend.list, function(x)length(labels(x)))
+  dend_group.df$group_size = group_size[as.character(dend_group.df$group)]
+  dend_group.df$dend_size = dend_size[as.character(dend_group.df$node)]
+  dend_group.df$cl.union = sapply(1:nrow(dend_group.df), function(i){
+    cl1= names(cl.group)[cl.group == dend_group.df[i,"group"]]
+    cl2 = labels(dend.list[[as.character(dend_group.df[i,"node"])]])
+    length(union(cl1, cl2))
+  })
+  dend_group.df$jaccard = dend_group.df$intersect/dend_group.df$cl.union
+  group.match = with(droplevels(dend_group.df), tapply(1:nrow(dend_group.df), group, function(x)x[which.max(jaccard[x])]))
+  group.dend.match = dend_group.df[group.match,]
+  return(group.dend.match)
+}
+

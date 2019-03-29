@@ -391,7 +391,12 @@ cpm <- function(counts)
 logCPM <- function(counts)
   {
     norm.dat = cpm(counts)
-    norm.dat@x = log2(norm.dat@x + 1)
+    if(is.matrix(norm.dat)){
+      norm.dat = log2(norm.dat+1)
+    }
+    else{
+      norm.dat@x = log2(norm.dat@x + 1)
+    }
     norm.dat
   }
 

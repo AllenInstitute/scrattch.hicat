@@ -300,3 +300,53 @@ node_specific_markers <- function(dend.list, norm.dat, cl,...)
     },simplify=F))
   }
 
+
+select_pos_markers <- function(de.genes, cl, n.markers=3, up.gene.score=NULL, down.gene.score=NULL)
+  {
+    pairs = names(de.genes)
+    pairs.df = as.data.frame(do.call("rbind", strsplit(pairs, "_")))
+    row.names(pairs.df) = pairs
+    pairs.df = pairs.df[pairs.df[,1]%in% levels(cl) & pairs.df[,2]%in% levels(cl),]
+    if(is.null(up.gene.score) | is.null(down.gene.score)){
+      tmp=get_gene_score(de.genes)
+      up.gene.score=tmp$up.gene.score
+      down.gene.score=tmp$down.gene.score
+    }
+    cl.df$markers=""
+###for each cluster, find markers that discriminate it from other types
+    cl.markers <- sapply(levels(cl), function(tmp.cl){
+      up.pairs = row.names(pairs.df)[pairs.df[,1] == tmp.cl]
+      down.pairs = row.names(pairs.df)[pairs.df[,2] == tmp.cl]
+      add.up = setNames(rep(n.markers, length(up.pairs)), up.pairs)
+      add.down = setNames(rep(n.markers, length(down.pairs)), down.pairs)
+      tmp.result = select_markers_pair_direction(de.genes, add.up=add.up, add.down = add.down,up.gene.score=up.gene.score, down.gene.score=down.gene.score )
+      tmp.result$markers
+    },simplify=F)  
+  }
+
+
+
+###Beta score from Trygve
+
+get_beta_score <- function(propExpr, spec.exp = 2, mcores=1){
+  if(mcores ==1){
+    registerDoSEQ()
+  }
+  else{
+    cl <- parallel::makeForkCluster(mcores)
+    doParallel::registerDoParallel(cl)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+  }
+  calc_beta <- function(y, spec.exp = 2, eps1 = 1e-10) {
+    d1 <- as.matrix(dist(y))
+    score1 <- sum(d1^spec.exp) / (sum(d1) + eps1)
+    return(score1)
+  }
+
+  res <- foreach(i = 1:nrow(propExpr), .combine="c") %dopar% {
+    print(i)
+    calc_beta(propExpr[i,])
+  }
+  names(res) = row.names(propExpr)
+  return(res)
+}
