@@ -115,19 +115,18 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
 
 
     
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title Compute module eigen genes 
-##' @param gene.mod A list of gene modules. 
-##' @param norm.dat log transformed normalized data matrix. 
-##' @param select.cells Cells used to compute module eigen genes. 
-##' @param prefix Default NULL. If not NULL, a heatmap of the gene module eigen genes will be produced with "prefix" as the prefix for the pdf file. 
-##' @param method Default "ward.D". Used by hclust method to create the cell dendrogram for the heatmap display.
-##' @param hc Precomputed cell dendrogram for heatmap display. Default NULL.  
-##' @param ... Other plotting parameters passed to the heatmap function. 
-##' @return A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells. 
-
+#' Compute module eigen genes 
+#' 
+#' @param gene.mod A list of gene modules. 
+#' @param norm.dat log transformed normalized data matrix. 
+#' @param select.cells Cells used to compute module eigen genes. 
+#' @param prefix Default NULL. If not NULL, a heatmap of the gene module eigen genes will be produced with "prefix" as the prefix for the pdf file. 
+#' @param method Default "ward.D". Used by hclust method to create the cell dendrogram for the heatmap display.
+#' @param hc Precomputed cell dendrogram for heatmap display. Default NULL.  
+#' @param ... Other plotting parameters passed to the heatmap function. 
+#' 
+#' @return A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells. 
+#' 
 get_eigen <- function(gene.mod, norm.dat, select.cells=colnames(norm.dat), prefix=NULL,method="ward.D",hc=NULL,...)
   {
     #gene.vector = setNames(rep(names(gene.mod), sapply(gene.mod, length)), unlist(gene.mod))

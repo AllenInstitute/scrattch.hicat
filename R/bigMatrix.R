@@ -1,5 +1,13 @@
-library(bit64)
-bigMatrix <- setClass("bigMatrix", slots=c(x="integer64", i="integer64", p = "numeric", dim="numeric", row_id = "ANY", col_id = "ANY"),package = "scrattch.hicat")
+#library(bit64)
+
+bigMatrix <- setClass("bigMatrix", 
+                      slots = c(x = "integer64", 
+                                i = "integer64", 
+                                p = "numeric", 
+                                dim = "numeric", 
+                                row_id = "ANY", 
+                                col_id = "ANY"),
+                      package = "scrattch.hicat")
 
 
 combine_dat <- function(dat.list)

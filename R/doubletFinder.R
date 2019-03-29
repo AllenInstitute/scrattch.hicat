@@ -17,12 +17,14 @@
 #' @param proportion.NN The proportion (from 0-1) of the merged real-artificial dataset used to define
 #' each cell's neighborhood in PC space. Default set to 1%, based on optimization on PBMCs (see McGinnis,
 #' Murrow and Gartner 2018, BioRxiv).
+#' 
 #' @return An updated Seurat object with metadata for pANN values and doublet predictions.
+#' 
 #' @export
+#' 
 #' @examples
 #' seu <- doubletFinder(seu, expected.doublets = 1000, proportion.artificial = 0.25, proportion.NN = 0.01)
-
-
+#' 
 doubletFinder <- function(data, select.genes, proportion.artificial = 0.20,
                           k = pmin(100, ncol(data) * 0.01)) {
   library(RANN)
