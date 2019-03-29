@@ -1,4 +1,4 @@
-library(limma)
+#library(limma)
 
 
 #' Set differential expression (DE) threshold for genes and clusters. 
@@ -11,10 +11,9 @@ library(limma)
 #' @param q.diff.th Threshold on scaled proportion difference, defined as abs(q1 - q2)/max(q1, q2). DE genes should have differences greater than q.diff.th. Default 0.7 
 #' @param de.score.th To determine whether two clusters are seperable based on DE genes, we define de.score as the sum of -log10(adjusted Pvalub) for all DE genes. Each gene contributes at most 20 towards the sum. All clusters should have pairwise de.score greater than de.score.th. 
 #'
-#' @return returns a data frame
+#' @return returns a list
 #' @export
 #'
-
 de_param <- function(low.th=1, padj.th=0.01, lfc.th=1, q1.th=0.5, q2.th=NULL,q.diff.th=0.7, de.score.th=100, min.cells=4, min.genes=5)
 {
   list(low.th=low.th, padj.th=padj.th, lfc.th=lfc.th, q1.th=q1.th, q2.th=q2.th, q.diff.th = q.diff.th, de.score.th=de.score.th, min.cells=min.cells, min.genes=min.genes)
