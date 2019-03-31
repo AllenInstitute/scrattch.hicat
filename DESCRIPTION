@@ -29,5 +29,6 @@ Imports:
 RoxygenNote: 6.1.0
 Suggests: knitr,
     rmarkdown,
-    testthat
+    testthat,
+    tasic2016data
 VignetteBuilder: knitr
