@@ -1,3 +1,33 @@
+# Function call map
+# function_1()
+#   called_by_function_1() called_function_file.R
+#
+#
+# map_by_cor()
+#   get_cl_means() util.R
+#
+# map_cl_summary()
+#   map_by_cor() annotate.R
+#
+# predict_annotate_cor()
+#   map_by_cor() annotate.R
+#   compare_annotate() annotate.R
+# 
+# map_sampling()
+#   map_by_cor() annotate.R
+#
+# map_cv()
+#   map_by_cor() annotate.R
+#
+# compare_annotate()
+#
+# match_cl()
+#   get_cl_means() util.R
+# 
+# find_low_quality_cl
+#   get_de_matrix() de.genes.R
+#   get_pair_matrix() util.R
+
 #' Map samples to a training dataset by correlation
 #' 
 #' @param train.dat Training data matrix, usually log-transformed CPM
@@ -18,6 +48,9 @@ map_by_cor <- function(train.dat,
                        test.dat,
                        method = "median") {
   
+  method <- match.arg(arg = method, 
+                      choices = c("mean","median"))
+  
   # Get medians or means for each cluster
   if(method == "median"){
     cl.meds <- tapply(names(train.cl), 
@@ -36,7 +69,7 @@ map_by_cor <- function(train.dat,
   row.names(cl.dat) <- row.names(train.dat)
   
   # Perform correlations
-  if(!is.matrix(test.dat) & nrow(test.dat)*ncol(test.dat) > 10^8){
+  if(!is.matrix(test.dat) & nrow(test.dat)*ncol(test.dat) > 1e8){
     test.cl.cor <- qlcMatrix::corSparse(test.dat, cl.dat)
     colnames(test.cl.cor) = colnames(cl.dat)
     row.names(test.cl.cor) = colnames(test.dat)
@@ -87,6 +120,7 @@ map_cl_summary <- function(ref.dat,
                            ref.cl, 
                            map.dat, 
                            map.cl) {
+  
   # Map the training set to the reference
   map.result <- map_by_cor(ref.dat, ref.cl, map.dat)
   cor.matrix <- map.result$cor.matrix
@@ -122,16 +156,16 @@ map_cl_summary <- function(ref.dat,
 
 #' Predict annotations by cluster correlation
 #'
-#' @param cl 
-#' @param norm.dat 
-#' @param ref.markers 
-#' @param ref.cl 
-#' @param ref.cl.df 
-#' @param ref.norm.dat 
-#' @param method 
-#' @param reorder 
+#' @param cl a cluster factor object for data to map to the reference
+#' @param norm.dat a normalized data matrix for data to map to the reference
+#' @param ref.markers a set of reference marker genes
+#' @param ref.cl a reference cluster factor object
+#' @param ref.cl.df a reference cl.df data.frame that describes the reference clusters
+#' @param ref.norm.dat a reference normalized data matrix
+#' @param method "median" or "mean". Default is "median".
+#' @param reorder Whether or not to reorder the input clusters based on the reference.
 #'
-#' @return
+#' @return a list object with annotation results
 #' 
 #' @export
 #'
@@ -144,6 +178,9 @@ predict_annotate_cor <- function(cl,
                                  method = "median", 
                                  reorder = TRUE) {
   
+  method <- match.arg(arg = method,
+                      choices = c("mean", "median"))
+  
   map_results <- map_by_cor(ref.norm.dat[ref.markers,], 
                             ref.cl, 
                             norm.dat[ref.markers, names(cl)],
@@ -153,10 +190,10 @@ predict_annotate_cor <- function(cl,
                              levels = row.names(ref.cl.df)), 
                       row.names(map_results$pred.df))
   
-  map_results$annoate  <- compare_annotate(cl, 
-                                           pred.cl, 
-                                           ref.cl.df, 
-                                           reorder = reorder)
+  map_results$annotate  <- compare_annotate(cl, 
+                                            pred.cl, 
+                                            ref.cl.df, 
+                                            reorder = reorder)
   
   return(map_results)
 }
