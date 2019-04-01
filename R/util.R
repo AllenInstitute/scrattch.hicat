@@ -56,9 +56,11 @@ set_pair_matrix <- function(m, rows, cols, vals)
 
 get_pairs <- function(pairs.str)
   {
-    pairs=as.data.frame(do.call("rbind",strsplit(pairs.str, "_")),stringsAsFactors=FALSE)
-    row.names(pairs)=pairs.str
-    colnames(pairs) = c("P1", "P2")
+    pairs <- as.data.frame(do.call("rbind", strsplit(pairs.str, "_")), 
+                           stringsAsFactors = FALSE)
+    row.names(pairs) <- pairs.str
+    colnames(pairs) <- c("P1", "P2")
+    
     return(pairs)
   }
 
@@ -366,16 +368,16 @@ sample_cells<- function(cl, sample.size, weights = NULL)
 
 cpm <- function(counts)
   {
-    library(Matrix)
-    sf = Matrix::colSums(counts)/10^6
+    
+    sf <- Matrix::colSums(counts) / 1e6
+    
     if(is.matrix(counts)){    
-      return(t(t(counts) /sf))
-    }
-    else if(class(counts)=="dgCMatrix"){
-      library(IRanges)                  
+      return(t(t(counts) / sf))
+    } else if(class(counts) == "dgCMatrix"){
+      
       sep = counts@p
       sep = sep[-1] - sep[-length(sep)]
-      j = Rle(1:length(sep), sep)
+      j = IRanges::Rle(1:length(sep), sep)
       counts@x = counts@x/sf[as.integer(j)]
     }
     else if(class(counts)=="dgTMatrix"){

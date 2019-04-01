@@ -5,7 +5,8 @@
 \title{Set differential expression (DE) threshold for genes and clusters.}
 \usage{
 de_param(low.th = 1, padj.th = 0.01, lfc.th = 1, q1.th = 0.5,
-  q2.th = NULL, q.diff.th = 0.7, de.score.th = 100, min.cells = 4)
+  q2.th = NULL, q.diff.th = 0.7, de.score.th = 100, min.cells = 4,
+  min.genes = 5)
 }
 \arguments{
 \item{low.th}{Threshold on normalized gene expression to determiend whether a gene is detected in a cell. Default value 1. Users can specifiy different thresholds for different genes if necessary by using a vector with genes as names.}
@@ -23,7 +24,7 @@ de_param(low.th = 1, padj.th = 0.01, lfc.th = 1, q1.th = 0.5,
 \item{de.score.th}{To determine whether two clusters are seperable based on DE genes, we define de.score as the sum of -log10(adjusted Pvalub) for all DE genes. Each gene contributes at most 20 towards the sum. All clusters should have pairwise de.score greater than de.score.th.}
 }
 \value{
-returns a data frame
+returns a list
 }
 \description{
 Set differential expression (DE) threshold for genes and clusters.

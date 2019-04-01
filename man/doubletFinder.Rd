@@ -4,8 +4,8 @@
 \alias{doubletFinder}
 \title{Doublet detection in single-cell RNA sequencing data}
 \usage{
-doubletFinder(data, select.genes, proportion.artificial = 0.25,
-  k = ncol(data) * 0.005, sc.th = 0.5)
+doubletFinder(data, select.genes, proportion.artificial = 0.2,
+  k = pmin(100, ncol(data) * 0.01))
 }
 \arguments{
 \item{seu}{A fully-processed Seurat object (i.e. after normalization, variable gene definition,
@@ -35,4 +35,5 @@ of doublets.
 }
 \examples{
 seu <- doubletFinder(seu, expected.doublets = 1000, proportion.artificial = 0.25, proportion.NN = 0.01)
+
 }

@@ -6,6 +6,8 @@
 \usage{
 group_cl(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
   neun.thresh = 0.5, neun.colname = "facs_population_plan",
+  neun.val = "NeuN-pos", test.genes = c("GAD1", "GAD2", "SLC17A7",
+  "SLC17A6"), expr.th = 3, prop.th = c(0.5, 0.5, 0.2, 0.2),
   outlier.cl = NULL, donor.cl = NULL)
 }
 \arguments{
@@ -24,6 +26,14 @@ NeuN positive (default is 0.5)}
 
 \item{neun.colname}{column name in anno with the Neun information}
 
+\item{neun.val}{value corresponding to non-neuronal marker in neun.colname in anno}
+
+\item{test.genes}{genes used to define cell classes (default is GAD1, GAD2, SLC17A7, SLC17A6)}
+
+\item{expr.th}{expression threshold for detecting test genes}
+
+\item{prop.th}{proportion threshold of detected genes by cluster (default is 0.5, 0.5, 0.2, 0.2)}
+
 \item{outlier.cl}{vector of clusters previously defined as "outlier" (default is NULL)}
 
 \item{donor.cl}{vector of clusters previously defined as "donor" (default is NULL)}
@@ -34,7 +44,7 @@ gives the clusters names in each class (exc, inh, glia, donor, outlier)
 }
 \description{
 This function assigns each cluster to a predefined set of classes (exc, inh, glia, 
-  donor, outlier) using a predefined set of genes (GAD1, GAD2, SLC17A7, SLC17A6).
+  donor, outlier) using test.genes (default GAD1, GAD2, SLC17A7, SLC17A6).
   Later iterations of the function will allow for user-defined classes and genes.
 }
 \examples{

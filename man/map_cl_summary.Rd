@@ -4,7 +4,7 @@
 \alias{map_cl_summary}
 \title{Map a dataset to a reference, and compare existing cluster calls to the reference comparison}
 \usage{
-map_cl_summary(ref.dat, ref.cl, map.dat, map.cl)
+map_cl_summary(ref.dat, ref.cl, map.dat, map.cl, method = "median")
 }
 \arguments{
 \item{ref.dat}{Training data matrix, usually log-transformed CPM}
@@ -14,6 +14,8 @@ map_cl_summary(ref.dat, ref.cl, map.dat, map.cl)
 \item{map.dat}{Data for cells to map to the training set. Should have the same genes as train.dat.}
 
 \item{map.cl}{Cluster assignments for the training set to compare to results of mapping.}
+
+\item{method}{Which statistic to compare. "median" or "mean". Default is "median".}
 }
 \value{
 a list object with two objects:  
