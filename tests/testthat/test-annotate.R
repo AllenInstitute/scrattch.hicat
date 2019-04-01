@@ -230,7 +230,7 @@ test_that(
 
 ## map_sampling() tests
 test_that(
-  "",
+  "map_sampling() needs tests.",
   {
     
   }
@@ -238,7 +238,7 @@ test_that(
 
 ## map_cv() tests
 test_that(
-  "",
+  "map_cv() needs tests.",
   {
     
   }
@@ -246,7 +246,7 @@ test_that(
 
 ## adjust_color() tests
 test_that(
-  "",
+  "adjust_color() needs tests.",
   {
     
   }
@@ -254,7 +254,7 @@ test_that(
 
 ## get_cl_df() tests
 test_that(
-  "",
+  "get_cl_df() needs tests.",
   {
     
   }
@@ -262,7 +262,7 @@ test_that(
 
 ## match_cl() tests
 test_that(
-  "",
+  "match_cl() needs tests.",
   {
     
   }
@@ -270,7 +270,7 @@ test_that(
 
 ## find_low_quality_cl() tests
 test_that(
-  "",
+  "find_low_quality_cl() needs tests.",
   {
     
   }
@@ -278,7 +278,7 @@ test_that(
 
 ## plot_low_qc() tests
 test_that(
-  "",
+  "plot_low_qc() needs tests.",
   {
     
   }
