@@ -6,7 +6,7 @@ library(tasic2016data)
 
 glial_classes <- c("Astrocyte", "Endothelial Cell", "Microglia", 
                   "Oligodendrocyte", "Oligodendrocyte Precursor Cell")
-glial_cells <- tasic_2016_anno[tasic_2016_anno$broad_type %in% glia_classes, ]
+glial_cells <- tasic_2016_anno[tasic_2016_anno$broad_type %in% glial_classes, ]
 glial_cells <- glial_cells[glial_cells$secondary_type_id == 0, ]
 
 set.seed(42)
@@ -230,25 +230,110 @@ test_that(
 
 ## map_sampling() tests
 test_that(
-  "map_sampling() needs tests.",
+  "map_sampling() performs bootstrapped mapping using medians.",
   {
+    glial_mapping <- map_sampling(train.dat = glial_train_data, 
+                                  train.cl = glial_train_cl, 
+                                  test.dat = glial_test_data, 
+                                  markers = glial_hv_genes, 
+                                  markers.perc = 0.8, 
+                                  iter = 10, 
+                                  method = "median",
+                                  verbose = TRUE)
     
+    expect_is(glial_mapping, "list")
+    
+    expect_equal(length(glial_mapping), 2)
+    
+    expect_is(glial_mapping$map.df, "data.frame")
+    expect_is(glial_mapping$map.freq, "matrix")
+  }
+)
+
+test_that(
+  "map_sampling() performs bootstrapped mapping using means",
+  {
+    glial_mapping <- map_sampling(train.dat = glial_train_data, 
+                                  train.cl = glial_train_cl, 
+                                  test.dat = glial_test_data, 
+                                  markers = glial_hv_genes, 
+                                  markers.perc = 0.8, 
+                                  iter = 10, 
+                                  method = "mean",
+                                  verbose = TRUE)
+    
+    expect_is(glial_mapping, "list")
+    
+    expect_equal(length(glial_mapping), 2)
+    
+    expect_is(glial_mapping$map.df, "data.frame")
+    expect_is(glial_mapping$map.freq, "matrix")
   }
 )
 
 ## map_cv() tests
 test_that(
-  "map_cv() needs tests.",
+  "map_cv() performs cross-validation.",
   {
+    glial_mapping <- map_cv(norm.dat = glial_train_data, 
+                            cl = glial_train_cl, 
+                            markers = glial_hv_genes, 
+                            n.bin = 5,
+                            g.perc = 1, 
+                            method = "median",
+                            verbose = TRUE)
     
+    expect_is(glial_mapping, "character")
+    expect_equal(length(glial_mapping), length(glial_train_cl))
   }
 )
 
 ## adjust_color() tests
 test_that(
-  "adjust_color() needs tests.",
+  "adjust_color() removes duplicate hex colors.",
   {
+    test_colors <- c("#00FF00","#00FF00","#FF0000","#FF0000","#00FF00","#000000")
     
+    fixed_colors <- adjust_color(test_colors)
+    
+    expect_equal(length(test_colors), length(fixed_colors))
+    expect_equal(length(unique(fixed_colors)), length(test_colors))
+    expect_true(length(unique(test_colors)) < length(unique(fixed_colors)))
+    expect_equal(sum(unique(test_colors) %in% fixed_colors), length(unique(test_colors)))
+  }
+)
+
+test_that(
+  "adjust_color() removes duplicate R colors.",
+  {
+    test_colors <- c("blue","blue","red","red","blue","black")
+    
+    fixed_colors <- adjust_color(test_colors)
+    
+    test_rgb <- col2rgb(test_colors)
+    test_hex <- rgb(test_rgb[1,], test_rgb[2,], test_rgb[3,], maxColorValue = 255)
+    
+    expect_equal(length(test_colors), length(fixed_colors))
+    expect_equal(length(unique(fixed_colors)), length(test_colors))
+    expect_true(length(unique(test_colors)) < length(unique(fixed_colors)))
+    expect_equal(sum(unique(test_hex) %in% fixed_colors), length(unique(test_colors)))
+  }
+)
+
+test_that(
+  "adjust_color() removes duplicate mixed R and hex colors.",
+  {
+    test_colors <- c("blue","#0000FF","red","#FF0000","blue","black")
+    
+    fixed_colors <- adjust_color(test_colors)
+    
+    test_rgb <- col2rgb(test_colors)
+    test_hex <- rgb(test_rgb[1,], test_rgb[2,], test_rgb[3,], maxColorValue = 255)
+    
+    expect_equal(length(test_colors), length(fixed_colors))
+    expect_equal(length(unique(fixed_colors)), length(test_colors))
+    expect_true(length(unique(test_colors)) < length(unique(fixed_colors)))
+    expect_equal(sum(unique(test_hex) %in% fixed_colors), length(unique(test_hex)))
   }
 )
 

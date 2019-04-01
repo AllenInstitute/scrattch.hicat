@@ -234,6 +234,9 @@ map_sampling <- function(train.dat,
                          method = "median",
                          verbose = TRUE) {
   
+  method <- match.arg(arg = method,
+                      choices = c("mean", "median"))
+  
   # Perform mapping iter times.
   map.result <- sapply(1:iter, 
                        function(i){
@@ -257,7 +260,8 @@ map_sampling <- function(train.dat,
   # Compute fraction of times each sample mapped to each cluster
   row.names(map.cl) <- colnames(test.dat)
   map <- as.data.frame(as.table(as.matrix(map.cl)))
-  map.freq <- table(map$Var1, map$Freq)
+  map.table <- table(map$Var1, map$Freq)
+  map.freq <- unclass(map.table)
   
   # Find the most frequently mapped cluster for each sample
   max.freq <- apply(map.freq, 1, which.max)
@@ -266,7 +270,7 @@ map_sampling <- function(train.dat,
   
   # Gather results
   map.df <- data.frame(pred.cl = pred.cl, 
-                       prob = rowMaxs(map.freq) / iter)
+                       prob = matrixStats::rowMaxs(map.freq) / iter)
   
   # output results
   out_list <- list(map.df = map.df,
@@ -275,13 +279,30 @@ map_sampling <- function(train.dat,
   return(out_list)
 }
 
-
+#' Run a single round of cross-validation of cluster mapping using a subset of marker genes
+#' 
+#' @param norm.dat a normalized data matrix for clustered cells
+#' @param cl a cluster factor object for the cells in norm.dat
+#' @param markers a character object with the marker genes to use for cross-validation
+#' @param n.bin an integer indicating the number of bins to use
+#' @param g.perc the fraction of genes to use for validation.
+#' @param method Method for mapping. Must be either "median" (Default) or "mean".
+#' @param verbose Whether or not to display progress notifications.
+#' 
+#' @return a named character object with the results of one round of cross-validation
+#' 
+#' @export
+#' 
 map_cv <- function(norm.dat, 
                    cl, 
                    markers, 
                    n.bin = 5,
                    g.perc = 1, 
-                   method = "median") {
+                   method = "median",
+                   verbose = TRUE) {
+  
+  method <- match.arg(arg = method,
+                      choices = c("mean", "median"))
   
   bins <- tapply(names(cl), 
                  cl, 
@@ -300,7 +321,10 @@ map_cv <- function(norm.dat,
   pred.cl <- setNames(rep(NA, length(cl)), names(cl))
   
   for(i in 1:n.bin) {
-    print(i)
+    if(verbose) {
+      cat("\r", paste0("Running bin ",i," of ",n.bin,".        "))
+      flush.console()
+    }
     train.cells <- names(cl)[bins != i]
     test.cells <- names(cl)[bins == i]
     select.markers <- sample(markers, round(length(markers) * g.perc))
