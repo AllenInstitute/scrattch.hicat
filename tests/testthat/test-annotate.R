@@ -20,6 +20,8 @@ glial_test_data <- tasic_2016_counts[, glial_test_cells$sample_name]
 
 glial_train_cl <- as.factor(glial_train_cells$primary_type_id)
 names(glial_train_cl) <- glial_train_cells$sample_name
+glial_test_cl <- as.factor(glial_test_cells$primary_type_id)
+names(glial_test_cl) <- glial_test_cells$sample_name
 
 ## map_by_cor() tests
 test_that(
@@ -72,12 +74,48 @@ test_that(
 
 ## map_cl_summary() tests
 test_that(
-  "",
+  "map_cl_summary() performs mapping comparison using medians",
   {
+    glial_test_cell_broad_cl <- factor(glial_test_cells$broad_type)
+    names(glial_test_cell_broad_cl) <- glial_test_cells$sample_name
+    
+    glial_mapping <- map_cl_summary(ref.dat = glial_train_data,
+                                    ref.cl = glial_train_cl,
+                                    map.dat = glial_test_data,
+                                    map.cl = glial_test_cell_broad_cl,
+                                    method = "median")
+    
+    expect_is(glial_mapping, "list")
+    
+    expect_equal(length(glial_mapping), 2)
+    
+    expect_is(glial_mapping$map.df, "data.frame")
+    expect_is(glial_mapping$cl.map.df, "data.frame")
     
   }
 )
 
+test_that(
+  "map_cl_summary() performs mapping comparison using means",
+  {
+    glial_test_cell_broad_cl <- factor(glial_test_cells$broad_type)
+    names(glial_test_cell_broad_cl) <- glial_test_cells$sample_name
+    
+    glial_mapping <- map_cl_summary(ref.dat = glial_train_data,
+                                    ref.cl = glial_train_cl,
+                                    map.dat = glial_test_data,
+                                    map.cl = glial_test_cell_broad_cl,
+                                    method = "mean")
+    
+    expect_is(glial_mapping, "list")
+    
+    expect_equal(length(glial_mapping), 2)
+    
+    expect_is(glial_mapping$map.df, "data.frame")
+    expect_is(glial_mapping$cl.map.df, "data.frame")
+    
+  }
+)
 
 ## predict_annotate_cor() tests
 test_that(

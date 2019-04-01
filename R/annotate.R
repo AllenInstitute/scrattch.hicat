@@ -107,6 +107,7 @@ map_by_cor <- function(train.dat,
 #' @param ref.cl Training cluster factor object
 #' @param map.dat Data for cells to map to the training set. Should have the same genes as train.dat.
 #' @param map.cl Cluster assignments for the training set to compare to results of mapping.
+#' @param method Which statistic to compare. "median" or "mean". Default is "median".
 #' 
 #' @return a list object with two objects:  
 #' \itemize{
@@ -119,10 +120,17 @@ map_by_cor <- function(train.dat,
 map_cl_summary <- function(ref.dat, 
                            ref.cl, 
                            map.dat, 
-                           map.cl) {
+                           map.cl,
+                           method = "median") {
+  
+  method <- match.arg(arg = method,
+                      choices = c("mean","median"))
   
   # Map the training set to the reference
-  map.result <- map_by_cor(ref.dat, ref.cl, map.dat)
+  map.result <- map_by_cor(train.dat = ref.dat, 
+                           train.cl = ref.cl, 
+                           test.dat = map.dat,
+                           method = method)
   cor.matrix <- map.result$cor.matrix
   
   map.df <- map.result$pred.df
