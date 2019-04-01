@@ -58,6 +58,7 @@ set_pair_matrix <- function(m,
 }
 
 
+<<<<<<< HEAD
 get_pairs <- function(pairs.str) {
   pairs <- as.data.frame(do.call("rbind", strsplit(pairs.str, "_")), 
                          stringsAsFactors = FALSE)
@@ -67,6 +68,17 @@ get_pairs <- function(pairs.str) {
   
   return(pairs)
 }
+=======
+get_pairs <- function(pairs.str)
+  {
+    pairs <- as.data.frame(do.call("rbind", strsplit(pairs.str, "_")), 
+                           stringsAsFactors = FALSE)
+    row.names(pairs) <- pairs.str
+    colnames(pairs) <- c("P1", "P2")
+    
+    return(pairs)
+  }
+>>>>>>> 117ee3dc968f04f6ae577a9d4d3a1495200fad08
 
 
 #' Convert paired cluster comparison values to a matrix
@@ -364,6 +376,7 @@ sample_cells<- function(cl,
   return(sampled.cells)
 }
 
+<<<<<<< HEAD
 #' Convert a matrix of raw counts to a matrix of Counts per Million values
 #' 
 #' The input can be a base R matrix or a sparse matrix from the Matrix package.

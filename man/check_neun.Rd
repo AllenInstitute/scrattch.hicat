@@ -5,7 +5,7 @@
 \title{Check whether clusters are Neun+ or Neun-}
 \usage{
 check_neun(anno, cluster, neun.thresh = 0.5,
-  neun.colname = "facs_population_plan")
+  neun.colname = "facs_population_plan", neun.val = "NeuN-pos")
 }
 \arguments{
 \item{anno}{anno dataframe which must include column name listed in `neun.colname`}
@@ -16,6 +16,8 @@ check_neun(anno, cluster, neun.thresh = 0.5,
 NeuN positive (default is 0.5)}
 
 \item{neun.colname}{column name in `anno` with the Neun information}
+
+\item{neun.val}{value corresponding to non-neuronal marker in neun.colname in anno}
 }
 \value{
 returns all the clusters and true/false of whether they are Neun positive
