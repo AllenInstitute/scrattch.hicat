@@ -362,15 +362,17 @@ test_that(
 
 ## find_low_quality_cl() tests
 test_that(
-  "find_low_quality_cl() performs comparisons between clusters.",
+  "find_low_quality_cl() performs comparisons to high-quality clusters.",
   {
+    glial_hq_cl <- glial_train_cl[glial_train_cl %in% c(45, 48,49)]
+    
     glial_de_genes <- de_score(norm.dat = glial_train_data, 
                                cl = glial_train_cl,  
                                de.param = de_param(), 
                                method = "limma")
     
     cl_test <- find_low_quality_cl(cl.df = train_cl.df,
-                                   cl.good = glial_train_cl,
+                                   cl.good = glial_hq_cl,
                                    de.score.mat = NULL,
                                    de.genes = glial_de_genes)
     
@@ -383,6 +385,12 @@ test_that(
 test_that(
   "plot_low_qc() needs tests.",
   {
+    glial_hq_cl <- glial_train_cl[glial_train_cl %in% c(45, 48,49)]
+    
+    glial_de_genes <- de_score(norm.dat = glial_train_data, 
+                               cl = glial_train_cl,  
+                               de.param = de_param(), 
+                               method = "limma")
     
   }
 )

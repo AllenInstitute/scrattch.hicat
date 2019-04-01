@@ -8,9 +8,9 @@ onestep_clust(norm.dat, select.cells = colnames(norm.dat),
   counts = NULL, method = c("louvain", "ward.D", "kmeans"),
   vg.padj.th = 0.5, dim.method = c("pca", "WGCNA"), max.dim = 20,
   rm.eigen = NULL, rm.th = 0.7, de.param = de_param(),
-  min.genes = 5, merge.type = c("undirectional", "directional"),
-  maxGenes = 3000, sampleSize = 4000, max.cl.size = 300,
-  prefix = NULL, verbose = FALSE)
+  merge.type = c("undirectional", "directional"), maxGenes = 3000,
+  sampleSize = 4000, max.cl.size = 300, k.nn = 15, prefix = NULL,
+  verbose = FALSE, regress.x = NULL)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).}
@@ -32,8 +32,6 @@ onestep_clust(norm.dat, select.cells = colnames(norm.dat),
 \item{rm.th}{The cutoff for correlation between reduced dimensions and rm.eigen. Reduced dimensions with correlatin with any rm.eigen vectors are not used for clustering. Default 0.7}
 
 \item{de.param}{The differential gene expression threshold. See de_param() function for details.}
-
-\item{min.genes}{The minimal number of high variance and differentially expressed genes genes. Default 5.}
 
 \item{maxGenes}{Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules.}
 
