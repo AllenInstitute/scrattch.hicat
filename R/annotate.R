@@ -163,6 +163,8 @@ map_cl_summary <- function(ref.dat,
 
 
 #' Predict annotations by cluster correlation
+#' 
+#' This function performs map_by_cor(), then compare_annotate().
 #'
 #' @param cl a cluster factor object for data to map to the reference
 #' @param norm.dat a normalized data matrix for data to map to the reference
@@ -198,10 +200,10 @@ predict_annotate_cor <- function(cl,
                              levels = row.names(ref.cl.df)), 
                       row.names(map_results$pred.df))
   
-  map_results$annotate  <- compare_annotate(cl, 
-                                            pred.cl, 
-                                            ref.cl.df, 
-                                            reorder = reorder)
+  map_results$annotate <- compare_annotate(cl, 
+                                           pred.cl, 
+                                           ref.cl.df, 
+                                           reorder = reorder)
   
   return(map_results)
 }
@@ -318,7 +320,7 @@ map_cv <- function(norm.dat,
 
 ###cluster annotation ref.cl.df must include "cluster_label" column
 
-#' Compare two sets of cluster assignments
+#' Compare two sets of cluster assignments for the same set of cells
 #' 
 #' @param cl A cluster factor object to compare to a reference
 #' @param ref.cl A cluster factor object for the reference clusters
@@ -340,7 +342,7 @@ compare_annotate <- function(cl,
                              ref.cl, 
                              ref.cl.df, 
                              reorder = TRUE,
-                             rename = reorder) {
+                             rename = TRUE) {
 
   if(!is.factor(cl)){
     cl <- setNames(factor(cl), names(cl))
@@ -353,6 +355,11 @@ compare_annotate <- function(cl,
   }
   
   common.cells <- intersect(names(cl),names(ref.cl))
+  
+  if(length(common.cells) == 0) {
+    stop("No common names in cl and ref.cl for comparison.")
+  }
+  
   ###Find clusters not present in ref.cl
   cl <- droplevels(cl[common.cells])
   ref.cl <- droplevels(ref.cl[common.cells])
@@ -419,19 +426,19 @@ compare_annotate <- function(cl,
   
   tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels = ref.cl.df$cluster_label)
   
-  g <- ggplot(tb.df, 
-              aes(x = cl, 
-                  y = ref.cl.label)) + 
-    geom_point(aes(size = sqrt(Freq),
-                   color = jaccard)) + 
-    theme(axis.text.x = element_text(vjust = 0.1,
-                                     hjust = 0.2, 
-                                     angle = 90,
-                                     size = 7),
-          axis.text.y = element_text(size = 6)) + 
-    scale_color_gradient(low = "yellow", 
-                         high = "darkblue") + 
-    scale_size(range = c(0, 3))
+  g <- ggplot2::ggplot(tb.df, 
+                       ggplot2::aes(x = cl, 
+                                    y = ref.cl.label)) + 
+    ggplot2::geom_point(ggplot2::aes(size = sqrt(Freq),
+                                     color = jaccard)) + 
+    ggplot2::theme(axis.text.x = ggplot2::element_text(vjust = 0.1,
+                                                       hjust = 0.2, 
+                                                       angle = 90,
+                                                       size = 7),
+                   axis.text.y = ggplot2::element_text(size = 6)) + 
+    ggplot2::scale_color_gradient(low = "yellow", 
+                                  high = "darkblue") + 
+    ggplot2::scale_size(range = c(0, 3))
   
   out_list <- list(cl = cl,
                    cl.df = cl.df,

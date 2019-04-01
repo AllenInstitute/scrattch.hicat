@@ -15,8 +15,12 @@ glial_test_cell_sample <- sample(1:nrow(glial_cells), floor(nrow(glial_cells) / 
 glial_train_cells <- glial_cells[-glial_test_cell_sample, ]
 glial_test_cells <- glial_cells[glial_test_cell_sample, ]
 
-glial_train_data <- tasic_2016_counts[, glial_train_cells$sample_name]
-glial_test_data <- tasic_2016_counts[, glial_test_cells$sample_name]
+glial_train_data <- log2(tasic_2016_counts[, glial_train_cells$sample_name] + 1)
+glial_test_data <- log2(tasic_2016_counts[, glial_test_cells$sample_name] + 1)
+
+glial_var <- apply(glial_train_data, 1, var)
+glial_var <- glial_var[order(glial_var, decreasing = TRUE)]
+glial_hv_genes <- names(glial_var[1:1000])
 
 glial_train_cl <- as.factor(glial_train_cells$primary_type_id)
 names(glial_train_cl) <- glial_train_cells$sample_name
@@ -117,11 +121,110 @@ test_that(
   }
 )
 
+## compare_annotate() tests
+test_that(
+  "compare_annotate() fails if cl and ref.cl have to overlap",
+  {
+    glial_test_cell_broad_cl <- factor(glial_test_cells$broad_type)
+    names(glial_test_cell_broad_cl) <- glial_test_cells$sample_name
+    
+    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
+    rownames(train_cl.df) <- train_cl.df$primary_type_id
+    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
+    
+    expect_error(compare_annotate(cl = glial_test_cell_broad_cl, 
+                                         ref.cl = glial_train_cl, 
+                                         ref.cl.df = train_cl.df, 
+                                         reorder = TRUE,
+                                         rename = TRUE))
+  }
+)
+
+test_that(
+  "compare_annotate() reports comparisons between cluster sets",
+  {
+    glial_train_cell_broad_cl <- factor(glial_train_cells$broad_type)
+    names(glial_train_cell_broad_cl) <- glial_train_cells$sample_name
+    
+    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
+    rownames(train_cl.df) <- train_cl.df$primary_type_id
+    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
+    
+    glial_comparison <- compare_annotate(cl = glial_train_cell_broad_cl, 
+                                         ref.cl = glial_train_cl, 
+                                         ref.cl.df = train_cl.df, 
+                                         reorder = TRUE,
+                                         rename = TRUE)
+    
+    expect_is(glial_comparison, "list")
+    expect_equal(length(glial_comparison), 5)
+    expect_is(glial_comparison$cl, "factor")
+    expect_is(glial_comparison$cl.df, "data.frame")
+    expect_is(glial_comparison$g, "ggplot")
+    expect_is(glial_comparison$tb.df, "data.frame")
+    expect_is(glial_comparison$cl.id.map, "data.frame")
+    
+  }
+)
+
 ## predict_annotate_cor() tests
 test_that(
-  "",
+  "predict_annotate_cor() performs comparisons using medians and reports results",
   {
+    glial_train_cell_broad_cl <- factor(glial_train_cells$broad_type)
+    names(glial_train_cell_broad_cl) <- glial_train_cells$sample_name
     
+    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
+    rownames(train_cl.df) <- train_cl.df$primary_type_id
+    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
+    
+    glial_mapping <- predict_annotate_cor(cl = glial_train_cell_broad_cl, 
+                                          norm.dat = glial_train_data, 
+                                          ref.markers = glial_hv_genes, 
+                                          ref.cl = glial_train_cl, 
+                                          ref.cl.df = train_cl.df, 
+                                          ref.norm.dat = glial_train_data, 
+                                          method = "median", 
+                                          reorder = TRUE)
+    
+    expect_is(glial_mapping, "list")
+    expect_equal(length(glial_mapping), 3)
+    
+    expect_is(glial_mapping$pred.df, "data.frame")
+    expect_is(glial_mapping$cor.matrix, "matrix")
+    expect_is(glial_mapping$annotate, "list")
+    
+    expect_equal(length(glial_mapping$annotate), 5)
+  }
+)
+
+test_that(
+  "predict_annotate_cor() performs comparisons using means and reports results",
+  {
+    glial_train_cell_broad_cl <- factor(glial_train_cells$broad_type)
+    names(glial_train_cell_broad_cl) <- glial_train_cells$sample_name
+    
+    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
+    rownames(train_cl.df) <- train_cl.df$primary_type_id
+    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
+    
+    glial_mapping <- predict_annotate_cor(cl = glial_train_cell_broad_cl, 
+                                          norm.dat = glial_train_data, 
+                                          ref.markers = glial_hv_genes, 
+                                          ref.cl = glial_train_cl, 
+                                          ref.cl.df = train_cl.df, 
+                                          ref.norm.dat = glial_train_data, 
+                                          method = "mean", 
+                                          reorder = TRUE)
+    
+    expect_is(glial_mapping, "list")
+    expect_equal(length(glial_mapping), 3)
+    
+    expect_is(glial_mapping$pred.df, "data.frame")
+    expect_is(glial_mapping$cor.matrix, "matrix")
+    expect_is(glial_mapping$annotate, "list")
+    
+    expect_equal(length(glial_mapping$annotate), 5)
   }
 )
 
@@ -134,14 +237,6 @@ test_that(
 )
 
 ## map_cv() tests
-test_that(
-  "",
-  {
-    
-  }
-)
-
-## compare_annotate() tests
 test_that(
   "",
   {
