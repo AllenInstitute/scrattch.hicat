@@ -191,7 +191,12 @@ de_pair <- function(df,  de.param=de_param(), cl.size1=NULL, cl.size2=NULL)
 #' @export
 #'
 
-de_score <- function(norm.dat, cl,  de.param= de_param(),  method="limma", de.genes=NULL,...)
+de_score <- function(norm.dat, 
+                     cl,  
+                     de.param = de_param(), 
+                     method = "limma", 
+                     de.genes = NULL,
+                     ...)
 {
    if(is.factor(cl)){
      cl = droplevels(cl)
