@@ -27,6 +27,10 @@ names(glial_train_cl) <- glial_train_cells$sample_name
 glial_test_cl <- as.factor(glial_test_cells$primary_type_id)
 names(glial_test_cl) <- glial_test_cells$sample_name
 
+train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
+rownames(train_cl.df) <- train_cl.df$primary_type_id
+names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
+
 ## map_by_cor() tests
 test_that(
   "map_by_cor() performs mapping to a reference using medians",
@@ -128,10 +132,6 @@ test_that(
     glial_test_cell_broad_cl <- factor(glial_test_cells$broad_type)
     names(glial_test_cell_broad_cl) <- glial_test_cells$sample_name
     
-    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
-    rownames(train_cl.df) <- train_cl.df$primary_type_id
-    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
-    
     expect_error(compare_annotate(cl = glial_test_cell_broad_cl, 
                                          ref.cl = glial_train_cl, 
                                          ref.cl.df = train_cl.df, 
@@ -145,10 +145,6 @@ test_that(
   {
     glial_train_cell_broad_cl <- factor(glial_train_cells$broad_type)
     names(glial_train_cell_broad_cl) <- glial_train_cells$sample_name
-    
-    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
-    rownames(train_cl.df) <- train_cl.df$primary_type_id
-    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
     
     glial_comparison <- compare_annotate(cl = glial_train_cell_broad_cl, 
                                          ref.cl = glial_train_cl, 
@@ -173,10 +169,6 @@ test_that(
   {
     glial_train_cell_broad_cl <- factor(glial_train_cells$broad_type)
     names(glial_train_cell_broad_cl) <- glial_train_cells$sample_name
-    
-    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
-    rownames(train_cl.df) <- train_cl.df$primary_type_id
-    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
     
     glial_mapping <- predict_annotate_cor(cl = glial_train_cell_broad_cl, 
                                           norm.dat = glial_train_data, 
@@ -203,10 +195,6 @@ test_that(
   {
     glial_train_cell_broad_cl <- factor(glial_train_cells$broad_type)
     names(glial_train_cell_broad_cl) <- glial_train_cells$sample_name
-    
-    train_cl.df <- unique(glial_train_cells[, grepl("primary_type", names(glial_train_cells))])
-    rownames(train_cl.df) <- train_cl.df$primary_type_id
-    names(train_cl.df) <- c("cluster_id","cluster_label","cluster_color")
     
     glial_mapping <- predict_annotate_cor(cl = glial_train_cell_broad_cl, 
                                           norm.dat = glial_train_data, 
@@ -339,25 +327,55 @@ test_that(
 
 ## get_cl_df() tests
 test_that(
-  "get_cl_df() needs tests.",
+  "get_cl_df() initializes a cl.df data.frame.",
   {
+    glial_cl.df <- get_cl_df(glial_train_cl)
     
+    expect_is(glial_cl.df, "data.frame")
+    expect_equal(nrow(glial_cl.df), length(levels(glial_train_cl)))
   }
 )
 
 ## match_cl() tests
 test_that(
-  "match_cl() needs tests.",
+  "match_cl() performs correlations between annotations.",
   {
+    glial_test_cell_broad_cl <- factor(glial_test_cells$broad_type)
+    names(glial_test_cell_broad_cl) <- glial_test_cells$sample_name
+    
+    glial_mapping <- match_cl(cl = glial_test_cell_broad_cl, 
+                              dat = glial_test_data, 
+                              ref.cl = glial_train_cl, 
+                              ref.cl.df = train_cl.df, 
+                              ref.dat = glial_train_data, 
+                              rename = TRUE)
+    
+    expect_is(glial_mapping, "list")
+    expect_equal(length(glial_mapping), 3)
+    
+    expect_is(glial_mapping$cl, "factor")
+    expect_is(glial_mapping$cl.df, "data.frame")
+    expect_is(glial_mapping$cor, "matrix")
     
   }
 )
 
 ## find_low_quality_cl() tests
 test_that(
-  "find_low_quality_cl() needs tests.",
+  "find_low_quality_cl() performs comparisons between clusters.",
   {
+    glial_de_genes <- de_score(norm.dat = glial_train_data, 
+                               cl = glial_train_cl,  
+                               de.param = de_param(), 
+                               method = "limma")
     
+    cl_test <- find_low_quality_cl(cl.df = train_cl.df,
+                                   cl.good = glial_train_cl,
+                                   de.score.mat = NULL,
+                                   de.genes = glial_de_genes)
+    
+    expect_is(cl_test, "data.frame")
+    expect_equal(nrow(cl_test), length(levels(glial_train_cl)))
   }
 )
 
