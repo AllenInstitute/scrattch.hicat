@@ -1,3 +1,50 @@
+# Function call map
+# function_1()
+#   called_by_function_1() called_function_file.R
+#
+# get_pair_matrix_coor()
+#
+# get_pair_matrix()
+#   get_pair_matrix_coor() util.R
+#
+# set_pair_matrix()
+#   get_pair_matrix_coor() util.R
+#
+# get_pairs()
+#
+# convert_pair_matrix()
+#   get_pairs() util.R
+#   set_pair_matrix() util.R
+#
+# convert_pair_matrix_str()
+#
+# get_cl_mat()
+#
+# get_cl_sums()
+#   get_cl_mat() util.R
+#
+# get_cl_means()
+#   get_cl_sums() util.R
+#
+# get_cl_medians()
+#
+# get_cl_prop()
+#   get_cl_mat() util.R
+#
+# sparse_cor()
+#
+# calc_tau()
+#
+# sample_cells()
+#
+# cpm()
+#
+# logCPM()
+#   cpm() util.R
+# 
+# pair_cor()
+#
+
 #' Convert matrix row/column positions to vector position
 #' 
 #' @param m a matrix object
@@ -9,15 +56,16 @@
 get_pair_matrix_coor <- function(m, 
                                  rows, 
                                  cols) {
+  
   if(!is.numeric(rows)){
-    rows <- match(rows, row.names(m))
+    rows <- match(rows, rownames(m))
   }
   
   if(!is.numeric(cols)){
     cols <- match(cols, colnames(m))
   }
   
-  coor <- (cols - 1) * nrow(m) + rows
+  coor <- (cols - 1L) * nrow(m) + rows
   
   return(coor)
 }
@@ -52,40 +100,40 @@ set_pair_matrix <- function(m,
                             rows, 
                             cols, 
                             vals) {
+  
   coor <- get_pair_matrix_coor(m, rows, cols)
   m[coor] <- vals
+  
   return(m)
 }
 
-
-<<<<<<< HEAD
+#' Convert underscore_separated pair names to a data.frame
+#' 
+#' @param pairs.str a character vector with underscore_separated values
+#' 
+#' @return a data.frame with columns "P1" and "P2" containing the separated pair names
+#' 
+#' @export
+#' 
 get_pairs <- function(pairs.str) {
-  pairs <- as.data.frame(do.call("rbind", strsplit(pairs.str, "_")), 
-                         stringsAsFactors = FALSE)
   
-  row.names(pairs) <- pairs.str
-  colnames(pairs) <- c("P1", "P2")
+  pairs_split <- strsplit(pairs.str, "_")
+  pairs_mat <- do.call("rbind", pairs_split)
+  pairs_df <- as.data.frame(pairs_mat,
+                            stringsAsFactors = FALSE)
   
-  return(pairs)
+  row.names(pairs_df) <- pairs.str
+  colnames(pairs_df) <- c("P1", "P2")
+  
+  return(pairs_df)
 }
-=======
-get_pairs <- function(pairs.str)
-  {
-    pairs <- as.data.frame(do.call("rbind", strsplit(pairs.str, "_")), 
-                           stringsAsFactors = FALSE)
-    row.names(pairs) <- pairs.str
-    colnames(pairs) <- c("P1", "P2")
-    
-    return(pairs)
-  }
->>>>>>> 117ee3dc968f04f6ae577a9d4d3a1495200fad08
 
 
 #' Convert paired cluster comparison values to a matrix
 #' 
-#' @param pair.num a vector of values with names of compared elements separted by "_", e.g. "c1_c2", "c23_c59"
+#' @param pair.num a named numeric vector of values. Names correspond to compared elements separted by "_", e.g. "c1_c2", "c23_c59"
 #' @param l labels for columns. Default is NULL, which will compute them from names(pair.num)
-#' @param directed If FALSE (default), the first value in each split will be used as columns, with the second as rows. 
+#' @param directed If FALSE (default), the first value in each pair will specify used as columns, with the second as rows. 
 #' If TRUE, first values will be rows, and second will be columns.
 #' 
 #' @return a matrix containing values from pair.num, and named for each element separated by "_" in names(pair.num)
@@ -105,6 +153,7 @@ get_pairs <- function(pairs.str)
 convert_pair_matrix <- function(pair.num, 
                                 l = NULL,
                                 directed = FALSE) {
+  
   pairs <- get_pairs(names(pair.num))
   
   if(is.null(l)){
@@ -116,10 +165,13 @@ convert_pair_matrix <- function(pair.num,
   pair.num.mat <- matrix(0, nrow = n.cl, ncol = n.cl)
   rownames(pair.num.mat) <- l
   colnames(pair.num.mat) <- l
+  
   pair.num.mat <- set_pair_matrix(pair.num.mat, pairs[,1], pairs[,2], pair.num)
+  
   if(!directed) {
     pair.num.mat <- set_pair_matrix(pair.num.mat, pairs[,2], pairs[,1], pair.num)
   }
+  
   return(pair.num.mat)
 }
 
@@ -182,7 +234,8 @@ get_cl_mat <- function(cl) {
   if(!is.factor(cl)){
     cl <- as.factor(cl)
   }
-  cl = droplevels(cl)
+  cl <- droplevels(cl)
+  
   cl.mat <- Matrix::sparseMatrix(i = 1:length(cl),  
                                  j = as.integer(cl), 
                                  x = 1)
@@ -376,7 +429,6 @@ sample_cells<- function(cl,
   return(sampled.cells)
 }
 
-<<<<<<< HEAD
 #' Convert a matrix of raw counts to a matrix of Counts per Million values
 #' 
 #' The input can be a base R matrix or a sparse matrix from the Matrix package.
@@ -408,17 +460,19 @@ cpm <- function(counts) {
   return(counts)
 }
 
-logCPM <- function(counts)
-  {
-    norm.dat = cpm(counts)
-    if(is.matrix(norm.dat)){
-      norm.dat = log2(norm.dat+1)
-    }
-    else{
-      norm.dat@x = log2(norm.dat@x + 1)
-    }
-    norm.dat
+
+logCPM <- function(counts) {
+  
+  norm.dat <- cpm(counts)
+  
+  if(is.matrix(norm.dat)){
+    norm.dat <- log2(norm.dat + 1)
+  } else {
+    norm.dat@x <- log2(norm.dat@x + 1)
   }
+  
+  norm.dat
+}
 
 #' Compute correlation each row of matrix1 with the corresponding row of matrix2 
 #' matrix1 and matrix2 must have the same dimemsion. 
@@ -426,9 +480,9 @@ logCPM <- function(counts)
 #' 
 pair_cor <- function(mat1, mat2)
   {
-    mat1 = mat1 - rowMeans(mat1)
-    mat2 = mat2 - rowMeans(mat2)
-    sd1 = rowSds(mat1)
-    sd2 = rowSds(mat2)
-    rowSums(mat1 * mat2)/((ncol(mat1)-1)*sd1*sd2)
+    mat1 <- mat1 - rowMeans(mat1)
+    mat2 <- mat2 - rowMeans(mat2)
+    sd1 <- rowSds(mat1)
+    sd2 <- rowSds(mat2)
+    rowSums(mat1 * mat2) / ((ncol(mat1) - 1) * sd1 * sd2)
   }

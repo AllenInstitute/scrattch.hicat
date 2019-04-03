@@ -7,11 +7,11 @@
 convert_pair_matrix(pair.num, l = NULL, directed = FALSE)
 }
 \arguments{
-\item{pair.num}{a vector of values with names of compared elements separted by "_", e.g. "c1_c2", "c23_c59"}
+\item{pair.num}{a named numeric vector of values. Names correspond to compared elements separted by "_", e.g. "c1_c2", "c23_c59"}
 
 \item{l}{labels for columns. Default is NULL, which will compute them from names(pair.num)}
 
-\item{directed}{If FALSE (default), the first value in each split will be used as columns, with the second as rows. 
+\item{directed}{If FALSE (default), the first value in each pair will specify used as columns, with the second as rows. 
 If TRUE, first values will be rows, and second will be columns.}
 }
 \value{
