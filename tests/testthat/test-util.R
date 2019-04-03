@@ -481,6 +481,134 @@ test_that(
 )
 
 test_that(
+  "sparse_cor() computes column-wise correlations for a sparse matrix",
+  {
+    
+    sparse_mat <- as(glial_test_data, "dgCMatrix")
+    
+    cor_results <- sparse_cor(sparse_mat)
+    
+    expect_is(cor_results, "matrix")
+    expect_equal(nrow(cor_results), ncol(cor_results))
+    expect_equal(ncol(cor_results), ncol(sparse_mat))
+    expect_equal(rownames(cor_results), colnames(sparse_mat))
+    expect_equal(colnames(cor_results), colnames(sparse_mat))
+    
+    expect_equal(cor_results, t(cor_results))
+    
+    # Spot checks
+    
+    vals_5 <- sparse_mat[,5]
+    vals_13 <- sparse_mat[,13]
+    vals_21 <- sparse_mat[,21]
+    
+    cor_5_13 <- cor(vals_5, vals_13)
+    expect_equal(cor_results[5,13], cor_5_13)
+    cor_5_21 <- cor(vals_5, vals_21)
+    expect_equal(cor_results[5,21], cor_5_21)
+    
+  }
+)
+
+test_that(
+  "calc_tau() computes tau scores for a set of genes",
+  {
+    tau_values <- calc_tau(m = glial_test_data,
+                           byRow = TRUE)
+    
+    expect_is(tau_values, "numeric")
+    expect_equal(length(tau_values), nrow(glial_test_data))
+    
+    sparse_mat <- as(glial_test_data, "dgCMatrix")
+    
+    tau_values_sparse <- calc_tau(m = sparse_mat,
+                                  byRow = TRUE)
+    
+    expect_is(tau_values_sparse, "numeric")
+    expect_equal(length(tau_values), nrow(sparse_mat))
+    
+    expect_equal(tau_values, tau_values_sparse)
+  }
+)
+
+test_that(
+  "sample_cells() equally downsamples cells from multiple clusters",
+  {
+    
+    sample_size <- 5
+    
+    # NULL seed 1
+    sampled_cells_random_1 <- sample_cells(cl = glial_train_cl, 
+                                           sample.size = sample_size, 
+                                           weights = NULL,
+                                           seed = NULL)
+    
+    expect_is(sampled_cells_random_1, "character")
+    
+    sampled_cl_random_1 <- glial_train_cl[sampled_cells_random_1]
+    
+    expect_equal(length(sampled_cl_random_1), length(levels(glial_train_cl)) * sample_size)
+    expect_true(sum(table(sampled_cl_random_1) == sample_size) == length(levels(glial_train_cl)))
+    
+    # NULL seed 2
+    sampled_cells_random_2 <- sample_cells(cl = glial_train_cl, 
+                                           sample.size = sample_size, 
+                                           weights = NULL,
+                                           seed = NULL)
+    
+    expect_is(sampled_cells_random_2, "character")
+    
+    sampled_cl_random_2 <- glial_train_cl[sampled_cells_random_2]
+    
+    expect_equal(length(sampled_cl_random_2), length(levels(glial_train_cl)) * sample_size)
+    expect_true(sum(table(sampled_cl_random_2) == sample_size) == length(levels(glial_train_cl)))
+    
+    expect_true(length(setdiff(sampled_cells_random_1, sampled_cells_random_2)) > 1)
+    expect_true(length(intersect(sampled_cells_random_1, sampled_cells_random_2)) < length(sampled_cells_random_1))
+    
+    # defined seed 1
+    seed <- 42
+    
+    sampled_cells_set_1 <- sample_cells(cl = glial_train_cl, 
+                                        sample.size = sample_size, 
+                                        weights = NULL,
+                                        seed = seed)
+    
+    expect_is(sampled_cells_set_1, "character")
+    
+    sampled_cl_set_1 <- glial_train_cl[sampled_cells_set_1]
+    
+    expect_equal(length(sampled_cl_set_1), length(levels(glial_train_cl)) * sample_size)
+    expect_true(sum(table(sampled_cl_set_1) == sample_size) == length(levels(glial_train_cl)))
+    
+    # defined seed 2
+    seed <- 42
+    
+    sampled_cells_set_2 <- sample_cells(cl = glial_train_cl, 
+                                        sample.size = sample_size, 
+                                        weights = NULL,
+                                        seed = seed)
+    
+    expect_identical(sampled_cells_set_1, sampled_cells_set_2)
+    
+    # sampling more cells than are available
+    # should just return all cells, not replace
+    
+    sample_size <- 50
+    seed <- 42
+    
+    oversampled_cells <- sample_cells(cl = glial_test_cl,
+                                      sample.size = sample_size,
+                                      weights = NULL,
+                                      seed = seed)
+    
+    expect_is(oversampled_cells, "character")
+    
+    expect_equal(length(oversampled_cells), length(glial_test_cl))
+  }
+)
+
+test_that(
   "cpm() returns equivalent results for different type of matrices", 
   {
     library(Matrix)
@@ -510,3 +638,94 @@ test_that(
   }
 )
 
+test_that(
+  "logCPM() returns equivalent results for different type of matrices", 
+  {
+    library(Matrix)
+    
+    counts_mat <- tasic_2016_counts[1:100, 1:100]
+    counts_dgt <- as(counts_mat, "dgTMatrix")
+    counts_dgc <- as(counts_mat, "dgCMatrix")
+    
+    results_mat <- logCPM(counts_mat)
+    results_dgc <- logCPM(counts_dgc)
+    results_dgt <- logCPM(counts_dgt)
+    
+    expect_is(results_mat, "matrix")
+    expect_is(results_dgc, "dgCMatrix")
+    expect_is(results_dgt, "dgTMatrix")
+    
+    values_mat <- as.vector(results_mat)
+    values_mat <- values_mat[values_mat != 0]
+    values_dgc <- results_dgc@x
+    names(values_dgc) <- NULL
+    values_dgt <- results_dgt@x
+    
+    expect_equal(values_mat, values_dgc)
+    expect_equal(values_mat, values_dgt)
+    expect_equal(values_dgc, values_dgt)
+    
+  }
+)
+
+test_that(
+  "pair_cor() fails for mismatched matrices.",
+  {
+    mat_1 <- matrix(0, nrow = 20, ncol = 10)
+    mat_2 <- matrix(0, nrow = 10, ncol = 20)
+    
+    expect_error(pair_cor(mat1 = mat_1,
+                          mat2 = mat_2,
+                          margin = 1))
+    
+    expect_error(pair_cor(mat1 = mat_1,
+                          mat2 = mat_2,
+                          margin = 2))
+    
+    expect_error(pair_cor(mat1 = mat_1,
+                          mat2 = mat_2,
+                          margin = 5))
+  }
+)
+
+
+test_that(
+  "pair_cor() runs paired correlations between matched matrices.",
+  {
+    mat_1 <- matrix(runif(200), nrow = 20, ncol = 10)
+    mat_2 <- matrix(runif(200), nrow = 20, ncol = 10)
+    mat_1_duplicate <- mat_1
+    
+    cor_results_1_duplicate <- pair_cor(mat1 = mat_1,
+                                        mat2 = mat_1_duplicate,
+                                        margin = 1)
+    
+    expect_is(cor_results_1_duplicate, "numeric")
+    expect_equal(sum(cor_results_1_duplicate > 0.999), length(cor_results_1_duplicate))
+    
+    cor_results_1_2_rows <- pair_cor(mat1 = mat_1,
+                                     mat2 = mat_2,
+                                     margin = 1)
+    
+    expect_is(cor_results_1_2_rows, "numeric")
+    expect_equal(length(cor_results_1_2_rows), nrow(mat_1))
+    
+    
+    cor_results_1_2_cols <- pair_cor(mat1 = mat_1,
+                                     mat2 = mat_2,
+                                     margin = 2)
+    
+    expect_is(cor_results_1_2_cols, "numeric")
+    expect_equal(length(cor_results_1_2_cols), ncol(mat_1))
+    
+    cor_results_t_1_2_cols <- pair_cor(mat1 = t(mat_1),
+                                       mat2 = t(mat_2),
+                                       margin = 2)
+    
+    expect_is(cor_results_t_1_2_cols, "numeric")
+    expect_equal(length(cor_results_t_1_2_cols), nrow(mat_1))
+    
+    expect_equal(cor_results_t_1_2_cols, cor_results_1_2_rows)
+    
+  }
+)

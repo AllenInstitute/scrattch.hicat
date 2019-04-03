@@ -2,12 +2,23 @@
 % Please edit documentation in R/util.R
 \name{pair_cor}
 \alias{pair_cor}
-\title{Compute correlation each row of matrix1 with the corresponding row of matrix2 
-matrix1 and matrix2 must have the same dimemsion.}
+\title{Compute correlations between each matching row or column of two matrices}
 \usage{
-pair_cor(mat1, mat2)
+pair_cor(mat1, mat2, margin = 1)
+}
+\arguments{
+\item{mat1}{a numeric matrix for correlation}
+
+\item{mat2}{a second numeric matrix for correlation}
+
+\item{margin}{1 for rows, 2 for columns (as for the MARGIN parameter of apply())}
+}
+\value{
+a numeric vector with paired correlation values
 }
 \description{
-Compute correlation each row of matrix1 with the corresponding row of matrix2 
-matrix1 and matrix2 must have the same dimemsion.
+e.g. row 1 of mat1 will be correlated with row 1 of mat2; row 2 of mat 1 with row 2 of mat2, etc.
+}
+\details{
+The matrices must have the same number of rows or columns
 }

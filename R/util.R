@@ -351,7 +351,7 @@ sparse_cor <- function(m) {
   
   ii <- unique(m@i) + 1 # rows with a non-zero element
   
-  Ex <- colMeans(m)
+  Ex <- Matrix::colMeans(m)
   
   nozero <- as.vector(m[ii,]) - rep(Ex, each = length(ii))        # colmeans
   
@@ -378,8 +378,11 @@ calc_tau <- function(m,
   if(!byRow){
     m <- t(m)
   }
-  m <- m / matrixStats::rowMaxs(m)
-  tau <- rowSums(1 - m) / (ncol(m) - 1)
+  
+  row_maxes <- apply(m, 1, max)
+  
+  m <- m / row_maxes
+  tau <- Matrix::rowSums(1 - m) / (ncol(m) - 1)
   tau[is.na(tau)] <- 0
   return(tau)
 }
@@ -388,12 +391,15 @@ calc_tau <- function(m,
 #' 
 #' @param cl A cluster factor object
 #' @param sample.size A maximum number of cells to take from each cluster, or a named numeric object with the number of cells to be sampled and names matching cluster levels
+#' @param weights A named numeric vector with weights for each cell, passed to the prob parameter of the sample() function. Default is NULL.
+#' @param seed A seed value for random sampling. If NULL (default), will be randomized.
 #' 
 #' @return A cluster factor object containing sampled cells
 #' 
-sample_cells<- function(cl, 
-                        sample.size, 
-                        weights = NULL) {
+sample_cells <- function(cl, 
+                         sample.size, 
+                         weights = NULL,
+                         seed = NULL) {
   
   n_cl <- unique(cl)
   
@@ -405,26 +411,32 @@ sample_cells<- function(cl,
   
   cl.cells <- split(names(cl), cl)
   
-  sampled.cells <- unlist(sapply(names(cl.cells), 
-                                 function(x){
-                                   cells <- cl.cells[[x]]
-                                   if(sample.size[[x]] == length(cells)){
-                                     return(cells)
-                                   }
-                                   
-                                   to.sample <- pmin(sample.size[[x]], length(cells))
-                                   
-                                   if(!is.null(weights)){
-                                     sampled <- sample(cells, to.sample, prob = weights[cells])
-                                   }
-                                   
-                                   else{
-                                     sampled <- sample(cells, to.sample)
-                                   }
-                                   
-                                   sampled
-                                   
-                                 }, simplify = FALSE))
+  sampled.cells <- sapply(names(cl.cells), 
+                          function(x) {
+                            cells <- cl.cells[[x]]
+                            
+                            if(sample.size[[x]] >= length(cells)){
+                              return(cells)
+                            }
+                            
+                            to.sample <- pmin(sample.size[[x]], length(cells))
+                            
+                            if(!is.null(weights)){
+                              set.seed(seed)
+                              
+                              sampled <- sample(cells, to.sample, prob = weights[cells])
+                              
+                            } else{
+                              set.seed(seed)
+                              
+                              sampled <- sample(cells, to.sample)
+                            }
+                            
+                            sampled
+                            
+                          }, simplify = FALSE)
+  
+  sampled.cells <- unlist(sampled.cells)
   
   return(sampled.cells)
 }
@@ -435,10 +447,13 @@ sample_cells<- function(cl,
 #' 
 #' This function expects that columns correspond to samples, and rows to genes.
 #' 
-#' @param counts a matrix of count values.
+#' @param counts a matrix, dgCMatrix, or dgTMatrix of count values.
+#' 
+#' @return a matrix, dgCMatrix, or dgTMatrix of CPM values (matching input)
+#' 
+#' @export
+#' 
 cpm <- function(counts) {
-  
-  library(Matrix)
   
   sf <- Matrix::colSums(counts) / 1e6
   
@@ -460,7 +475,18 @@ cpm <- function(counts) {
   return(counts)
 }
 
-
+#' Convert a matrix of raw counts to a matrix of log2(Counts per Million + 1) values
+#' 
+#' The input can be a base R matrix or a sparse matrix from the Matrix package.
+#' 
+#' This function expects that columns correspond to samples, and rows to genes.
+#' 
+#' @param counts a matrix, dgCMatrix, or dgTMatrix of count values.
+#' 
+#' @return a matrix, dgCMatrix, or dgTMatrix of log2(CPM + 1) values (matching input)
+#' 
+#' @export
+#' 
 logCPM <- function(counts) {
   
   norm.dat <- cpm(counts)
@@ -474,15 +500,51 @@ logCPM <- function(counts) {
   norm.dat
 }
 
-#' Compute correlation each row of matrix1 with the corresponding row of matrix2 
-#' matrix1 and matrix2 must have the same dimemsion. 
+#' Compute correlations between each matching row or column of two matrices
 #' 
+#' e.g. row 1 of mat1 will be correlated with row 1 of mat2; row 2 of mat 1 with row 2 of mat2, etc.
 #' 
-pair_cor <- function(mat1, mat2)
-  {
-    mat1 <- mat1 - rowMeans(mat1)
-    mat2 <- mat2 - rowMeans(mat2)
-    sd1 <- rowSds(mat1)
-    sd2 <- rowSds(mat2)
-    rowSums(mat1 * mat2) / ((ncol(mat1) - 1) * sd1 * sd2)
+#' The matrices must have the same number of rows or columns
+#' 
+#' @param mat1 a numeric matrix for correlation
+#' @param mat2 a second numeric matrix for correlation
+#' @param margin 1 for rows, 2 for columns (as for the MARGIN parameter of apply())
+#' 
+#' @return a numeric vector with paired correlation values
+#' 
+#' @export
+#' 
+pair_cor <- function(mat1, 
+                     mat2,
+                     margin = 1) {
+  
+  if(!margin %in% c(1,2)) {
+    stop("margin must be either 1 (rows) or 2 (columns).")
   }
+  
+  if(margin == 1) {
+    
+    if(nrow(mat1) != nrow(mat2)) {
+      stop("mat1 and mat2 must have an equal number of rows when margin = 1.")
+    }
+    
+    
+  } else if(margin == 2) {
+    
+    if(ncol(mat1) != ncol(mat2)) {
+      stop("mat1 and mat2 must have an equal number of columns when margin = 2.")
+    }
+    
+    mat1 <- t(mat1)
+    mat2 <- t(mat2)
+  }
+  
+  mat1 <- mat1 - rowMeans(mat1)
+  mat2 <- mat2 - rowMeans(mat2)
+  sd1 <- rowSds(mat1)
+  sd2 <- rowSds(mat2)
+  cors <- rowSums(mat1 * mat2) / ((ncol(mat1) - 1) * sd1 * sd2)
+  
+  return(cors)
+  
+}
