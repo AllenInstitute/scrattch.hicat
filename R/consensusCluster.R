@@ -213,7 +213,7 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
   else{
     require(foreach)
     require(doParallel)
-    cl <- makeCluster(mc.cores)
+    cl <- makeForkCluster(mc.cores)
     registerDoParallel(cl)
     cl.list= foreach(i=1:niter, .combine='c') %dopar% run(f)
     stopCluster(cl)
