@@ -273,8 +273,8 @@ test_that(
                                 pair_matrix_directed[p1[3], p2[3]]))
     
     expect_equal(rep("", 3), c(pair_matrix_directed[p2[1], p1[1]],
-                              pair_matrix_directed[p2[2], p1[2]],
-                              pair_matrix_directed[p2[3], p1[3]]))
+                               pair_matrix_directed[p2[2], p1[2]],
+                               pair_matrix_directed[p2[3], p1[3]]))
     
     expect_false(identical(pair_matrix, t(pair_matrix_directed)))
     expect_false(identical(pair_matrix_directed, t(pair_matrix_directed)))
@@ -300,6 +300,183 @@ test_that(
     
     expect_equal(colnames(cl_mat), levels(glial_train_cl))
     expect_equal(rownames(cl_mat), names(glial_train_cl))
+  }
+)
+
+test_that(
+  "get_cl_sums() computes per-cluster sums from a matrix and cluster designations",
+  {
+    
+    genes <- c("Opalin","Hspa8","Mbp")
+    
+    test_mat <- glial_test_data[genes,]
+    
+    cl_sums <- get_cl_sums(mat = test_mat,
+                           cl = glial_test_cl)
+    
+    expect_is(cl_sums, "matrix")
+    expect_equal(ncol(cl_sums), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_sums), nrow(test_mat))
+    
+    # Spot Checks
+    expect_equal(cl_sums["Opalin", "44"],
+                 sum(test_mat["Opalin", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))]))
+    
+    expect_equal(cl_sums["Hspa8", "46"],
+                 sum(test_mat["Hspa8", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))]))
+    
+    # Using a sparse matrix
+    test_mat_sparse <- as(test_mat, "dgCMatrix")
+    
+    cl_sums_sparse <- get_cl_sums(mat = test_mat_sparse,
+                                  cl = glial_test_cl)
+    
+    expect_is(cl_sums_sparse, "matrix")
+    expect_equal(ncol(cl_sums_sparse), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_sums_sparse), nrow(test_mat))
+    
+    # Spot Checks
+    expect_equal(cl_sums_sparse["Opalin", "44"],
+                 sum(test_mat["Opalin", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))]))
+    
+    expect_equal(cl_sums_sparse["Hspa8", "46"],
+                 sum(test_mat["Hspa8", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))]))
+    
+    
+  }
+)
+
+test_that(
+  "get_cl_means() computes per-cluster means from a matrix and cluster designations",
+  {
+    
+    genes <- c("Opalin","Hspa8","Mbp")
+    
+    test_mat <- glial_test_data[genes,]
+    
+    cl_means <- get_cl_means(mat = test_mat,
+                             cl = glial_test_cl)
+    
+    expect_is(cl_means, "matrix")
+    expect_equal(ncol(cl_means), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_means), nrow(test_mat))
+    
+    # Spot Checks
+    expect_equal(cl_means["Opalin", "44"],
+                 mean(test_mat["Opalin", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))]))
+    
+    expect_equal(cl_means["Hspa8", "46"],
+                 mean(test_mat["Hspa8", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))]))
+    
+    # Using a sparse matrix
+    test_mat_sparse <- as(test_mat, "dgCMatrix")
+    
+    cl_means_sparse <- get_cl_means(mat = test_mat_sparse,
+                                    cl = glial_test_cl)
+    
+    expect_is(cl_means_sparse, "matrix")
+    expect_equal(ncol(cl_means_sparse), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_means_sparse), nrow(test_mat))
+    
+    # Spot Checks
+    expect_equal(cl_means_sparse["Opalin", "44"],
+                 mean(test_mat["Opalin", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))]))
+    
+    expect_equal(cl_means_sparse["Hspa8", "46"],
+                 mean(test_mat["Hspa8", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))]))
+    
+  }
+)
+
+test_that(
+  "get_cl_medians() computes per-cluster medians from a matrix and cluster designations",
+  {
+    
+    genes <- c("Opalin","Hspa8","Mbp")
+    
+    test_mat <- glial_test_data[genes,]
+    
+    cl_medians <- get_cl_medians(mat = test_mat,
+                                 cl = glial_test_cl)
+    
+    expect_is(cl_medians, "matrix")
+    expect_equal(ncol(cl_medians), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_medians), nrow(test_mat))
+    
+    # Spot Checks
+    expect_equal(cl_medians["Opalin", "44"],
+                 median(test_mat["Opalin", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))]))
+    
+    expect_equal(cl_medians["Hspa8", "46"],
+                 median(test_mat["Hspa8", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))]))
+    
+    test_mat_sparse <- as(test_mat, "dgCMatrix")
+    
+    
+    cl_medians_sparse <- get_cl_medians(mat = test_mat_sparse,
+                                        cl = glial_test_cl)
+    
+    expect_is(cl_medians_sparse, "matrix")
+    expect_equal(ncol(cl_medians_sparse), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_medians_sparse), nrow(test_mat))
+    
+    # Spot Checks
+    expect_equal(cl_medians_sparse["Opalin", "44"],
+                 median(test_mat["Opalin", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))]))
+    
+    expect_equal(cl_medians_sparse["Hspa8", "46"],
+                 median(test_mat["Hspa8", which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))]))
+    
+  }
+)
+
+
+test_that(
+  "get_cl_prop() computes per-cluster proportions from a matrix and cluster designations",
+  {
+    
+    genes <- c("Opalin","Hspa8","Mbp")
+    
+    test_mat <- glial_test_data[genes,]
+    
+    test_thresh <- 1
+    
+    cl_prop <- get_cl_prop(mat = test_mat,
+                           cl = glial_test_cl,
+                           threshold = test_thresh)
+    
+    expect_is(cl_prop, "matrix")
+    expect_equal(ncol(cl_prop), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_prop), nrow(test_mat))
+    
+    # Spot Checks
+    cells_44 <- which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))
+    expect_equal(cl_prop["Opalin", "44"],
+                 sum(test_mat["Opalin", cells_44] > test_thresh) / length(cells_44))
+    
+    cells_46 <- which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))
+    expect_equal(cl_prop["Hspa8", "46"],
+                 sum(test_mat["Hspa8", cells_46] > test_thresh) / length(cells_46))
+    
+    # Using a sparse matrix
+    test_mat_sparse <- as(test_mat, "dgCMatrix")
+    
+    cl_prop_sparse <- get_cl_prop(mat = test_mat_sparse,
+                                  cl = glial_test_cl,
+                                  threshold = test_thresh)
+    
+    expect_is(cl_prop_sparse, "matrix")
+    expect_equal(ncol(cl_prop_sparse), length(levels(glial_test_cl)))
+    expect_equal(nrow(cl_prop_sparse), nrow(test_mat))
+    
+    # Spot Checks
+    cells_44 <- which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "44"]))
+    expect_equal(cl_prop_sparse["Opalin", "44"],
+                 sum(test_mat["Opalin", cells_44] > test_thresh) / length(cells_44))
+    
+    cells_46 <- which(colnames(test_mat) %in% names(glial_test_cl[glial_test_cl == "46"]))
+    expect_equal(cl_prop_sparse["Hspa8", "46"],
+                 sum(test_mat["Hspa8", cells_46] > test_thresh) / length(cells_46))
   }
 )
 

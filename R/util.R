@@ -318,18 +318,18 @@ get_cl_medians <- function(mat, cl)
 #'
 #' @param mat a gene (rows) x samples(columns) sparse matrix
 #' @param cl A cluster factor object
-#' @param thresshold The minimum expression value used to binarize the results
+#' @param threshold The minimum expression value used to binarize the results
 #'
 #' @return a matrix of genes (rows) x cluster(columns) with proportions for each cluster
 #' @export
 #' 
 get_cl_prop <- function(mat, 
                         cl, 
-                        thresshold = 1) {
+                        threshold = 1) {
   
   cl.mat <- get_cl_mat(cl)
   
-  cl.prop <- Matrix::tcrossprod(mat[,rownames(cl.mat)] > thresshold, Matrix::t(cl.mat))
+  cl.prop <- Matrix::tcrossprod(mat[,rownames(cl.mat)] > threshold, Matrix::t(cl.mat))
   
   cl.prop <- as.matrix(cl.prop) / Matrix::colSums(cl.mat)[col(cl.prop)]
   
