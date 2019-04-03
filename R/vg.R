@@ -115,6 +115,7 @@ findVG <- function(dat,
     dispersion_fit_plot
     dev.off()
   }
+  row.names(gene_var_stats) = gene_var_stats$gene
   
   if(return_type == "data") {
     return(gene_var_stats)

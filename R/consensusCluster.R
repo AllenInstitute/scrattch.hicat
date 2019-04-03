@@ -205,10 +205,10 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
     test.cl = setNames(map.df$pred.cl, row.names(map.df))
     all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
-    return(all.cl)
+    return(all.cl[all.cells])
   }
   if (mc.cores==1){
-    cl.list=sapply(result.files, function(f){run(f)})
+    cl.list=sapply(result.files, function(f){run(f)},simplify=F)
   }
   else{
     require(foreach)

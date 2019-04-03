@@ -172,13 +172,13 @@ onestep_clust <- function(norm.dat,
     }
     if(dim.method=="WGCNA"){
       ###Ignore vg.padj.th for WGCNA, choose top "maxGgenes" for analysis
-      select.genes = vg[which(vg$loess.padj < 1),"gene"]
+      select.genes = as.character(vg[which(vg$loess.padj < 1),"gene"])
       select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
       rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=sampled.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)$rd.dat
     }
     else{
        ###If most genes are differentially expressed, then use absolute dispersion value
-      select.genes = vg[which(vg$loess.padj < vg.padj.th | vg$dispersion >3),"gene"]
+      select.genes = as.character(vg[which(vg$loess.padj < vg.padj.th | vg$dispersion >3),"gene"])
       select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
       if(verbose){
         cat("Num high variance genes:",length(select.genes),"\n")
