@@ -1,3 +1,33 @@
+# Function call map
+# function_1()
+#   called_by_function_1() called_function_file.R
+#
+#
+# map_by_cor()
+#   get_cl_means() util.R
+#
+# map_cl_summary()
+#   map_by_cor() annotate.R
+#
+# predict_annotate_cor()
+#   map_by_cor() annotate.R
+#   compare_annotate() annotate.R
+# 
+# map_sampling()
+#   map_by_cor() annotate.R
+#
+# map_cv()
+#   map_by_cor() annotate.R
+#
+# compare_annotate()
+#
+# match_cl()
+#   get_cl_means() util.R
+# 
+# find_low_quality_cl
+#   get_de_matrix() de.genes.R
+#   get_pair_matrix() util.R
+
 #' Map samples to a training dataset by correlation
 #' 
 #' @param train.dat Training data matrix, usually log-transformed CPM
@@ -11,20 +41,24 @@
 #' \item cor.matrix: a matrix object with correlation scores for each cluster.
 #' }
 #' 
+#' @export
+#' 
 map_by_cor <- function(train.dat, 
                        train.cl, 
                        test.dat,
-                       method = "median")
-{
+                       method = "median") {
+  
+  method <- match.arg(arg = method, 
+                      choices = c("mean","median"))
+  
   # Get medians or means for each cluster
   if(method == "median"){
-    library(matrixStats)
     cl.meds <- tapply(names(train.cl), 
                       train.cl, 
                       function(x) {
                         train.mat <- train.dat[, x, drop = F]
                         train.mat <- as.matrix(train.mat)
-                        rowMedians(train.mat)
+                        matrixStats::rowMedians(train.mat)
                       }
     )
     
@@ -35,13 +69,11 @@ map_by_cor <- function(train.dat,
   row.names(cl.dat) <- row.names(train.dat)
   
   # Perform correlations
-  if(!is.matrix(test.dat) & nrow(test.dat)*ncol(test.dat) > 10^8){
-    library(qlcMatrix)
-    test.cl.cor <- corSparse(test.dat, cl.dat)
+  if(!is.matrix(test.dat) & nrow(test.dat)*ncol(test.dat) > 1e8){
+    test.cl.cor <- qlcMatrix::corSparse(test.dat, cl.dat)
     colnames(test.cl.cor) = colnames(cl.dat)
     row.names(test.cl.cor) = colnames(test.dat)
-  }
-  else{
+  } else{
     test.cl.cor <- cor(as.matrix(test.dat), cl.dat)
   }
   test.cl.cor[is.na(test.cl.cor)] <- 0
@@ -75,19 +107,30 @@ map_by_cor <- function(train.dat,
 #' @param ref.cl Training cluster factor object
 #' @param map.dat Data for cells to map to the training set. Should have the same genes as train.dat.
 #' @param map.cl Cluster assignments for the training set to compare to results of mapping.
+#' @param method Which statistic to compare. "median" or "mean". Default is "median".
 #' 
 #' @return a list object with two objects:  
 #' \itemize{
 #' \item map.df: A data.frame with the mapping results for each sample in map.dat to the reference
 #' \item cl.map.df: A data.frame with cluster-level frequency of mapping for each cluster in map.cl to ref.cl
 #' }
+#' 
+#' @export
+#' 
 map_cl_summary <- function(ref.dat, 
                            ref.cl, 
                            map.dat, 
-                           map.cl)
-{
+                           map.cl,
+                           method = "median") {
+  
+  method <- match.arg(arg = method,
+                      choices = c("mean","median"))
+  
   # Map the training set to the reference
-  map.result <- map_by_cor(ref.dat, ref.cl, map.dat)
+  map.result <- map_by_cor(train.dat = ref.dat, 
+                           train.cl = ref.cl, 
+                           test.dat = map.dat,
+                           method = method)
   cor.matrix <- map.result$cor.matrix
   
   map.df <- map.result$pred.df
@@ -119,6 +162,23 @@ map_cl_summary <- function(ref.dat,
 }
 
 
+#' Predict annotations by cluster correlation
+#' 
+#' This function performs map_by_cor(), then compare_annotate().
+#'
+#' @param cl a cluster factor object for data to map to the reference
+#' @param norm.dat a normalized data matrix for data to map to the reference
+#' @param ref.markers a set of reference marker genes
+#' @param ref.cl a reference cluster factor object
+#' @param ref.cl.df a reference cl.df data.frame that describes the reference clusters
+#' @param ref.norm.dat a reference normalized data matrix
+#' @param method "median" or "mean". Default is "median".
+#' @param reorder Whether or not to reorder the input clusters based on the reference.
+#'
+#' @return a list object with annotation results
+#' 
+#' @export
+#'
 predict_annotate_cor <- function(cl, 
                                  norm.dat, 
                                  ref.markers, 
@@ -126,16 +186,21 @@ predict_annotate_cor <- function(cl,
                                  ref.cl.df, 
                                  ref.norm.dat, 
                                  method = "median", 
-                                 reorder = TRUE)
-{
+                                 reorder = TRUE) {
+  
+  method <- match.arg(arg = method,
+                      choices = c("mean", "median"))
+  
   map_results <- map_by_cor(ref.norm.dat[ref.markers,], 
                             ref.cl, 
                             norm.dat[ref.markers, names(cl)],
                             method = method)
   
-  pred.cl <- setNames(factor(as.character(map_results$pred.df$pred.cl), levels = row.names(ref.cl.df)), row.names(map_results$pred.df))
+  pred.cl <- setNames(factor(as.character(map_results$pred.df$pred.cl), 
+                             levels = row.names(ref.cl.df)), 
+                      row.names(map_results$pred.df))
   
-  map_results$annoate  <- compare_annotate(cl, 
+  map_results$annotate <- compare_annotate(cl, 
                                            pred.cl, 
                                            ref.cl.df, 
                                            reorder = reorder)
@@ -159,6 +224,7 @@ predict_annotate_cor <- function(cl,
 #' \item map.df: A data.frame with the mapping results for each sample in test.dat to the reference
 #' \item map.freq: A table with the frequency of mapping of each sample to each cluster across all iterations.
 #' }
+#' 
 map_sampling <- function(train.dat, 
                          train.cl, 
                          test.dat, 
@@ -166,8 +232,11 @@ map_sampling <- function(train.dat,
                          markers.perc = 0.8, 
                          iter = 100, 
                          method = "median",
-                         verbose = TRUE)
-{
+                         verbose = TRUE) {
+  
+  method <- match.arg(arg = method,
+                      choices = c("mean", "median"))
+  
   # Perform mapping iter times.
   map.result <- sapply(1:iter, 
                        function(i){
@@ -191,7 +260,8 @@ map_sampling <- function(train.dat,
   # Compute fraction of times each sample mapped to each cluster
   row.names(map.cl) <- colnames(test.dat)
   map <- as.data.frame(as.table(as.matrix(map.cl)))
-  map.freq <- table(map$Var1, map$Freq)
+  map.table <- table(map$Var1, map$Freq)
+  map.freq <- unclass(map.table)
   
   # Find the most frequently mapped cluster for each sample
   max.freq <- apply(map.freq, 1, which.max)
@@ -200,7 +270,7 @@ map_sampling <- function(train.dat,
   
   # Gather results
   map.df <- data.frame(pred.cl = pred.cl, 
-                       prob = rowMaxs(map.freq) / iter)
+                       prob = matrixStats::rowMaxs(map.freq) / iter)
   
   # output results
   out_list <- list(map.df = map.df,
@@ -209,11 +279,30 @@ map_sampling <- function(train.dat,
   return(out_list)
 }
 
+#' Run a single round of cross-validation of cluster mapping using a subset of marker genes
+#' 
+#' @param norm.dat a normalized data matrix for clustered cells
+#' @param cl a cluster factor object for the cells in norm.dat
+#' @param markers a character object with the marker genes to use for cross-validation
+#' @param n.bin an integer indicating the number of bins to use
+#' @param g.perc the fraction of genes to use for validation.
+#' @param method Method for mapping. Must be either "median" (Default) or "mean".
+#' @param verbose Whether or not to display progress notifications.
+#' 
+#' @return a named character object with the results of one round of cross-validation
+#' 
+#' @export
+#' 
 map_cv <- function(norm.dat, 
                    cl, 
                    markers, 
                    n.bin = 5,
-                   g.perc = 1, method="median") {
+                   g.perc = 1, 
+                   method = "median",
+                   verbose = TRUE) {
+  
+  method <- match.arg(arg = method,
+                      choices = c("mean", "median"))
   
   bins <- tapply(names(cl), 
                  cl, 
@@ -225,13 +314,17 @@ map_cv <- function(norm.dat,
                    }
                    setNames(tmp[sample(length(tmp))], x)
                  })
-  names(bins) = NULL
+  
+  names(bins) <- NULL
   bins <- unlist(bins)
   bins <- bins[names(cl)]
   pred.cl <- setNames(rep(NA, length(cl)), names(cl))
   
   for(i in 1:n.bin) {
-    print(i)
+    if(verbose) {
+      cat("\r", paste0("Running bin ",i," of ",n.bin,".        "))
+      flush.console()
+    }
     train.cells <- names(cl)[bins != i]
     test.cells <- names(cl)[bins == i]
     select.markers <- sample(markers, round(length(markers) * g.perc))
@@ -251,12 +344,13 @@ map_cv <- function(norm.dat,
 
 ###cluster annotation ref.cl.df must include "cluster_label" column
 
-#' Compare two sets of cluster assignments
+#' Compare two sets of cluster assignments for the same set of cells
 #' 
 #' @param cl A cluster factor object to compare to a reference
 #' @param ref.cl A cluster factor object for the reference clusters
 #' @param ref.cl.df A data.frame with reference cluster annotations that includes a "cluster_label" column 
 #' @param reorder Whether or not to reorder the overlaps by overlap size. Default = TRUE
+#' @param rename a logical indicating whether or not to rename the results.
 #'
 #' @return a list with 5 objects:  
 #' \itemize{
@@ -266,23 +360,34 @@ map_cv <- function(norm.dat,
 #' \item tb.df
 #' \item cl.id.map
 #' }
+#' 
+#' @export
+#' 
 compare_annotate <- function(cl, 
                              ref.cl, 
                              ref.cl.df, 
                              reorder = TRUE,
-                             rename = reorder)
-{
-  library(ggplot2)
+                             rename = TRUE) {
+
   if(!is.factor(cl)){
-    cl = setNames(factor(cl),names(cl))
+    cl <- setNames(factor(cl), names(cl))
   }
+  
   if(!is.factor(ref.cl)){
-    ref.cl = setNames(factor(as.character(ref.cl),levels=row.names(ref.cl.df)),names(ref.cl))
+    ref.cl <- setNames(factor(as.character(ref.cl),
+                              levels = row.names(ref.cl.df)),
+                       names(ref.cl))
   }
+  
   common.cells <- intersect(names(cl),names(ref.cl))
+  
+  if(length(common.cells) == 0) {
+    stop("No common names in cl and ref.cl for comparison.")
+  }
+  
   ###Find clusters not present in ref.cl
-  cl = droplevels(cl[common.cells])
-  ref.cl = droplevels(ref.cl[common.cells])
+  cl <- droplevels(cl[common.cells])
+  ref.cl <- droplevels(ref.cl[common.cells])
   # compare predicted cluster member with the new clustering result 
   tb <- table(cl, ref.cl)
   cl.id.map <- NULL
@@ -330,9 +435,11 @@ compare_annotate <- function(cl,
   
   select.cells <- names(cl)
 
-  cl.size = table(cl)
-  ref.cl.size = table(ref.cl)
-  tb.df$jaccard = as.vector(tb.df$Freq/(cl.size[as.character(tb.df[,1])] + ref.cl.size[as.character(tb.df[,2])] - tb.df$Freq))
+  cl.size <- table(cl)
+  ref.cl.size <- table(ref.cl)
+  
+  tb.df$jaccard <- as.vector(tb.df$Freq / (cl.size[as.character(tb.df[,1])] + ref.cl.size[as.character(tb.df[,2])] - tb.df$Freq))
+
   # Compute Jaccard statistics for each pair of clusters
   #tb.df$jaccard <- 0
   #for(i in 1:nrow(tb.df)){
@@ -343,19 +450,20 @@ compare_annotate <- function(cl,
   #}
   
   tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels = ref.cl.df$cluster_label)
-                               
-  g <- ggplot(tb.df, 
-              aes(x = cl, 
-                  y = ref.cl.label)) + 
-                    geom_point(aes(size = sqrt(Freq),
-                                   color = jaccard)) + 
-                                     theme(axis.text.x = element_text(vjust = 0.1,
-                                             hjust = 0.2, 
-                                             angle = 90,
-                                             size = 7),
-                                           axis.text.y = element_text(size = 6)) + 
-                                             scale_color_gradient(low = "yellow", high = "darkblue") + 
-                                               scale_size(range=c(0,3))
+  
+  g <- ggplot2::ggplot(tb.df, 
+                       ggplot2::aes(x = cl, 
+                                    y = ref.cl.label)) + 
+    ggplot2::geom_point(ggplot2::aes(size = sqrt(Freq),
+                                     color = jaccard)) + 
+    ggplot2::theme(axis.text.x = ggplot2::element_text(vjust = 0.1,
+                                                       hjust = 0.2, 
+                                                       angle = 90,
+                                                       size = 7),
+                   axis.text.y = ggplot2::element_text(size = 6)) + 
+    ggplot2::scale_color_gradient(low = "yellow", 
+                                  high = "darkblue") + 
+    ggplot2::scale_size(range = c(0, 3))
   
   out_list <- list(cl = cl,
                    cl.df = cl.df,
@@ -366,97 +474,218 @@ compare_annotate <- function(cl,
   return(out_list)
 }
 
-adjust_color <- function(color.mapping)
-{
-  while(1){
-    tmp.color = which(duplicated(color.mapping))
-    if(length(tmp.color)==0){
-      break
-    }
-    rgb = col2rgb(color.mapping)
-    for(x in tmp.color){
-      if(x < length(tmp.color)){
-        tmp= round(rgb[,x-1] *0.8 + sample(20, 3) + rgb[,x+1] *0.2) 
+#' Correct duplicated colors
+#'
+#' @param colorset a character vector of R or hex colors
+#'
+#' @return a character vector of hex colors with duplicated colors replaced
+#' 
+#' @export
+#'
+#' @examples
+#' 
+#' original_colors <- c("#00FF00","#00FF00","#FF0000","#00FF00")
+#' 
+#' new_colors <- adjust_color(original_colors)
+#' 
+adjust_color <- function(colorset) {
+  
+  duplicated_colors <- which(duplicated(colorset))
+  
+  while(length(duplicated_colors) > 0) {
+    
+    rgb <- col2rgb(colorset)
+    
+    for(x in duplicated_colors) {
+      
+      if(x < length(duplicated_colors)) {
+        tmp <- round(rgb[,x - 1] * 0.8 + sample(20, 3) + rgb[,x + 1] * 0.2) 
+      } else{
+        tmp <- round(rgb[,x - 1] * 0.8 + sample(40, 3))
       }
-      else{
-        tmp= round(rgb[,x-1] *0.8 +  sample(40, 3))
-      }
-      rgb[,x] = tmp
+      
+      rgb[,x] <- tmp
     }
-    rgb[rgb > 255]=255
-    color.mapping = rgb(rgb[1,],rgb[2,],rgb[3,], maxColorValue=255)
+    
+    rgb[rgb > 255] <- 255
+    
+    colorset <- rgb(rgb[1,],
+                    rgb[2,],
+                    rgb[3,], 
+                    maxColorValue = 255)
+    
+    duplicated_colors <- which(duplicated(colorset))
   }
-  return(color.mapping)
+  
+  return(colorset)
+}
+
+#' Generate an initial cl.df object based on cl
+#' 
+#' @param cl a cluster factor object
+#' 
+#' @return a data.frame with an id, color, and size for each cluster.
+#' 
+#' @export
+#' 
+get_cl_df <- function(cl) {
+  
+  jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
+                                   "#7FFF7F", "yellow", "#FF7F00", "red", 
+                                   "#7F0000"))
+  
+  cl.df <- data.frame(cluster_label = sort(unique(cl)))
+  cl.size <- table(cl)
+  cl.df$cluster_id <- 1:nrow(cl.df)
+  cl.df$cluster_color <-jet.colors(nrow(cl.df))
+  cl.df$size <- cl.size[row.names(cl.df)]
+  row.names(cl.df) <- cl.df$cluster_label
+  
+  return(cl.df)
+
+}
+
+#' Compute correlations of clusters to a reference set, and get the best-correlated reference clusters
+#' 
+#' match_cl uses pearson correlation of cluster means.
+#' 
+#' @param cl A cluster factor object to compare to a reference
+#' @param dat a normalized data matrix for data to map to the reference
+#' @param ref.cl A cluster factor object for the reference clusters
+#' @param ref.cl.df A data.frame with reference cluster annotations that includes a "cluster_label" column 
+#' @param ref.dat a reference normalized data matrix
+#' @param rename a logical indicating whether or not to rename the results.
+#' 
+#' #' @return a list with 3 objects:  
+#' \itemize{
+#' \item cl
+#' \item cl.df
+#' \item cor
+#' }
+#' 
+#' @export
+#' 
+match_cl <- function(cl, 
+                     dat, 
+                     ref.cl, 
+                     ref.cl.df, 
+                     ref.dat, 
+                     rename = TRUE) {
+  
+  cl.means <- get_cl_means(dat, cl)
+  ref.cl.means <- get_cl_means(ref.dat, ref.cl)
+  mat <- cor(cl.means, ref.cl.means)
+  tmp <- apply(mat, 1, which.max)
+  max.ref.cl <- colnames(mat)[tmp]
+  
+  cl_names <- names(cl)
+  cl <- factor(as.character(cl), 
+               levels = c(row.names(mat)[order(tmp)]))
+  cl <- setNames(cl, cl_names)
+  
+  cl.df <- data.frame(ref.cl = max.ref.cl)
+  cl.df <- cbind(cl.df, ref.cl.df[max.ref.cl,])
+  row.names(cl.df) <- row.names(mat)
+  cl.df <- cl.df[levels(cl),]
+  mat <- mat[levels(cl),]
+  
+  if(rename){
+    levels(cl) <- 1:length(levels(cl))
+    row.names(cl.df) <- row.names(mat) <- levels(cl)
+  }
+  
+  return(list(cl = cl, 
+              cl.df = cl.df, 
+              cor = mat))
+}
+
+#' Use DEGenes to identify clusters with few differentially expressed genes
+#'
+#' To use this, you'll need to perform pairwise gene expression tests with de_score(), and 
+#' a set of clusters with high confidence (cl.good).
+#' 
+#' Low-quality clusters will be from all clusters in cl.df that are not in cl.good.
+#'
+#' @param cl.df A data.frame with cluster annotations that includes a "cluster_label" column 
+#' @param cl.good a cluster factor object for cells from high-quality clusters.
+#' @param de.score.mat an optional matrix of pairwise degene scores generated by get_de_matrix().
+#' @param de.genes differential gene expression results like those generated by de_score().
+#'
+#' @return a data.frame with the closest "good" cluster for each non-good/low cluster.
+#' 
+#' @export
+#'
+find_low_quality_cl <- function(cl.df, 
+                                cl.good, 
+                                de.score.mat = NULL, 
+                                de.genes) {
+  
+  if(is.null(de.score.mat)){
+    de.score.mat <- get_de_matrix(de.genes, 
+                                  directed = TRUE, 
+                                  field = "num")
+  }
+  
+  diag(de.score.mat) <- max(de.score.mat)
+  
+  tmp.mat <- de.score.mat[, cl.good]
+  low.pair <- data.frame(cl.low = row.names(tmp.mat), 
+                         cl.good = colnames(tmp.mat)[apply(tmp.mat, 1, which.min)],
+                        stringsAsFactors = FALSE)
+  
+  low.pair$low.gene.counts <- cl.df[low.pair[,1], "gene.counts"]
+  low.pair$high.gene.counts <- cl.df[low.pair[,2], "gene.counts"]
+  
+  low.pair$low.size <- cl.df[low.pair[,1], "size"]
+  low.pair$high.size <- cl.df[low.pair[,2], "size"]
+  
+  low.pair$up.genes <- get_pair_matrix(de.score.mat, 
+                                       low.pair$cl.low, 
+                                       low.pair$cl.good)
+  
+  low.pair$cl.low.label <- cl.df[as.character(low.pair$cl.low), "cluster_label"]
+  low.pair$cl.good.label <- cl.df[as.character(low.pair$cl.good), "cluster_label"]
+  
+  row.names(low.pair) <- low.pair$cl.low
+  
+  return(low.pair)
 }
 
 
-get_cl_df <- function(cl)
-  {
-    jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
-    cl.df = data.frame(cluster_label=sort(unique(cl)))
-    cl.size= table(cl)
-    cl.df$cluster_id = 1:nrow(cl.df)
-    cl.df$cluster_color = jet.colors(nrow(cl.df))
-    cl.df$size = cl.size[row.names(cl.df)]
-    row.names(cl.df) = cl.df$cluster_label
-    return(cl.df)
-  }
-
-match_cl <- function(cl, dat, ref.cl, ref.cl.df, ref.dat, rename=TRUE)
-  {
-    cl.means = get_cl_means(dat,cl)
-    ref.cl.means = get_cl_means(ref.dat, ref.cl)
-    mat = cor(cl.means, ref.cl.means)
-    tmp <- apply(mat, 1, which.max)
-    max.ref.cl = colnames(mat)[tmp]
+#' Plot low-quality clusters
+#'
+#' @param norm.data normalized data matrix for clustered cells.
+#' @param cl A cluster factor object for all cells.
+#' @param low.df a data.frame with results from find_low_quality_cl().
+#' @param nn.df 
+#' @param de.genes differential gene expression results like those generated by de_score().
+#' @param all.col 
+#'
+#' @return
+#'
+plot_low_qc <- function(norm.dat, 
+                        cl, 
+                        low.df, 
+                        nn.df, 
+                        de.genes, 
+                        all.col) {
+  
+  for(i in 1:nrow(low.df)) {
+    x <- low.df[i, "cl.low"]
+    y <- low.df[i, "cl.good"]
+    i <- nn.df[x, "nn.cl"]
+    j <- nn.df[y, "nn.cl"]
     
-    cl_names <- names(cl)
-    cl <- factor(as.character(cl), levels = c(row.names(mat)[order(tmp)]))
-    cl <- setNames(cl, cl_names)
+    tmp.cl <- droplevels(cl[cl %in% c(x, y, i, j)])
+    tmp.cl <- tmp.cl[names(tmp.cl) %in% colnames(norm.dat)]
     
-    cl.df <- data.frame(ref.cl = max.ref.cl)
-    cl.df <- cbind(cl.df, ref.cl.df[max.ref.cl,])
-    row.names(cl.df) = row.names(mat)
-    cl.df = cl.df[levels(cl),]
-    mat = mat[levels(cl),]
-    if(rename){
-      levels(cl) = 1:length(levels(cl))
-      row.names(cl.df) = row.names(mat)= levels(cl)
-    }
-    return(list(cl=cl, cl.df=cl.df, cor = mat))
+    tmp <- display_cl(tmp.cl, 
+                      norm.dat, 
+                      prefix = paste(levels(tmp.cl), 
+                                     collapse = "_"), 
+                      col = all.col, 
+                      max.cl.size = 100, 
+                      de.genes = de.genes)
   }
-
-find_low_quality_cl <- function(cl.df, cl.good, de.score.mat=NULL, de.genes)
-  {
-    if(is.null(de.score.mat)){
-      de.score.mat <- get_de_matrix(de.genes, directed=TRUE, field="num")
-    }
-    diag(de.score.mat) = max(de.score.mat)
-    library(matrixStats)
-    tmp.mat = de.score.mat[, cl.good]
-    low.pair = data.frame(cl.low=row.names(tmp.mat), cl.good = colnames(tmp.mat)[apply(tmp.mat, 1, which.min)],stringsAsFactors=FALSE)
-    low.pair$low.gene.counts = cl.df[low.pair[,1], "gene.counts"]
-    low.pair$high.gene.counts = cl.df[low.pair[,2], "gene.counts"]
-
-    low.pair$low.size = cl.df[low.pair[,1], "size"]
-    low.pair$high.size = cl.df[low.pair[,2], "size"]
-    low.pair$up.genes = get_pair_matrix(de.score.mat, low.pair$cl.low, low.pair$cl.good)
-    low.pair$cl.low.label = cl.df[as.character(low.pair$cl.low),"cluster_label"]
-    low.pair$cl.good.label = cl.df[as.character(low.pair$cl.good),"cluster_label"]
-    row.names(low.pair) = low.pair$cl.low
-    return(low.pair)
-  }
-
-
-plot_low_qc <- function(norm.dat, cl, low.df, nn.df, de.genes, all.col)
-  {
-    for(i in 1:nrow(low.df)){
-      x = low.df[i, "cl.low"]
-      y = low.df[i, "cl.good"]
-      i = nn.df[x, "nn.cl"]
-      j = nn.df[y, "nn.cl"]      
-      tmp.cl = droplevels(cl[cl %in% c(x,y,i,j)])
-      tmp.cl = tmp.cl[names(tmp.cl) %in% colnames(norm.dat)]
-      tmp=display_cl(tmp.cl, norm.dat, prefix=paste(levels(tmp.cl), collapse="_"), col=all.col, max.cl.size=100, de.genes=de.genes)
-    }
-  }
+  
+}

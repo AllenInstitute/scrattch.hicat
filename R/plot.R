@@ -1,4 +1,19 @@
-plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=NULL,centered=FALSE,labels=names(cl),sorted=FALSE,by.cl=TRUE,ColSideColors=NULL,maxValue=5,min.sep=4,main="", height=13, width=9)
+plot_cl_heatmap <- function(norm.dat, 
+                            cl, 
+                            markers, 
+                            prefix = NULL,
+                            hc = NULL,
+                            gene.hc = NULL,
+                            centered = FALSE,
+                            labels = names(cl),
+                            sorted = FALSE,
+                            by.cl = TRUE,
+                            ColSideColors = NULL,
+                            maxValue = 5,
+                            min.sep = 4,
+                            main = "", 
+                            height = 13, 
+                            width = 9)
   {
     library(matrixStats)
     blue.red <-colorRampPalette(c("blue", "white", "red"))
@@ -57,7 +72,18 @@ plot_cl_heatmap <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=
   }
 
 
-display_cl_one_vs_others <- function(select.cl, cl, norm.dat, de.genes,  plot=!is.null(prefix), col=NULL, max.cl.size=NULL,main="",height=13, width=9, min.sep=4, ...)
+display_cl_one_vs_others <- function(select.cl, 
+                                     cl, 
+                                     norm.dat, 
+                                     de.genes,
+                                     plot = !is.null(prefix),
+                                     col = NULL, 
+                                     max.cl.size = NULL,
+                                     main = "",
+                                     height = 13, 
+                                     width = 9, 
+                                     min.sep = 4, 
+                                     ...)
   {
     select.cells=names(cl)        
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -91,25 +117,24 @@ display_cl_one_vs_others <- function(select.cl, cl, norm.dat, de.genes,  plot=!i
     return(list(markers=markers,cells_order= cells_order))
   }
   
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param cl 
-##' @param norm.dat 
-##' @param prefix 
-##' @param plot 
-##' @param col 
-##' @param max.cl.size 
-##' @param markers 
-##' @param de.genes 
-##' @param main 
-##' @param height 
-##' @param width 
-##' @param min.sep 
-##' @param ... 
-##' @return 
-##' @author Zizhen Yao
+#' Display cluster plot
+#' 
+#' @param cl 
+#' @param norm.dat 
+#' @param prefix 
+#' @param plot 
+#' @param col 
+#' @param max.cl.size 
+#' @param markers 
+#' @param de.genes 
+#' @param main 
+#' @param height 
+#' @param width 
+#' @param min.sep 
+#' @param ... 
+#' 
+#' @author Zizhen Yao
+#' 
 display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9, min.sep=10, ...)
   {
     select.cells=names(cl)        

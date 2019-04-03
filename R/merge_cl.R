@@ -38,11 +38,11 @@ test_merge <- function(de.pair, de.param, merge.type="undirectional")
 #' @param return.markers If TRUE, compute the DE genes between very pairs of clusters as markers
 #' @param pairBatch The number of pairs to be tested for merging in one batch. Avoid compairing many pairs at the same time to reduce memory comsumption. Default 40
 #' @param sampled For big dataset, norm.dat may not include all cells from cl. If TRUE, norm.dat is the data matrix for downsampled cells, and no need for further down sampling. 
+#'
 #' @return A list with cl (cluster membership), de.genes (differentially expressed genes), sc (cluster pairwise de.score), markers (top cluster pairwise markers)
+#' 
 #' @export
 #'
-
-
 merge_cl<- function(norm.dat,
                     cl, 
                     rd.dat.t, 

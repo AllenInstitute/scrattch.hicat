@@ -240,20 +240,18 @@ compile_cl_mat <- function(cl.list, select.cells)
 
 
 
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param cl Cluster membership cluster
-##' @param co.ratio cell-cell co-clustering matrix. 
-##' @param cl.mat cell-cluster matrix collected from bootstrapping iterations. Either co.ratio or cl.mat should not be NULL. 
-##' @param confusion.th Clusters with average confusion score greater than this threshold will be removed. Cells in this cluster will be re-distributed to other most likely clusters. 
-##' @param min.cells Clusters with fewer than this many cells will be removed. Cells in this cluster will be re-distributed to other most likely clusters. 
-##' @param niter maxmimal mumber of refinement iterations. 
-##' @param tol.th If improvement is smaller than this threshold, terminate refinement step.  
-##' @param verbose If true, print out step-by-step improvement. 
-##' @return 
-##' @author Zizhen Yao
+#' Refine clusters
+#' 
+#' @param cl Cluster membership cluster
+#' @param co.ratio cell-cell co-clustering matrix. 
+#' @param cl.mat cell-cluster matrix collected from bootstrapping iterations. Either co.ratio or cl.mat should not be NULL. 
+#' @param confusion.th Clusters with average confusion score greater than this threshold will be removed. Cells in this cluster will be re-distributed to other most likely clusters. 
+#' @param min.cells Clusters with fewer than this many cells will be removed. Cells in this cluster will be re-distributed to other most likely clusters. 
+#' @param niter maxmimal mumber of refinement iterations. 
+#' @param tol.th If improvement is smaller than this threshold, terminate refinement step.  
+#' @param verbose If true, print out step-by-step improvement. 
+#' @return 
+#' @author Zizhen Yao
 refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells=4, niter=50, tol.th=0.02, verbose=0)
 {
   ###If cl is factor, turn in to integer vector first. 
@@ -457,9 +455,8 @@ plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 #' @param init.result The pre-set high level clusters. If set, the function will only find finer splits of the current clusters.  
 #' @param ... Other parameters passed to iter_clust
 #'
-
 #' @export
-
+#' 
 run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, co.result=NULL, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("undirectional","directional"), override=FALSE, init.result=NULL, cut.method="auto",...)
 {
   if(!dir.exists(output_dir)){

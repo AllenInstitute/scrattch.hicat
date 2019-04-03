@@ -1,5 +1,6 @@
-require(dendextend)
-require(dplyr)      
+#require(dendextend)
+#require(dplyr)      
+
 pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp", "au"), signif_col_fun = colorRampPalette(c("black", 
     "darkred", "red")), ...) 
 {

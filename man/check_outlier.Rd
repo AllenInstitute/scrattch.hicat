@@ -6,10 +6,11 @@
 \usage{
 check_outlier(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
   keep.cl = NULL, neun.thresh = 0.5,
-  neun.colname = "facs_population_plan",
+  neun.colname = "facs_population_plan", neun.val = "NeuN-pos",
   qc.metrics = c("Genes.Detected.CPM", "percent_reads_aligned_total",
   "complexity_cg"), test.genes = c("SNAP25", "GAD1", "GAD2", "SLC17A7",
-  "SLC17A6"), plot = TRUE, plot.path = "output/")
+  "SLC17A6"), expr.th = 3, prop.th = c(0.4, 0.4, 0.4, 0.4, 0.4),
+  min.prop.th = 0.8, plot = TRUE, plot.path = "output/")
 }
 \arguments{
 \item{anno}{anno dataframe which must include column names listed in `neun.colname`
@@ -30,12 +31,20 @@ NeuN positive (default is 0.5)}
 
 \item{neun.colname}{column name in anno with the Nuen information}
 
+\item{neun.val}{value corresponding to non-neuronal marker in neun.colname in anno}
+
 \item{qc.metrics}{required columns from anno dataframe. default is Genes.Detected.CPM", 
 "percent_reads_aligned_total", "complexity_cg"}
 
 \item{test.genes}{CURRENTLY NOT USED.  This function will eventually allow for a 
 pre-defined set of genes to be entered. default is "SNAP25", "GAD1", "GAD2", 
 "SLC17A7", "SLC17A6"}
+
+\item{expr.th}{expression threshold for detecting test genes}
+
+\item{prop.th}{proportion threshold of detected genes by cluster (default is 0.4, 0.4, 0.4, 0.4, 0.4)}
+
+\item{min.prop.th}{one of last 4 test genes should have detection at least at this amount}
 
 \item{plot}{default is TRUE}
 
