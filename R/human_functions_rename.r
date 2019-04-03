@@ -338,6 +338,7 @@ renameAndOrderClusters <- function(
       }
     }
     # Find the top gene by tau if the function above fails     # NEW
+    propExpr <- propExpr[!is.element(rownames(propExpr),excludeGenes),]  # UPDATE
     prpMax <- apply(propExpr,1,max)
     prpWm  <- colnames(propExpr)[apply(propExpr,1,which.max)]
     names(prpWm) <- names(prpMax)
