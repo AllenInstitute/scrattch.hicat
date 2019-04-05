@@ -34,11 +34,13 @@ test_that(
     glial_scaling <- glial_sample_totals / median(glial_sample_totals)
     glial_data_scaled <- glial_data / glial_scaling[col(glial_data)]
     
+    # g.means
     check_means <- rowMeans(glial_data_scaled[check_genes,])
     names(check_means) <- NULL
     expect_equal(vg_results$g.means[match(check_genes, vg_results$gene)],
                  check_means)
     
+    # g.vars
     check_vars <- apply(glial_data_scaled[check_genes,], 1, 
                         function(x) {
                           # correct for differences in var calculation
@@ -48,6 +50,22 @@ test_that(
     names(check_vars) <- NULL
     expect_equal(vg_results$g.vars[match(check_genes, vg_results$gene)],
                  check_vars)
+    
+    # dispersion
+    check_dispersion <- log10(check_vars / check_means)
+    
+    expect_equal(vg_results$dispersion[match(check_genes, vg_results$gene)],
+                 check_dispersion)
+    
+    # z
+    d <- vg_results$dispersion
+    IQR <- quantile(d, probs = c(0.25, 0.75), na.rm = T)
+    m <- mean(IQR)
+    delta <- (IQR[2] - IQR[1]) / (qnorm(0.75) - qnorm(0.25))
+    check_z <- (d - m) / delta 
+    
+    expect_equal(vg_results$z[match(check_genes, vg_results$gene)],
+                 check_z[match(check_genes, vg_results$gene)])
   }
 )
 

@@ -70,6 +70,42 @@ findVG <- function(dat,
 #' 
 compute_vg <- function(dat) {
   
+  scaled_data <- rescale_vg(dat)
+  
+  means <- gene_means(dat)
+  
+  vars <- gene_vars(dat,
+                    means = gene_means)
+  
+  dispersion <- gene_dispersion(dat,
+                                means = means,
+                                vars = vars)
+  
+  z <- gene_z(dat,
+              dispersion = dispersion)
+  
+  ###loess regression
+  
+  loess_z <- gene_loess_z(dat,
+                          dispersion = dispersion,
+                          means = means)
+  
+  gene_var_stats <- data.frame(gene = rownames(dat),
+                               g.means = means, 
+                               g.vars = vars, 
+                               dispersion = dispersion,
+                               z = z,
+                               pval = 1 - pnorm(z),
+                               padj = p.adjust(1 - pnorm(z), method = "fdr"),
+                               loess.z = loess_z,
+                               loess.pval = 1 - pnorm(loess_z),
+                               loess.pad = p.adjust(1 - pnorm(loess_z), method = "fdr"))
+  
+  return(gene_var_stats)
+}
+
+rescale_vg <- function(dat) {
+  
   if(!is.matrix(dat)) {
     sample_totals <- Matrix::colSums(dat)
   } else {
@@ -80,43 +116,95 @@ compute_vg <- function(dat) {
   
   scaled_data <- dat / scaling_factor[col(dat)]
   
+  scaled_data
+}
+
+gene_means <- function(dat) {
+  
   if(is.matrix(dat)) {
-    gene_means <- rowMeans(scaled_data)
-    gene_vars <-  rowMeans(scaled_data^2) - gene_means^2
+    rowMeans(scaled_data)
   } else {
-    gene_means <- Matrix::rowMeans(scaled_data)
-    gene_vars <- Matrix::rowMeans(scaled_data^2) - gene_means^2
+    Matrix::rowMeans(scaled_data)
   }
   
-  dispersion <- log10(gene_vars / gene_means)
+}
+
+gene_vars <- function(dat,
+                     means = NULL) {
+  
+  
+  if(is.null(means)) {
+    means <- gene_means(dat)
+  }
+  
+  squared_dat <- dat^2
+  
+  if(is.matrix(dat)) {
+    rowMeans(squared_dat) - means ^ 2
+  } else {
+    Matrix::rowMeans(squared_dat) - means ^ 2
+  }
+  
+}
+
+gene_dispersion <- function(dat,
+                            means = NULL,
+                            vars = NULL) {
+  
+  if(is.null(means)) {
+    means <- gene_means(dat)
+  }
+  
+  if(is.null(vars)) {
+    vars <- gene_vars(dat, means = means)
+  }
+  
+  log10(vars / means)
+}
+
+gene_z <- function(dat,
+                   dispersion = NULL) {
   
   #####test samples####
   ###fit normal with 25% to 75%
+  
+  if(is.null(dispersion)) {
+    dispersion <- gene_dispersion(dat)
+  }
   
   IQR <- quantile(dispersion, 
                   probs = c(0.25, 0.75),
                   na.rm = TRUE)
   m <- mean(IQR)
   delta <- (IQR[2] - IQR[1]) / (qnorm(0.75) - qnorm(0.25))
-  z <- (dispersion  - m) / delta        
   
-  gene_var_stats <- data.frame(gene = rownames(dat),
-                               g.means = gene_means, 
-                               g.vars = gene_vars, 
-                               dispersion = dispersion,
-                               z = z,
-                               pval = 1 - pnorm(z),
-                               padj = p.adjust(1 - pnorm(z), method = "fdr"))
+  (dispersion  - m) / delta 
+}
+
+gene_loess_z <- function(dat,
+                         dispersion = NULL,
+                         means = NULL) {
   
-  ###loess regression
+  if(is.null(means)) {
+    means <- gene_means(dat)
+  }
   
-  select<- !is.na(gene_var_stats$dispersion) & gene_var_stats$dispersion > 0
+  if(is.null(dispersion)) {
+    dispersion <- gene_dispersion(dat,
+                                  means = means)
+  }
   
-  fit <- with(gene_var_stats, loess(dispersion ~ log10(g.means), subset = select))
+  select <- !is.na(dispersion) & dispersion > 0
+  
+  selected_dispersion <- dispersion[select]
+  selected_means <- means[select]
+  
+  fit <- loess(selected_dispersion ~ log10(selected_means))
   
   residual <- resid(fit)
   base <- min(predict(fit))
-  diff <- gene_var_stats$dispersion - base
+  
+  diff <- dispersion - base
   diff[select] <- residual
   
   IQR <- quantile(diff, 
@@ -125,11 +213,7 @@ compute_vg <- function(dat) {
   m <- mean(IQR)
   delta <- (IQR[2] - IQR[1]) / (qnorm(0.75) - qnorm(0.25))
   
-  gene_var_stats$loess.z <- (diff - m) / delta
-  gene_var_stats$loess.pval = 1 - pnorm(gene_var_stats$loess.z)
-  gene_var_stats$loess.padj = p.adjust(gene_var_stats$loess.pval, method="fdr")
-  
-  return(gene_var_stats)
+  (diff - m) / delta
 }
 
 #' Generate gene variance plots
