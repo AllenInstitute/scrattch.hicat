@@ -4,14 +4,14 @@
 \alias{get_cl_prop}
 \title{Compute cluster proportions for each row in a matrix}
 \usage{
-get_cl_prop(mat, cl, thresshold = 1)
+get_cl_prop(mat, cl, threshold = 1)
 }
 \arguments{
 \item{mat}{a gene (rows) x samples(columns) sparse matrix}
 
 \item{cl}{A cluster factor object}
 
-\item{thresshold}{The minimum expression value used to binarize the results}
+\item{threshold}{The minimum expression value used to binarize the results}
 }
 \value{
 a matrix of genes (rows) x cluster(columns) with proportions for each cluster
