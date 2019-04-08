@@ -47,15 +47,41 @@
 #' @return returns a list of parameters for reuse
 #' @export
 #'
-de_param <- function(low.th = 1, 
-                     padj.th = 0.01, 
+de_param <- function(padj.th = 0.01, 
                      lfc.th = 1, 
+                     low.th = 1,
                      q1.th = 0.5, 
                      q2.th = NULL,
                      q.diff.th = 0.7, 
                      de.score.th = 100, 
                      min.cells = 4, 
                      min.genes = 5) {
+  
+  if(padj.th > 1) {
+    stop("padj.th must be a value <= 1.")
+  }
+  if(padj.th <= 0) {
+    stop("padj.th must be a value > 0.")
+  }
+  if(lfc.th < 0) {
+    stop("lfc.th must be a non-negative value.")
+  }
+  if(low.th < 0) {
+    stop("low.th must be a non-negative value.")
+  }
+  if(q1.th < 0 | q1.th > 1) {
+    stop("q1.th must be a non-negative value between 0 and 1.")
+  }
+  if(!is.null(q2.th)) {
+    if(q2.th < 0 | q2.th > 1) {
+      stop("q2.th must be a non-negative value between 0 and 1.")
+    }
+    if(q2.th > q1.th) {
+      stop("q2.th must be smaller than q1.th.")
+    }
+  }
+  
+  
   list(low.th = low.th, 
        padj.th = padj.th, 
        lfc.th = lfc.th, 
