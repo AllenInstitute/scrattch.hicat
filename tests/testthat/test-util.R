@@ -53,7 +53,7 @@ test_that(
                                      rows = row_idx,
                                      cols = col_idx)
     
-    expect_is(coor, "integer")
+    expect_is(chr_coor, "integer")
     
     expect_equal(length(chr_coor), length(row_names))
     
@@ -502,9 +502,9 @@ test_that(
     vals_13 <- sparse_mat[,13]
     vals_21 <- sparse_mat[,21]
     
-    cor_5_13 <- cor(vals_5, vals_13)
+    cor_5_13 <- as.vector(cor(vals_5, vals_13))
     expect_equal(cor_results[5,13], cor_5_13)
-    cor_5_21 <- cor(vals_5, vals_21)
+    cor_5_21 <- as.vector(cor(vals_5, vals_21))
     expect_equal(cor_results[5,21], cor_5_21)
     
   }
