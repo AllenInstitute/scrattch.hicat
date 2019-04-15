@@ -337,14 +337,24 @@ renameAndOrderClusters <- function(
         specGenes[s] <- specGenes0[s]
       }
     }
-    # Find the top gene by tau if the function above fails     # NEW
+    # Find the top gene by tau if the function above fails, and then by highest expression # NEW
+    propExpr <- propExpr[!is.element(rownames(propExpr),excludeGenes),]  # UPDATE
     prpMax <- apply(propExpr,1,max)
     prpWm  <- colnames(propExpr)[apply(propExpr,1,which.max)]
     names(prpWm) <- names(prpMax)
-    tau    <- calc_tau(propExpr[prpMax>=propMin,])
-    prpWm  <- prpWm[prpMax>=propMin][order(-tau,-prpMax[prpMax>=propMin])]
+    kpp    <- prpMax>=propMin
+    tau    <- calc_tau(propExpr)
+    prpWmTau <- prpWm[kpp][order(-tau[kpp],-prpMax[kpp])]
+    prpWmMax <- prpWm[order(-prpMax)]
     for (s in colnames(propExpr)[(specGenes == "none")]) {
-      specGenes[s] <- names(prpWm[prpWm==s])[1]
+      valS <- names(prpWmTau[prpWmTau==s])[1]
+      if(is.na(valS)){
+        valS <- names(prpWmMax[prpWmMax==s])[1]
+      }
+      if(is.na(valS)){
+        valS <- names(sort(-propExpr[,s]))[1]
+      }
+      specGenes[s] <- valS 
     }
     clusterInfo$specificGene <- specGenes[clusterInfo$old_cluster_label] # FIX
   }

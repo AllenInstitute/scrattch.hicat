@@ -10,6 +10,7 @@ Depends: R (>= 3.3.0)
 License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true
+Requires: Matrix
 Imports: 
   data.table,
   dendextend,
@@ -19,14 +20,13 @@ Imports:
   ggplot2,
   grid,
   limma,
-  Matrix,
   matrixStats,
   pvclust,
   qlcMatrix,
   Rphenograph,
   Rtsne,
   WGCNA
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Suggests: knitr,
     rmarkdown,
     testthat,

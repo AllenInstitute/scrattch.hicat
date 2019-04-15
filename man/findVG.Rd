@@ -2,23 +2,10 @@
 % Please edit documentation in R/vg.R
 \name{findVG}
 \alias{findVG}
-\title{Identify high variability genes using Brennecke's method}
+\title{reverse-compatibility wrapper around find_vg()}
 \usage{
-findVG(dat, plot_file = NULL, return_type = "data")
-}
-\arguments{
-\item{dat}{A matrix or dgCMatrix with samples as columns and genes as rows}
-
-\item{plot_file}{(optional) A file to use to output diagnostic plots. Default is NULL.}
-
-\item{return_type}{What kind of objects to return. Default is "data", which will return only 
-a data.frame with results for each gene. Other options are "plots", which will return a list 
-containing plot objects, and "both" which will return a list with the statistics (gene_var_stats) 
-and plots.}
-}
-\value{
-Either a data.frame or a list (see return_type parameter).
+findVG(...)
 }
 \description{
-Identify high variability genes using Brennecke's method
+reverse-compatibility wrapper around find_vg()
 }
