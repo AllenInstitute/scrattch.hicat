@@ -257,7 +257,7 @@ onestep_clust <- function(norm.dat,
       cl.hc = hclust(dist(t(cl.dat)),method="average")
       cl = setNames(factor(as.character(cl), levels= colnames(cl.dat)[cl.hc$order]), names(cl))
       if(verbose & !is.null(prefix)){
-        display_cl(norm.dat, cl, prefix=prefix, markers=markers, max.cl.size=max.cl.size)
+        display_cl(cl, norm.dat, prefix=prefix, markers=markers, max.cl.size=max.cl.size)
       }
       levels(cl) = 1:length(levels(cl))
       result=list(cl=cl, markers=markers)
