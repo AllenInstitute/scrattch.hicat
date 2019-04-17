@@ -32,10 +32,11 @@ returns a list of parameters for reuse
 }
 \description{
 This function provides a convenient way to manage settings for differential expression tests in scrattch.hicat.
- 
-Calling \code{de.param()} without additional parameters provides reasonable defaults for high depth (e.g. SMART-seq) datasets.
 }
 \details{
+Calling \code{de.param()} without additional parameters provides reasonable defaults for high depth (e.g. SMART-seq) datasets.
+
+
 \strong{Gene detection threshold:}
 
 \code{low.th} sets a lower bound for normalized gene expression to determine whether or not a gene is considered to be detected.
@@ -117,5 +118,5 @@ tx_param <- de_param(low.th = 1,
                      de.score.th = 100, # Reduced due to decreased detection
                      min.cells = 10, # Increased due to higher number of cells
                      min.genes = 5) 
-                     
+
 }
