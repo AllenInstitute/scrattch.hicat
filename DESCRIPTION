@@ -27,8 +27,10 @@ Imports:
   Rtsne,
   WGCNA
 RoxygenNote: 6.1.1
-Suggests: knitr,
+Suggests: 
+    knitr,
     rmarkdown,
     testthat,
-    tasic2016data
+    tasic2016data,
+    covr
 VignetteBuilder: knitr

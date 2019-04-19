@@ -550,11 +550,11 @@ test_that(
     expect_equal(length(sampled_cl_random_1), length(levels(glial_train_cl)) * sample_size)
     expect_true(sum(table(sampled_cl_random_1) == sample_size) == length(levels(glial_train_cl)))
     
-    # NULL seed 2
+    # different seed 2
     sampled_cells_random_2 <- sample_cells(cl = glial_train_cl, 
                                            sample.size = sample_size, 
                                            weights = NULL,
-                                           seed = NULL)
+                                           seed = 123)
     
     expect_is(sampled_cells_random_2, "character")
     

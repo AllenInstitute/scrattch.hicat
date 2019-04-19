@@ -166,8 +166,17 @@ de_param <- function(low.th = 1,
       stop("q2.th must be a non-negative value between 0 and 1.")
     }
   }
+  if(q.diff.th < 0) {
+    stop("q.diff.th must be a non-negative value.")
+  }
   if(de.score.th < 0) {
     stop("de.score.th must be a non-negative value.")
+  }
+  if(min.cells < 1) {
+    stop("min.cells must be an integer with a value greater than 0.")
+  }
+  if(min.genes < 1) {
+    stop("min.genes must be an integer with a value greater than 0.")
   }
   
   list(low.th = low.th, 
@@ -179,6 +188,8 @@ de_param <- function(low.th = 1,
        de.score.th = de.score.th, 
        min.cells = min.cells, 
        min.genes = min.genes)
+  
+  
 }
 
 #' Vectorized Chi-squared tests for differential gene detection
@@ -291,7 +302,7 @@ score_pair_limma <- function(pair,
   return(results)
 }
 
-  
+
 #' Perform pairwise differential detection tests using Chi-Squared for a single pair of clusters
 #'
 #' @param pair a numeric vector of length 2 specifying which clusters to compare
@@ -392,7 +403,7 @@ DE_genes_pairs <- function(norm.dat,
     genes_above_low.th <- Matrix::rowSums(norm.dat >= low.th[row.names(norm.dat)])
   }
   
-  genes_above_min.cells <- gene_above_low.th >= min.cells
+  genes_above_min.cells <- genes_above_low.th >= min.cells
   
   select.genes <- row.names(norm.dat)[genes_above_min.cells]
   
@@ -424,11 +435,11 @@ DE_genes_pairs <- function(norm.dat,
       v <- limma::voom(counts = as.matrix(counts[row.names(norm.dat), names(cl)]), 
                        design = design)
       
-      fit <- lmFit(object = v, 
-                   design = design)		
+      fit <- limma::lmFit(object = v, 
+                          design = design)		
     } else {
-      fit <- lmFit(object = norm.dat[, names(cl)], 
-                   design = design)
+      fit <- limma::lmFit(object = norm.dat[, names(cl)], 
+                          design = design)
     }
   }
   
