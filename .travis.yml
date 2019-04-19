@@ -1,0 +1,22 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+
+sudo: false
+warnings_are_errors: FALSE
+
+cache: packages
+
+r_packages:
+  - covr
+  
+r_github_packages:
+  - JinmiaoChenLab/Rphenograph
+  - AllenInstitute/tasic2016data
+
+bioc_packages:
+  - limma
+  - WGCNA
+
+after_success:
+  - Rscript -e 'library(covr); codecov()'

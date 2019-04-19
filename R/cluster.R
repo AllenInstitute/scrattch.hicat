@@ -281,8 +281,6 @@ onestep_clust <- function(norm.dat,
 #'         cl: cluster membership for each cell
 #'         markers: top markers that seperate clusters     
 #'         
-#' @examples clust.result <- iter_clust(norm.dat)
-#'           clust.result <- iter_clust(norm.dat, de.param = de_param(q1.th = 0.5, de.score.th = 100))
 iter_clust <- function(norm.dat, 
                        select.cells = colnames(norm.dat),
                        prefix = NULL, 
@@ -363,7 +361,6 @@ iter_clust <- function(norm.dat,
 #' @return Reorder cluster membership vector. The cluster id start from 1 to the number of clusters.
 #' @export 
 #'
-#' @examples reorder_cl()
 reorder_cl <- function(cl, dat)
 {
   cl.means = get_cl_means(dat,cl)

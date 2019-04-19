@@ -16,7 +16,7 @@
 #' @return returns all the clusters and true/false of whether they are Neun positive
 #' @export
 #'
-#' @examples check_neun(anno, anno$cluster, neun.thresh = 0.5)
+#' @examples
 check_neun <- function(anno, cluster,
                        neun.thresh = 0.5,
                        neun.colname = "facs_population_plan",
@@ -45,7 +45,7 @@ check_neun <- function(anno, cluster,
 #' @return returns binary result of whether qc failed or passed
 #' @export
 #'
-#' @examples check_qc(x,  qc.iqr.mult = 3)
+#' @examples
 check_qc <- function(x, qc.iqr.mult = 3) {
   med.diff <- abs(x - median(x, na.rm = TRUE))
   iqr      <- abs(quantile(x, 0.75, na.rm = TRUE) - quantile(x, 0.25, na.rm = TRUE))
@@ -91,7 +91,7 @@ check_qc <- function(x, qc.iqr.mult = 3) {
 #' @return gives outlier clusters and exploratory plots
 #' @export
 #'
-#' @examples check_outlier()
+#' @examples
 
 check_outlier <- function(anno, cluster, norm.dat,
                           select.cells = colnames(norm.dat),
@@ -211,7 +211,7 @@ check_outlier <- function(anno, cluster, norm.dat,
 #'   as a list
 #' @export
 #'
-#' @examples group_cl()
+#' @examples
 group_cl <- function(anno, cluster, norm.dat,
                      select.cells = colnames(norm.dat),
                      neun.thresh = 0.5,
@@ -284,7 +284,7 @@ group_cl <- function(anno, cluster, norm.dat,
 #' @return Gives cluster ids vs donor expression/region heatmap
 #' @export
 #'
-#' @examples check_donor()
+#' @examples
 check_donor <- function(anno, cluster, norm.dat, select.cells = names(cluster),
                         keep.cl = NULL, meta1_area = "roi", meta2_donor = "external_donor_name",
                         plot = TRUE, plot.path = "output/") {
@@ -351,7 +351,7 @@ check_donor <- function(anno, cluster, norm.dat, select.cells = names(cluster),
 #' @export
 compare_plot <- function(cl,ref.cl){
   
-  library(ggplot2)
+  #library(ggplot2)
   
   common.cells <- intersect(names(cl),names(ref.cl))
   # compare predicted cluster member with the new clustering result 
@@ -374,18 +374,18 @@ compare_plot <- function(cl,ref.cl){
   
   colnames(tb.df) <- c("cl","ref.cl","Freq","jaccard")
   
-  g <- ggplot(tb.df, 
-              aes(x = cl, 
+  g <- ggplot2::ggplot(tb.df, 
+                       ggplot2::aes(x = cl, 
                   y = ref.cl)) + 
-    geom_point(aes(size = sqrt(Freq),
+    ggplot2::geom_point(aes(size = sqrt(Freq),
                    color = jaccard)) + 
-    theme(axis.text.x = element_text(vjust = 0.1,
+    ggplot2::heme(axis.text.x = ggplot2::element_text(vjust = 0.1,
                                      hjust = 0.2, 
                                      angle = 90,
                                      size = 7),
-          axis.text.y = element_text(size = 6)) + 
-    scale_color_gradient(low = "yellow", high = "darkblue") + 
-    scale_size(range=c(0,3))
+          axis.text.y = ggplot2::element_text(size = 6)) + 
+    ggplot2::scale_color_gradient(low = "yellow", high = "darkblue") + 
+    ggplot2::scale_size(range=c(0,3))
   
   g
 }

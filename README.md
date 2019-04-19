@@ -2,6 +2,12 @@
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/The_cat_-_an_introduction_to_the_study_of_backboned_animals%2C_especially_mammals_%281881%29_%2820577850762%29.jpg/640px-The_cat_-_an_introduction_to_the_study_of_backboned_animals%2C_especially_mammals_%281881%29_%2820577850762%29.jpg" alt="A hicat" width="300px"/>
 
+Master: [![Travis build status](https://travis-ci.org/AllenInstitute/scrattch.hicat.svg?branch=master)](https://travis-ci.org/AllenInstitute/scrattch.hicat)
+[![Coverage status](https://codecov.io/gh/AllenInstitute/scrattch.hicat/branch/master/graph/badge.svg)](https://codecov.io/github/AllenInstitute/scrattch.hicat?branch=master)
+
+Dev: [![Travis build status](https://travis-ci.org/AllenInstitute/scrattch.hicat.svg?branch=dev)](https://travis-ci.org/AllenInstitute/scrattch.hicat)
+[![Coverage status](https://codecov.io/gh/AllenInstitute/scrattch.hicat/branch/dev/graph/badge.svg)](https://codecov.io/github/AllenInstitute/scrattch.hicat?branch=dev)
+
 ## Installation
 
 `scrattch.hicat` has several dependencies, including two from BioConductor and one from Github:

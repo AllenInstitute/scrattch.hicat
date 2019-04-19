@@ -253,7 +253,7 @@ gene_vars <- function(dat,
 #'
 #' @return a numeric vector of dispersion values for each gene
 #' 
-#' @ export
+#' @export
 #' 
 gene_dispersion <- function(dat,
                             means = NULL,

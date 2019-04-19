@@ -16,7 +16,7 @@ This value can best be estimated from cell loading densities into the 10X/Drop-S
 
 \item{porportion.artificial}{The proportion (from 0-1) of the merged real-artificial dataset
 that is artificial. In other words, this argument defines the total number of artificial doublets.
-Default is set to 25%, based on optimization on PBMCs (see McGinnis, Murrow and Gartner 2018, BioRxiv).}
+Default is set to 25\%, based on optimization on PBMCs (see McGinnis, Murrow and Gartner 2018, BioRxiv).}
 
 \item{proportion.NN}{The proportion (from 0-1) of the merged real-artificial dataset used to define
 each cell's neighborhood in PC space. Default set to 1%, based on optimization on PBMCs (see McGinnis,
@@ -32,8 +32,4 @@ is performed on the merged real-artificial dataset using PCA. Third, the proport
 artificial nearest neighbors is defined for each real cell. Finally, real cells are rank-
 ordered and predicted doublets are defined via thresholding based on the expected number
 of doublets.
-}
-\examples{
-seu <- doubletFinder(seu, expected.doublets = 1000, proportion.artificial = 0.25, proportion.NN = 0.01)
-
 }
