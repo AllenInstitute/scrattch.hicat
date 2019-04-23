@@ -1,6 +1,22 @@
 context("test-de.genes")
 library(scrattch.hicat)
 
+# Load glial test data
+library(tasic2016data)
+
+glial_classes <- c("Astrocyte", "Endothelial Cell", "Microglia", 
+                   "Oligodendrocyte", "Oligodendrocyte Precursor Cell")
+glial_cells <- tasic_2016_anno[tasic_2016_anno$broad_type %in% glial_classes, ]
+glial_cells <- glial_cells[glial_cells$secondary_type_id == 0, ]
+
+glial_data <- log2(tasic_2016_counts[, glial_cells$sample_name] + 1)
+
+glial_data_sparse <- as(glial_data, "dgCMatrix")
+
+glial_cl <- 
+
+glial_means <- get_cl_means()
+
 ## de_param() tests
 test_that(
   "de_param() returns a list of parameters.",
@@ -114,6 +130,22 @@ test_that(
     
   }
 )
+
+## score_pair_limma() tests
+test_that(
+  "score_pair_limma() uses limma to run DEGene tests.",
+  {
+    
+    
+    spl_result <- score_pair_limma(pair,
+                                   cl.present,
+                                   cl.means,
+                                   design,
+                                   fit,
+                                   genes)
+  }
+)
+
 ## DE_genes_pairs() tests
 test_that(
   "DE_genes_pairs() needs tests.",
