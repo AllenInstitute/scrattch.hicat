@@ -417,6 +417,7 @@ plot_vg <- function(gene_var_stats,
       ggplot2::stat_qq_line() +
       ggplot2::ggtitle("z-score Q-Q Plot")
   }
+  row.names(gene_var_stats) = gene_var_stats$gene
   
   if("all" %in% plots | "qq_loess.z_plot" %in% plots) {
     out_list$qq_loess.z_plot <- ggplot2::ggplot(gene_var_stats,

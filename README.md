@@ -25,6 +25,14 @@ devtools::install_github("AllenInstitute/scrattch.hicat")
 
 An overview of the main functions in `scrattch.hicat` is provided in a vignette, which can be viewed [Here](http://htmlpreview.github.io/?https://github.com/AllenInstitute/scrattch.hicat/blob/master/vignettes/scrattch.hicat.html) 
 
+## Roadmap
+
+The next few updates to `scrattch.hicat` will be aimed at getting code testing in place for major clustering functions:  
+0.0.21: Current version; Added TravisCI and `covr` integration.  
+0.0.22: Tests in place for de.genes.R functions.  
+0.0.23: Tests in place for cluster.R functions.  
+0.1.0: Vignette re-integrated; Update to Master branch.
+
 ## The `scrattch` suite
 
 `scrattch.hicat` is one component of the [scrattch](https://github.com/AllenInstitute/scrattch/) suite of packages for Single Cell RNA-seq Analysis for Transcriptomic Type CHaracterization from the Allen Institute.

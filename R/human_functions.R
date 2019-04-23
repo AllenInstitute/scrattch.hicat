@@ -379,7 +379,7 @@ compare_plot <- function(cl,ref.cl){
                   y = ref.cl)) + 
     ggplot2::geom_point(aes(size = sqrt(Freq),
                    color = jaccard)) + 
-    ggplot2::heme(axis.text.x = ggplot2::element_text(vjust = 0.1,
+    ggplot2::theme(axis.text.x = ggplot2::element_text(vjust = 0.1,
                                      hjust = 0.2, 
                                      angle = 90,
                                      size = 7),

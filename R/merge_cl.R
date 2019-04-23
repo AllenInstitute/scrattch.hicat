@@ -96,7 +96,7 @@ merge_cl<- function(norm.dat,
       }
       cl[cl==x]= y
       tmp.cells = intersect(names(cl)[cl==y], colnames(rd.dat.t))
-      tmp= rowMeans(rd.dat.t[,tmp.cells,drop=FALSE])
+      tmp= Matrix::rowMeans(rd.dat.t[,tmp.cells,drop=FALSE])
       cl.rd[,as.character(y)]= tmp
       cl.rd = cl.rd[,colnames(cl.rd)!=x,drop=F]
     }		
@@ -183,7 +183,7 @@ merge_cl<- function(norm.dat,
         p = c(to.merge[i,1], to.merge[i,2])
         if(i == 1 | sc[i] < de.param$de.score.th /2  & length(intersect(p, merged))==0){
           if(verbose > 0){
-            cat("Merge ",p[1], p[2], to.merge[i,"sc"], to.merge[i, "sim"], "\n")
+            cat("Merge ",p[1], p[2], to.merge[i,"sc"], to.merge[i, "sim"], sum(tmp.cl== p[1]),"cells", sum(tmp.cl==p[2]),"cells", "\n")
           }
           cl[cl==p[2]] = p[1]
           rm.pairs = row.names(pairs)[pairs[,1]%in% p | pairs[,2]%in% p]

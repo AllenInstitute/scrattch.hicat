@@ -384,12 +384,11 @@ compare_annotate <- function(cl,
   if(length(common.cells) == 0) {
     stop("No common names in cl and ref.cl for comparison.")
   }
-  
   ###Find clusters not present in ref.cl
-  cl <- droplevels(cl[common.cells])
+  tmp.cl <- droplevels(cl[common.cells])
   ref.cl <- droplevels(ref.cl[common.cells])
   # compare predicted cluster member with the new clustering result 
-  tb <- table(cl, ref.cl)
+  tb <- table(tmp.cl, ref.cl)
   cl.id.map <- NULL
   
   # Reorder clusters by size of overlap if reorder == TRUE
@@ -402,11 +401,12 @@ compare_annotate <- function(cl,
       cl.id.map <- data.frame(new = 1:length(levels(cl)),
                               old = levels(cl))
       levels(cl) <- 1:length(levels(cl))
+
     }
   }
   
   # Assign the best matching old cluster to each new cluster. 
-  tb <- table(cl = cl,ref.cl = ref.cl)
+  tb <- table(cl = cl[common.cells],ref.cl = ref.cl)
   max.ref.cl <- colnames(tb)[apply(tb, 1, which.max)]
   
   cl.df <- data.frame(ref.cl = max.ref.cl)
