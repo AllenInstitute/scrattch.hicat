@@ -203,7 +203,9 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     cl= result$cl
     test.cells = setdiff(all.cells, names(cl))
     markers=unique(result$markers)
-    map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="means")$pred.df
+    samp.subset1 <- match(names(cl), colnames(norm.dat))
+    samp.subset2 <- match(test.cells, colnames(norm.dat))
+    map.df = map_by_cor(norm.dat[markers, samp.subset1],cl, norm.dat[markers, samp.subset2],method="means")$pred.df
     test.cl = setNames(map.df$pred.cl, row.names(map.df))
     all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
     cl.list[[f]] = all.cl
