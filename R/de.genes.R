@@ -513,9 +513,6 @@ de_selected_pairs <- function(norm.dat,
   return(de_list)
 }
 
-DE_genes_pairs <- function(...) {
-  de_selected_pairs(...)
-}
 
 ####Make sure dat and cl has the same dimension, and cells are in the same order
 
@@ -551,9 +548,6 @@ de_all_pairs <- function(norm.dat,
   
 }
 
-DE_genes_pw <- function(...) {
-  de_all_pairs(...)
-}
 
 #' Compute deScore values based on a differential results data.frame and de_param().
 #' 
@@ -638,9 +632,6 @@ compute_pair_deScore <- function(df,
   
 }
 
-de_pair <- function(...) {
-  compute_pair_deScore(...)
-}
 
 de_score_pairs <- function(norm.dat, 
                            cl, 
