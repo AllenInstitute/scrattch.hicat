@@ -11,7 +11,7 @@ score_pair_chisq(pair, cl.present, cl.means, cl.size, genes)
 
 \item{cl.present}{a data.frame of gene detection proportions (genes x clusters)}
 
-\item{cl.means}{a data.frame of mean gene expression values (genes x clusters)}
+\item{cl.means}{a data.frame of normalized mean gene expression values (genes x clusters)}
 
 \item{cl.size}{a named numeric vector of cluster sizes}
 
@@ -20,13 +20,13 @@ score_pair_chisq(pair, cl.present, cl.means, cl.size, genes)
 \value{
 a data.frame with DE statistics:
 \itemize{
-\item{padj}
-\item{pval}
-\item{lfc}
-\item{meanA}
-\item{meanB}
-\item{q1}
-\item{q2}
+\item{padj} P-values adjusted using the Holm (1979) method (\code{p.adjust()} default).
+\item{pval} P-values reported by the \code{vec_chisq_test()} function.
+\item{lfc} Log fold change of mean expression values between the pair of clusters.
+\item{meanA} Mean expression value for the first cluster in the pair.
+\item{meanB} Mean expression value for the second cluster in the pair.
+\item{q1} Proportion of cells expressing each gene for the first cluster in the pair.
+\item{q2} Proportion of cells expressing each gene for the second cluster in the pair.
 }
 }
 \description{
