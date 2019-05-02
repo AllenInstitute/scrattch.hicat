@@ -709,7 +709,7 @@ de_stats_selected_pairs<- function(norm.dat,
                            cl.size1 <- NULL
                            cl.size2 <- NULL
                          }
-                         score_pair_stats(df, 
+                         de_stats_pair(df, 
                                  de.param = de.param, 
                                  cl.size1, 
                                  cl.size2)

@@ -385,12 +385,6 @@ test_that(
 test_that(
   "plot_low_qc() needs tests.",
   {
-    glial_hq_cl <- glial_train_cl[glial_train_cl %in% c(45, 48,49)]
-    
-    glial_de_genes <- de_score(norm.dat = glial_train_data, 
-                               cl = glial_train_cl,  
-                               de.param = de_param(), 
-                               method = "limma")
-    
+
   }
 )
