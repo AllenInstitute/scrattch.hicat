@@ -5,8 +5,7 @@
 \title{Perform pairwise differential gene expression tests between main pairs of clusters in parallel}
 \usage{
 de_selected_pairs(norm.dat, cl, pairs, method = "limma", low.th = 1,
-  min.cells = 4, cl.present = NULL, use.voom = FALSE,
-  counts = NULL, mc.cores = 1)
+  cl.present = NULL, use.voom = FALSE, counts = NULL, mc.cores = 1)
 }
 \arguments{
 \item{norm.dat}{a normalized data matrix for data.}
@@ -18,8 +17,6 @@ de_selected_pairs(norm.dat, cl, pairs, method = "limma", low.th = 1,
 \item{method}{Either "limma" or "chisq".}
 
 \item{low.th}{The minimum expression value used to filter for expressed genes.}
-
-\item{min.cells}{The minimum number of cells with expression above \code{low.th} to allow a gene to be used.}
 
 \item{cl.present}{A matrix of proportions of cells in each cluster with gene detection. Can be generated with \code{get_cl_props()}. Default is NULL (will be generated).}
 

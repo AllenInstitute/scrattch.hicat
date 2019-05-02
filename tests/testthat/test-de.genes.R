@@ -241,7 +241,6 @@ test_that(
                                     pairs = test_pairs, 
                                     method = "chisq", 
                                     low.th = 1, 
-                                    min.cells = 4, 
                                     cl.present = NULL, 
                                     use.voom = FALSE, 
                                     counts = NULL,
@@ -263,7 +262,6 @@ test_that(
                                     pairs = test_pairs, 
                                     method = "limma", 
                                     low.th = 1, 
-                                    min.cells = 4, 
                                     cl.present = NULL, 
                                     use.voom = FALSE, 
                                     counts = NULL,
@@ -287,7 +285,6 @@ test_that(
                                     pairs = test_pairs, 
                                     method = "limma", 
                                     low.th = 1, 
-                                    min.cells = 4, 
                                     cl.present = NULL, 
                                     use.voom = TRUE, 
                                     counts = count_data,
@@ -334,7 +331,6 @@ test_that(
                                     pairs = test_pairs, 
                                     method = "chisq", 
                                     low.th = 1, 
-                                    min.cells = 4, 
                                     cl.present = NULL, 
                                     use.voom = FALSE, 
                                     counts = NULL,
@@ -370,15 +366,53 @@ test_that(
 
 ## de_stats_selected_pairs() tests
 test_that(
-  "de_score() needs tests.",
+  "de_stats_selected_pairs() computes de stats for seleceted pairs.",
   {
+    test_pairs <- matrix(c(43, 43, 44, 46), ncol = 2)
+
+    de_one_pair <- de_selected_pairs(norm.dat = glial_data,
+                                     cl = glial_cl,
+                                     pairs = test_pairs[1, , drop = FALSE],
+                                     method = "chisq",
+                                     low.th = 1)
     
+    de_stats_one_pair <- de_stats_pair(df = de_one_pair[[1]])
+    
+    de_results <- de_stats_selected_pairs(norm.dat = glial_data, 
+                                          cl = glial_cl, 
+                                          pairs = test_pairs, 
+                                          de.df = NULL, 
+                                          de.param = de_param(), 
+                                          method = "chisq", 
+                                          mc.cores = 1)
+    
+    expect_is(de_results, "list")
+    expect_equal(length(de_results), 2)
+    expect_is(de_results[[1]], "list")
+    expect_equal(length(de_results[[1]]), 2)
+    expect_is(de_results[[2]], "list")
+    expect_equal(length(de_results[[2]]), 2)
+    
+    expect_identical(de_results[[1]][[1]], de_one_pair[[1]])
+    expect_identical(de_results[[2]][[1]], de_stats_one_pair)
   }
 )
+
 ## de_stats_all_pairs() tests
 test_that(
-  "de_score_pairs() needs tests.",
+  "de_stats_all_pairs() needs tests.",
   {
+    de_results <- de_stats_all_pairs(norm.dat = glial_data, 
+                                     cl = glial_cl, 
+                                     method = "chisq")
+    
+    n_clusters <- length(levels(glial_cl))
+    n_combos <- sum(1:(n_clusters-1))
+    
+    expect_is(de_results, "list")
+    expect_equal(length(de_results), 2)
+    expect_equal(length(de_results[[1]]), n_combos)
+    expect_equal(length(de_results[[2]]), n_combos)
     
   }
 )

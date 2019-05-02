@@ -7,6 +7,10 @@
 de_all_pairs(norm.dat, cl, ...)
 }
 \arguments{
+\item{norm.dat}{a normalized data matrix for data.}
+
+\item{cl}{a cluster factor object.}
+
 \item{...}{Additional parameters passed to DE_genes_pairs()}
 }
 \value{

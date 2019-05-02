@@ -8,20 +8,20 @@ de_stats_all_pairs(norm.dat, cl, de.param = de_param(),
   method = "limma", de.genes = NULL, ...)
 }
 \arguments{
-\item{norm.dat}{log transformed normalized gene expression matrix}
+\item{norm.dat}{a normalized data matrix for data.}
 
-\item{cl}{Cluster membership.}
+\item{cl}{a cluster factor object.}
 
-\item{de.param}{DE gene criteria set by de_param function.}
+\item{de.param}{A list of differential gene expression parameters from \code{de_param()}}
 
-\item{method}{Default "limma".}
+\item{method}{If de.df is NULL, use "limma" or "chisq" to compute differentially expressed genes.}
 
-\item{de.genes}{If DE genes already computed for some pairs of clusters, use them without recomputation.}
+\item{...}{Additional parameters passed to \code{de_selected_pairs()}}
 
-\item{min.cells}{Minimal number of cells in a cluster}
+\item{de.df}{Optional. Pre-computed results from \code{de_all_pairs()} or \code{de_selected_pairs}. Default = NULL.}
 }
 \value{
-a list with DE genes from all pairs of clusters.
+a character vector of all differentially expressed genes.
 }
 \description{
 Title
