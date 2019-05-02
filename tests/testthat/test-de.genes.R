@@ -134,9 +134,9 @@ test_that(
   }
 )
 
-## score_pair_limma() tests
+## de_pair_limma() tests
 test_that(
-  "score_pair_limma() uses limma to run DEGene tests.",
+  "de_pair_limma() uses limma to run DEGene tests.",
   {
     limma_data <- glial_data[glial_hv_genes,]
     
@@ -153,7 +153,7 @@ test_that(
     glial_props <- get_cl_prop(limma_data,
                                glial_cl)
     
-    spl_result <- score_pair_limma(pair = c("43","46"),
+    spl_result <- de_pair_limma(pair = c("43","46"),
                                    cl.present = glial_props,
                                    cl.means = glial_means,
                                    design = design,
@@ -185,9 +185,9 @@ test_that(
   }
 )
 
-## score_pair_chisq() tests
+## de_pair_chisq() tests
 test_that(
-  "score_pair_chisq() performs Chi-squared tests for a pair of clusters.",
+  "de_pair_chisq() performs Chi-squared tests for a pair of clusters.",
   {
     
     hv_data <- glial_data[glial_hv_genes,]
@@ -199,7 +199,7 @@ test_that(
     
     glial_cl_size <- table(glial_cl)
     
-    chi_result <- score_pair_chisq(pair = c("43","46"),
+    chi_result <- de_pair_chisq(pair = c("43","46"),
                                    cl.present = glial_props,
                                    cl.means = glial_means,
                                    cl.size = glial_cl_size,
@@ -300,26 +300,82 @@ test_that(
 )
 ## de_all_pairs() tests
 test_that(
-  "de_all_pairs() needs tests.",
+  "de_all_pairs() performs all pairwise tests for a set of clusters.",
   {
+    de_results <- de_all_pairs(norm.dat = glial_data,
+                               cl = glial_cl)
     
+    n_clusters <- length(levels(glial_cl))
+    n_combos <- sum(1:(n_clusters-1))
+    
+    expect_is(de_results, "list")
+    expect_equal(length(de_results), n_combos)
+    expect_is(de_results[[1]], "data.frame")
+    
+    # can we pass parameters?
+    de_results2 <- de_all_pairs(norm.dat = glial_data,
+                                cl = glial_cl,
+                                method = "chisq")
+    
+    expect_is(de_results, "list")
+    expect_equal(length(de_results), n_combos)
+    expect_is(de_results[[1]], "data.frame")
   }
 )
-## compute_pair_deScore() tests
+
+## de_stats_pair() tests
 test_that(
-  "compute_pair_deScore() needs tests.",
+  "de_stats_pair() needs tests.",
   {
+    test_pairs <- matrix(c(43, 43, 44, 46), ncol = 2)
     
+    de_results <- de_selected_pairs(norm.dat = glial_data, 
+                                    cl = glial_cl,
+                                    pairs = test_pairs, 
+                                    method = "chisq", 
+                                    low.th = 1, 
+                                    min.cells = 4, 
+                                    cl.present = NULL, 
+                                    use.voom = FALSE, 
+                                    counts = NULL,
+                                    mc.cores = 1)
+    
+    de_result <- de_results[[1]]
+    
+    results <- de_stats_pair(df = de_result)
+    
+    expect_is(results, "list")
+    expect_length(results, 10)
+    
+    expect_is(results$score, "numeric")
+    expect_is(results$up.score, "numeric")
+    expect_is(results$down.score, "numeric")
+    expect_equal(results$down.score + results$up.score, results$score)
+    
+    expect_is(results$num,"integer")
+    expect_is(results$up.num, "integer")
+    expect_is(results$down.num, "integer")
+    expect_equal(results$up.num + results$down.num, results$num)
+    
+    expect_is(results$genes, "character")
+    expect_is(results$up.genes, "character")
+    expect_is(results$down.genes, "character")
+    expect_equal(sum(results$up.genes %in% results$genes), length(results$up.genes))
+    expect_equal(sum(results$down.genes %in% results$genes), length(results$down.genes))
+    expect_equal(length(results$genes), results$num)
+    expect_equal(length(results$up.genes), results$up.num)
+    expect_equal(length(results$down.genes), results$down.num)
   }
 )
-## de_score() tests
+
+## de_stats_selected_pairs() tests
 test_that(
   "de_score() needs tests.",
   {
     
   }
 )
-## de_score_pairs() tests
+## de_stats_all_pairs() tests
 test_that(
   "de_score_pairs() needs tests.",
   {

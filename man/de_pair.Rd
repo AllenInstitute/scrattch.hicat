@@ -2,13 +2,13 @@
 % Please edit documentation in R/deprecated_function_names.R
 \name{de_pair}
 \alias{de_pair}
-\title{reverse-compatibility wrapper around compute_pair_deScore()}
+\title{reverse-compatibility wrapper around score_pair_stats()}
 \usage{
 de_pair(...)
 }
 \description{
-reverse-compatibility wrapper around compute_pair_deScore()
+reverse-compatibility wrapper around score_pair_stats()
 }
 \seealso{
-\code{link{compute_pair_deScore}}
+\code{link{score_pair_stats}}
 }
