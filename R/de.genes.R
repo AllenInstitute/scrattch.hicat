@@ -810,66 +810,50 @@ de_stats_all_pairs <- function(norm.dat,
 }
 
 
-get_de_matrix <- function(de.genes, 
+#' Generate a matrix of pairwise DE results
+#'
+#' @param de.results Output from \code{de_score_selected_pairs} or \code{de_score_all_pairs}.
+#' @param directed Logical indicating whether to select results based on all DE genes (Default, FALSE) or up/down regulated genes (see Details).
+#' @param field The result to retrieve from de.results. Either "score" or "num". Default is "num".
+#'
+#' @details When directed = TRUE and field = "num", the minimum value from up or down-regulated genes is returned for each pair. When field = "score", the 
+#' minimum deScore is returned.
+#'
+#' @return a matrix with clusters as rows and columns, and pairwise DE results as values.
+#' @export
+#'
+get_de_matrix <- function(de.results, 
                           directed = FALSE, 
                           field = "num") {
+  
+  field <- match.arg(field,
+                     choices = c("num","score"))
+  
+  if(sum(names(de.results) %in% c("de.df","de.genes")) == 2) {
+    de.genes <- de.results$de.genes
+  }
   
   pairs <- get_pairs(names(de.genes))
   
   if(directed){
+    # If directed, take the minimum of up or down-regulated
     f <- paste("up", field, sep = ".")
-    up.de.num <- sapply(de.genes, function(x) { x[[f]] } )
+    up.de.num <- unlist(sapply(de.genes, function(x) { x[[f]] } ))
     
     f <- paste("down", field,sep=".")
-    down.de.num <- sapply(de.genes, function(x) { x[[f]] } )
+    down.de.num <- unlist(sapply(de.genes, function(x) { x[[f]] } ))
     
     # head(sort(pmin(up.de.num, down.de.num)))
-    
-    names(down.de.num) <- with(pairs[names(down.de.num), ], paste0(P2, "_", P1))
-    de.num <- c(up.de.num, down.de.num)
+    de.num <- pmin(up.de.num, down.de.num)
     
   } else {
-    de.num <- sapply(de.genes, function(x) { x[[field]] })
+    de.num <- unlist(sapply(de.genes, function(x) { x[[field]] }))
   }
-  
+
   de.matrix <- convert_pair_matrix(de.num, 
                                    directed = directed)
   
-  return(de.matrix)    
-}
-
-plot_de_num <- function(de.genes, 
-                        dend, 
-                        cl.label = NULL, 
-                        directed = FALSE, 
-                        file = "log10.de.num.pdf", 
-                        ...) {
-  
-  label <- as.hclust(dend)$label
-  de.num.matrix <- get_de_matrix(de.genes, 
-                                 directed = directed)
-  de.num.matrix <- de.num.matrix[label, label]
-  
-  breaks <- c(-1, seq(0.2, 4, length.out = 100))
-  
-  if(!is.null(cl.label)) {
-    colnames(de.num.matrix) <- cl.label[row.names(de.num.matrix)]
-    row.names(de.num.matrix) <- cl.label[row.names(de.num.matrix)]
-  }
-  
-  tmp.dat <- log10(de.num.matrix + 1)
-  
-  pdf(file, ...)
-  heatmap.3(tmp.dat, 
-            col = jet.colors(100), 
-            breaks = breaks,
-            trace = "none",
-            Colv = dend, 
-            Rowv = dend,
-            dendrogram = "row",
-            cexRow = 0.3,
-            cexCol = 0.3)
-  dev.off()
+  return(de.matrix)
 }
 
 
@@ -929,6 +913,41 @@ DE_genes_cat_by_cl <- function(norm.dat,
               cl.cat.de.genes = cl.cat.de.genes))
 }
 
+
+
+plot_de_num <- function(de.genes, 
+                        dend, 
+                        cl.label = NULL, 
+                        directed = FALSE, 
+                        file = "log10.de.num.pdf", 
+                        ...) {
+  
+  label <- as.hclust(dend)$label
+  de.num.matrix <- get_de_matrix(de.genes, 
+                                 directed = directed)
+  de.num.matrix <- de.num.matrix[label, label]
+  
+  breaks <- c(-1, seq(0.2, 4, length.out = 100))
+  
+  if(!is.null(cl.label)) {
+    colnames(de.num.matrix) <- cl.label[row.names(de.num.matrix)]
+    row.names(de.num.matrix) <- cl.label[row.names(de.num.matrix)]
+  }
+  
+  tmp.dat <- log10(de.num.matrix + 1)
+  
+  pdf(file, ...)
+  heatmap.3(tmp.dat, 
+            col = jet.colors(100), 
+            breaks = breaks,
+            trace = "none",
+            Colv = dend, 
+            Rowv = dend,
+            dendrogram = "row",
+            cexRow = 0.3,
+            cexCol = 0.3)
+  dev.off()
+}
 
 
 plot_de_lfc_num <- function(de.genes, 

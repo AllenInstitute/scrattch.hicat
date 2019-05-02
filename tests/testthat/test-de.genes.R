@@ -400,8 +400,26 @@ test_that(
 
 ## de_stats_all_pairs() tests
 test_that(
-  "de_stats_all_pairs() needs tests.",
+  "de_stats_all_pairs() generates the same results as de_stats_selected_pairs for all pairs of clusters.",
   {
+    test_pairs <- matrix(c(43, 43, 44, 46), ncol = 2)
+    
+    de_one_pair <- de_selected_pairs(norm.dat = glial_data,
+                                     cl = glial_cl,
+                                     pairs = test_pairs[1, , drop = FALSE],
+                                     method = "chisq",
+                                     low.th = 1)
+    
+    de_stats_one_pair <- de_stats_pair(df = de_one_pair[[1]])
+    
+    de_stats_selected <- de_stats_selected_pairs(norm.dat = glial_data, 
+                                                 cl = glial_cl, 
+                                                 pairs = test_pairs, 
+                                                 de.df = NULL, 
+                                                 de.param = de_param(), 
+                                                 method = "chisq", 
+                                                 mc.cores = 1)
+    
     de_results <- de_stats_all_pairs(norm.dat = glial_data, 
                                      cl = glial_cl, 
                                      method = "chisq")
@@ -414,22 +432,61 @@ test_that(
     expect_equal(length(de_results[[1]]), n_combos)
     expect_equal(length(de_results[[2]]), n_combos)
     
+    expect_identical(de_results$de.df$`43_44`, de_one_pair[[1]])
+    expect_identical(de_results$de.genes$`43_44`, de_stats_one_pair)
+    
+    expect_identical(de_results[[1]][names(de_stats_selected[[1]])], de_stats_selected[[1]])
+    expect_identical(de_results[[2]][names(de_stats_selected[[1]])], de_stats_selected[[2]])
+    
   }
 )
+
 ## get_de_matrix() tests
 test_that(
   "get_de_matrix() needs tests.",
   {
+    de_results <- de_stats_all_pairs(norm.dat = glial_data, 
+                                     cl = glial_cl, 
+                                     method = "chisq")
     
+    de_matrix1 <- get_de_matrix(de_results,
+                               directed = FALSE,
+                               field = "num")
+    
+    expect_is(de_matrix1, "matrix")
+    expect_identical(ncol(de_matrix1), nrow(de_matrix1))
+    expect_identical(ncol(de_matrix1), length(unique(glial_cl)))
+    
+    de_matrix2 <- get_de_matrix(de_results,
+                               directed = TRUE,
+                               field = "num")
+    
+    expect_is(de_matrix2, "matrix")
+    expect_identical(ncol(de_matrix2), nrow(de_matrix2))
+    expect_identical(ncol(de_matrix2), length(unique(glial_cl)))
+    
+    de_matrix3 <- get_de_matrix(de_results,
+                                directed = FALSE,
+                                field = "score")
+    
+    expect_is(de_matrix3, "matrix")
+    expect_identical(ncol(de_matrix3), nrow(de_matrix3))
+    expect_identical(ncol(de_matrix3), length(unique(glial_cl)))
+    
+    de_matrix4 <- get_de_matrix(de_results,
+                                directed = FALSE,
+                                field = "score")
+    
+    expect_is(de_matrix4, "matrix")
+    expect_identical(ncol(de_matrix4), nrow(de_matrix4))
+    expect_identical(ncol(de_matrix4), length(unique(glial_cl)))
+    
+    expect_error(get_de_matrix(de_results,
+                               directed = FALSE,
+                               field = "genes"))
   }
 )
-## plot_de_num() tests
-test_that(
-  "plot_de_num() needs tests.",
-  {
-    
-  }
-)
+
 ## DE_genes_cat_by_cl() tests
 test_that(
   "DE_genes_cat_by_cl() needs tests.",
@@ -437,6 +494,15 @@ test_that(
     
   }
 )
+
+## plot_de_num() tests
+test_that(
+  "plot_de_num() needs tests.",
+  {
+    
+  }
+)
+
 ## plot_de_lfc_num() tests
 test_that(
   "plot_de_lfc_num() needs tests.",

@@ -366,10 +366,10 @@ test_that(
   {
     glial_hq_cl <- glial_train_cl[glial_train_cl %in% c(45, 48,49)]
     
-    glial_de_genes <- de_score(norm.dat = glial_train_data, 
-                               cl = glial_train_cl,  
-                               de.param = de_param(), 
-                               method = "limma")
+    glial_de_genes <- de_stats_all_pairs(norm.dat = glial_train_data, 
+                                         cl = glial_train_cl,  
+                                         de.param = de_param(), 
+                                         method = "limma")
     
     cl_test <- find_low_quality_cl(cl.df = train_cl.df,
                                    cl.good = glial_hq_cl,
