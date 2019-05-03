@@ -6,26 +6,29 @@
 #
 # vec_chisq_test()
 #
-# score_pair_limma() Tests for one pair of clusters
+# de_pair_limma() Tests for one pair of clusters
 #
-# score_pair_chisq() Tests for one pair of clusters
+# de_pair_chisq() Tests for one pair of clusters
 #   vec_chisq_test() de.genes.R
 #
 # de_selected_pairs() Tests for multiple pairs of clusters. Was DE_genes_pairs().
 #   get_cl_means() util.R
-#   score_pair_limma() de.genes.R
-#   score_pair_chisq() de.genes.R
+#   de_pair_limma() de.genes.R
+#   de_pair_chisq() de.genes.R
 #
 # de_all_pairs() Tests for every pair of clusters. Was DE_genes_pw().
-#   DE_genes_pairs() de.genes.R
+#   de_selected_pairs() de.genes.R
 #
-# compute_pair_deScore() Compute deScores based on score_pair_X() results and de_param(). Was de_pairs().
+# de_stats_pair() Compute deScores based on score_pair_X() results and de_param(). Was de_pairs().
 # 
-# de_score()
-#   de_score_pairs() de.genes.R
+# de_stats_selected_pairs()
+#   de_stats_pair() de.genes.R
 #
-# de_score_pairs()
-#   DE_genes_pairs de.genes.R
+# de_stats_all_pairs()
+#   de_stats_selected_pairs de.genes.R
+#
+#  DE_genes_cat_by_cl
+#    deScore.pairs() ??
 #
 # get_de_matrix()
 #   get_pairs() de.genes.R
@@ -34,9 +37,6 @@
 # plot_de_num()
 #   get_de_matrix() de.genes.R
 #   heatmap.3() heatmap.R
-#
-#  DE_genes_cat_by_cl
-#    deScore.pairs() ??
 #
 # plot_de_lfc_num()
 
