@@ -103,11 +103,6 @@ find_vg <- function(dat,
   
 }
 
-#' reverse-compatibility wrapper around find_vg()
-#' 
-findVG <- function(...) {
-  find_vg(...)
-}
 
 #' Compute gene expression variance statistics
 #' 
