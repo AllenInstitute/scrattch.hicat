@@ -48,9 +48,9 @@ knn_jaccard <- function(knn) {
                                ncol(knn)), 
                        j = as.vector(knn))
   
-  knn.mat <- sparseMatrix(i = knn.df[[1]], 
-                          j = knn.df[[2]], 
-                          x = 1)
+  knn.mat <- Matrix::sparseMatrix(i = knn.df[[1]], 
+                                  j = knn.df[[2]], 
+                                  x = 1)
   
   jaccard(knn.mat)
 }

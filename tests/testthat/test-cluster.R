@@ -88,9 +88,38 @@ test_that(
 
 ## knn_jaccard() tests
 test_that(
-  "knn_jaccard() needs tests.",
+  "knn_jaccard() computes jaccard distances between cells using the output of RANN::nn2().",
   {
+    glial_subset <- t(glial_data[1:5000,])
+    glial_knn <- RANN::nn2(glial_subset, k = 10)[[1]]
     
+    results <- knn_jaccard(glial_knn)
+    
+    expect_is(results, "dgTMatrix")
+    expect_equal(dim(results), c(nrow(glial_cells),nrow(glial_cells)))
+    
+    # spot checks
+    check_cells <- c(34, 37)
+    
+    cell1 <- glial_knn[check_cells[1],]
+    cell2 <- glial_knn[check_cells[2],]
+    
+    ol <- length(intersect(cell1, cell2))
+    denom <- length(cell1) + length(cell2) - ol
+    js <- ol / denom
+    
+    expect_equal(js, results[check_cells[1],check_cells[2]])
+    
+    check_cells <- c(93, 52)
+    
+    cell1 <- glial_knn[check_cells[1],]
+    cell2 <- glial_knn[check_cells[2],]
+    
+    ol <- length(intersect(cell1, cell2))
+    denom <- length(cell1) + length(cell2) - ol
+    js <- ol / denom
+    
+    expect_equal(js, results[check_cells[1],check_cells[2]])
   }
 )
 
