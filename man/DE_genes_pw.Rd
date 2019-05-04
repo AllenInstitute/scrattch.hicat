@@ -6,6 +6,9 @@
 \usage{
 DE_genes_pw(...)
 }
+\arguments{
+\item{...}{parameters passed to \code{link{de_all_pairs}}}
+}
 \description{
 reverse-compatibility wrapper around de_all_pairs()
 }
