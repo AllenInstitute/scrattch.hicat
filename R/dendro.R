@@ -21,7 +21,7 @@ pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp
   dend= dend %>% assign_values_to_branches_edgePar(the_cols, "col") %>% assign_values_to_branches_edgePar(the_lwds, "lwd") %>% assign_values_to_branches_edgePar(pvalue_by_all_nodes, "conf") 
 }
 
-build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100)
+build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100, ncores=1)
   {
     require(dendextend)
     require(dplyr)
@@ -31,7 +31,11 @@ build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100
     pvclust.result=NULL
     if(nboot > 0){
       require(pvclust)
-      pvclust.result <- pvclust::pvclust(cl.dat, method.dist = "cor" ,method.hclust = "average", nboot=nboot)
+      parallel= FALSE
+      if(ncores > 1){
+        parallel = as.integer(ncores)
+      }
+      pvclust.result <- pvclust::pvclust(cl.dat, method.dist = "cor" ,method.hclust = "average", nboot=nboot, parallel=parallel)
       dend = as.dendrogram(pvclust.result$hclust)
       dend = label_dend(dend)$dend
       dend = dend %>% pvclust_show_signif_gradient(pvclust.result, signif_type = "bp", signif_col_fun=colorRampPalette(c("white","gray","darkred","black")))
@@ -145,6 +149,7 @@ reorder_dend <- function(dend, l.rank, top.level=TRUE)
       l = dend[[i]] %>% labels
       mean(l.rank[dend[[i]] %>% labels])
     })
+    print(sc)
     ord = order(sc)
     if(length(dend)>1){
       for(i in 1:length(dend)){

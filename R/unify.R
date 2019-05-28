@@ -1,0 +1,815 @@
+library(Matrix)
+library(ggplot2)
+
+jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+blue.red <-colorRampPalette(c("blue", "white", "red"))
+
+
+###comb.dat include the following elements
+###dat.list a list of data matrix
+###ref.de.param.list the DE gene criteria for each reference dataset (optional)
+###meta.df merged meta data for all datasets. 
+###cl.list clusters for each dataset (optional)
+###cl.df.list cluster annotations for each dataset (optional) 
+
+prepare_unify  <- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = NULL, de.param.list=NULL, de.genes.list=NULL, rename=TRUE)
+  {
+    common.genes = row.names(dat.list[[1]])
+    for(x in 2:length(dat.list)){
+      common.genes= intersect(common.genes, row.names(dat.list[[x]]))
+    }
+    if(rename){
+      for(x in names(dat.list)){
+        colnames(dat.list[[x]]) = paste(x, colnames(dat.list[[x]]), sep=".")
+      }
+      if(!is.null(cl.list)){
+        for(x in names(cl.list)){
+          names(cl.list[[x]]) = paste(x, names(cl.list[[x]]), sep=".")
+        }
+      }
+    }
+    platform = do.call("c",lapply(names(dat.list), function(p){
+      dat = dat.list[[p]]
+      setNames(rep(p, ncol(dat)), colnames(dat))
+    }))
+    gene.counts <- do.call("c",lapply(names(dat.list), function(p){
+      dat = dat.list[[p]]
+      setNames(colSums(dat > 0), colnames(dat))
+    }))
+    df = data.frame(platform, gene.counts)
+    if(!is.null(meta.df)){
+      meta.df = cbind(meta.df, df[row.names(meta.df),])
+    }
+    else{
+      meta.df = df
+    }
+    all.cells = unlist(lapply(dat.list, colnames))
+    comb.dat = list(dat.list=dat.list, meta.df = meta.df, cl.list=cl.list, cl.df.list = cl.df.list, de.genes.list = de.genes.list, de.param.list= de.param.list, common.genes=common.genes, all.cells= all.cells)
+  }
+
+
+
+test_knn <- function(knn, cl, reference, ref.cl)
+  {
+    library(reshape)
+    library(ggplot2)
+    cl=  cl[row.names(knn)]
+    if(is.factor(cl)){
+      cl = droplevels(cl)
+    }
+    ref.cl =ref.cl[reference]
+    if(is.factor(ref.cl)){
+      ref.cl = droplevels(ref.cl)
+    }
+    if(length(unique(cl)) <=1 | length(unique(ref.cl)) <= 1){
+      return(NULL)
+    }
+    pred.result = predict_knn(knn, reference, ref.cl)
+    pred.prob = as.matrix(pred.result$pred.prob)
+    cl.pred.prob=as.matrix(do.call("rbind",tapply(names(cl), cl, function(x){
+      colMeans(pred.prob[x,,drop=F])
+    })),ncol=ncol(pred.prob))
+    
+    tmp <- apply(cl.pred.prob, 1, which.max)
+    cl.pred.prob = cl.pred.prob[order(tmp),]
+    
+    match.cl = setNames(tmp[as.character(cl)], names(cl))
+    match_score = get_pair_matrix(pred.prob, names(match.cl), match.cl)
+    
+    cl.score = sum(apply(cl.pred.prob, 1, max))/sum(cl.pred.prob)
+    cell.score =  mean(match_score)
+    tb.df = melt(cl.pred.prob)
+    tb.df[[1]] = factor(as.character(tb.df[[1]]), levels=row.names(cl.pred.prob))
+    tb.df[[2]] = factor(as.character(tb.df[[2]]), levels=colnames(cl.pred.prob))
+    colnames(tb.df) = c("cl","ref.cl", "freq")
+    g <- ggplot(tb.df, 
+                aes(x = cl, y = ref.cl)) + 
+                  geom_point(aes(color = freq)) + 
+                    theme(axis.text.x = element_text(vjust = 0.1,
+                            hjust = 0.2, 
+                            angle = 90,
+                            size = 7),
+                          axis.text.y = element_text(size = 6)) + 
+                            scale_color_gradient(low = "white", high = "darkblue") + scale_size(range=c(0,3))
+    return(list(cl.score=cl.score, cell.score= cell.score, cell.pred.prob = pred.prob, cl.pred.prob = cl.pred.prob, g=g))
+  }
+
+
+sample_sets_list <- function(cells.list, cl.list, cl.sample.size=100, sample.size=5000)
+  {
+    for(x in names(cells.list)){
+      if(length(cells.list[[x]]) > sample.size){
+        if(is.null(cl.list[[x]])){
+          cells.list[[x]] = sample(cells.list[[x]], sample.size)
+        }
+        else{
+          tmp.cl = cl.list[[x]][cells.list[[x]]]
+          if(is.factor(tmp.cl)){
+            tmp.cl = droplevels(tmp.cl)
+          }
+          cells.list[[x]] = sample_cells(tmp.cl, max(cl.sample.size,round(sample.size/length(unique(tmp.cl)))))
+        }
+      }
+    }
+    return(cells.list)
+  }
+
+batch_process <- function(x, batch.size, FUN, mc.cores=1, ...)
+  {
+    FUN <- match.fun(FUN)
+    bins = split(x, floor((1:length(x))/batch.size))
+    if(mc.cores==1){
+      results <- lapply(bins, function(x){FUN(x,...)})
+    }
+    else{
+      require(foreach)
+      require(doParallel)
+      cl <- makeCluster(mc.cores)
+      registerDoParallel(cl)
+      results= foreach(i=1:length(bins), .combine='c') %dopar% FUN(bins[[i]],...)
+      stopCluster(cl)
+    }    
+    return(results)
+  }
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param dat 
+##' @param ref.dat 
+##' @param method 
+##' @param batch.size 
+##' @param mc.cores 
+##' @param ... 
+##' @return 
+##' @author Zizhen Yao
+get_knn_batch <- function(dat, batch.size, mc.cores=1, ...)
+  {
+    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, function(x){
+      get_knn(dat=dat[,x], ...)
+    })                       
+    results <- do.call("rbind", results)
+    return(results)
+  }
+
+
+get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL)
+  {
+    
+    print(method)
+    if(method=="cor"){
+      knn.index = knn_cor(ref.dat, dat,k=k)  
+    }
+    else if(method=="cosine"){
+      knn.index = knn_cosine(ref.dat, dat,k=k)  
+    }
+    else if(method=="RANN"){
+      knn.index = RANN::nn2(t(ref.dat), t(dat), k=k)[[1]]
+    }
+    else if(method == "CCA"){
+      mat3 = crossprod(ref.dat, dat)
+      cca.svd <- irlba(mat3, dim=dim)
+      knn.index = knn_cor(cca.svd$u, cca.svd$v,  k=k)
+    }
+    else{
+      stop(paste(method, "method unknown"))
+    }
+    row.names(knn.index) = colnames(dat)
+    return(knn.index)
+  }
+
+
+select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20,use.markers=TRUE, top.n=50,rm.eigen=NULL, rm.th=0.7)
+  {
+    with(comb.dat, {
+      select.genes = lapply(names(ref.list), function(ref.set){
+        print(ref.set)
+        ref.cells = ref.list[[ref.set]]
+        ref.dat = dat.list[[ref.set]]
+        tmp.cells=  intersect(select.cells, ref.cells)
+        ###if cluster membership is available, use cluster DE genes
+        if(use.markers & !is.null(de.genes.list[[ref.set]])){
+          cl = droplevels(cl.list[[ref.set]][tmp.cells])
+          cl.size = table(cl)
+          cl = droplevels(cl[cl %in% names(cl.size)[cl.size > de.param.list[[ref.set]]$min.cells]])
+          if(length(levels(cl)) <= 1){
+            return(NULL)
+          }
+          de.genes = de.genes.list[[ref.set]]
+          print(length(de.genes.list[[ref.set]]))
+
+          
+          select.genes = display_cl(cl, norm.dat=ref.dat, max.cl.size = 200, n.markers=20, de.genes= de.genes)$markers
+          select.genes = intersect(select.genes, common.genes)
+        }
+      ####if cluster membership is not available, use high variance genes and genes with top PCA loading
+        else{
+          norm.dat = dat.list[[ref.set]][common.genes,ref.cells]
+          vg = findVG(2^norm.dat -1)
+          select.genes = row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)]
+          if(length(select.genes) < 5){
+            return(NULL)
+          }
+          select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
+          rd = rd_PCA(norm.dat,select.genes, ref.cells, max.pca = max.dim)
+          if(is.null(rd)){
+            return(NULL)
+          }
+          rd.dat = rd$rd.dat
+          rot = t(rd$pca$rotation[,1:ncol(rd$rd.dat)])
+          if(!is.null(rm.eigen)){
+            rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
+            rm.cor[is.na(rm.cor)]=0
+            rm.score = rowMaxs(abs(rm.cor))
+            print(rm.score)
+            select = rm.score < rm.th
+            if(sum(select)==0){
+              return(NULL)
+            }
+            rot = rot[,select,drop=FALSE]
+          }
+          if(is.null(rot)){
+            return(NULL)
+          }
+          rot.scaled = (rot  - rowMeans(rot))/rowSds(rot)
+          gene.rank = t(apply(-abs(rot), 1, rank))
+          select = gene.rank <= top.n & abs(rot.scaled ) > 2
+          select.genes = colnames(select)[colSums(select)>0]
+        }
+      })
+      gene.score = table(unlist(select.genes))
+      if(length(gene.score)==0){
+        return(NULL)
+      }
+      select.genes= names(head(sort(gene.score, decreasing=T), maxGenes))
+      return(select.genes)
+   })
+  }
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param comb.dat 
+##' @param select.sets 
+##' @param select.cells 
+##' @param select.genes 
+##' @param method 
+##' @param k 
+##' @param sample.size 
+##' @param cl.sample.size 
+##' @param ... 
+##' @return 
+##' @author Zizhen Yao
+knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, method="cor", self.method = "RANN", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,...)
+{
+  #attach(comb.dat)
+  with(comb.dat,{
+  cat("Number of select cells", length(select.cells), "\n")
+  cells.list = split(select.cells, meta.df[select.cells, "platform"])[select.sets]
+  cells.list =  sample_sets_list(cells.list, cl.list[names(cl.list) %in% select.sets], sample.size=sample.size, cl.sample.size = cl.sample.size)
+  ref.list = cells.list[ref.sets]
+###Select genes for joint analysis
+  if(is.null(select.genes)){
+    select.genes = select_joint_genes(comb.dat, ref.list = ref.list,select.cells=select.cells, ...)
+  }
+  if(length(select.genes) < 5){
+    return(NULL)
+  }
+  cat("Number of select genes", length(select.genes), "\n")
+  cat("Get knn\n")
+  ###index is the index of knn from all the cells
+  knn.comb =do.call("rbind",lapply(select.sets, function(set){
+    print(set)
+    tmp.cells=  intersect(select.cells, colnames(dat.list[[set]]))
+    if(length(tmp.cells)==0){
+      return(NULL)
+    }
+    dat = dat.list[[set]][select.genes, tmp.cells,drop=F]
+    #gene.cor = cor(t(as.matrix(dat[,sample(1:ncol(dat),pmin(ncol(dat),1000))])))
+    
+    print(length(tmp.cells))
+    knn = do.call("cbind", lapply(names(ref.list), function(ref.set){
+      cat("Test ", set, "Ref ", ref.set, "\n")
+      if(length(ref.list[[ref.set]]) <= k) {
+        ##Not enough reference points to compute k
+        return(NULL)
+      }
+      k.tmp = k
+      if(length(ref.list[[ref.set]]) <= k*2) {
+        k.tmp = round(k/2)
+      }
+      ref.dat = dat.list[[ref.set]][select.genes, ref.list[[ref.set]],drop=F]
+      if(set == ref.set){
+        if(self.method =="RANN"){
+          rd.dat = rd_PCA(dat,select.genes=row.names(dat), select.cells=colnames(dat), max.pca = 100, sampled.cells=colnames(ref.dat), th=1)$rd.dat
+          if(is.null(rd.dat)){
+            return(NULL)
+          }
+          knn = RANN::nn2(rd.dat[colnames(ref.dat),,drop=F] , rd.dat[colnames(dat),,drop=F], k=k.tmp)[[1]]
+          row.names(knn) = colnames(dat)
+        }
+        else{
+          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = self.method, batch.size = batch.size)
+          
+        }
+      }
+      else{
+        #ref.gene.cor = cor(t(as.matrix(ref.dat[,sample(1:ncol(ref.dat),pmin(ncol(ref.dat), 1000))])))
+        #ref.gene.cor = cor(t(as.matrix(ref.dat)))
+        #gene.cor.score = setNames(sapply(1:nrow(gene.cor), function(i)cor(gene.cor[i,], ref.gene.cor[i,],use = "pairwise.complete.obs")),row.names(gene.cor))
+        knn=get_knn_batch(dat=dat, ref.dat=ref.dat, k=k.tmp, method = method, batch.size=batch.size)
+      }
+      if(!is.null(cl.list)){
+        test.knn = test_knn(knn, cl.list[[set]], colnames(ref.dat), cl.list[[ref.set]])
+        if(!is.null(test.knn)){
+          cat("Knn", set, ref.set, method, "cl.score", test.knn$cl.score, "cell.score", test.knn$cell.score,"\n")
+        }
+      }
+      idx = match(colnames(ref.dat), all.cells)
+      knn = matrix(idx[knn], nrow=nrow(knn))
+      row.names(knn) = tmp.cells
+      knn
+    }))    
+  }))
+  #########
+  #save(knn.comb, file="knn.comb.rda")
+  sampled.cells = unlist(cells.list)
+  result = knn_jaccard_louvain(knn.comb[sampled.cells,])
+  result$cl.mat = t(result$memberships)
+  row.names(result$cl.mat) = sampled.cells
+  result$knn = knn.comb
+  cl = setNames(result$cl.mat[,1], row.names(result$cl.mat))
+  if(length(cl) < nrow(result$knn)){
+    pred.df = predict_knn(result$knn, all.cells, cl)$pred.df
+    pred.cl= setNames(pred.df$pred.cl, row.names(pred.df))
+    #cl = c(cl, pred.cl[setdiff(names(pred.cl), names(cl))])
+    cl = pred.cl
+  }
+  cl.platform.counts = table(meta.df[names(cl), "platform"],cl)
+  print(cl.platform.counts)
+  ###If a cluster is not present in reference sets, split the cells based on imputed cluster based on cells in reference set.
+
+  ref.de.param.list = de.param.list[ref.sets]
+  cl.min.cells = sapply(ref.de.param.list, function(x)x$min.cells)
+  cl.big= cl.platform.counts[ref.sets,,drop=F] >= cl.min.cells
+  bad.cl = colnames(cl.big)[colSums(cl.big) ==0]
+  if(length(bad.cl) > 0){
+    print("Bad.cl")
+    print(bad.cl)
+    tmp.cells = names(cl)[cl %in% bad.cl]
+    pred.df = predict_knn(result$knn[tmp.cells,,drop=F], all.cells, cl)$pred.df
+    pred.cl= setNames(pred.df$pred.cl, row.names(pred.df))
+    cl[names(pred.cl)]= pred.cl
+  }
+  
+  cl  = merge_cl_multiple(comb.dat, merge.dat.list=comb.dat$dat.list, cl=cl, anchor.genes=select.genes, merge.sets=merge.sets)
+  if(length(unique(cl))<=1){
+    return(NULL)
+  }
+  print(table(cl))
+  result$ref.list = ref.list
+  result$cl = cl
+  result$markers = select.genes
+  result$select.genes= select.genes
+  result$ref.de.param.list = ref.de.param.list
+  return(result)
+})
+}
+
+sim_knn <- function(sim, k=15)
+{
+  
+  th =  rowOrderStats(as.matrix(sim), which=ncol(sim)-k+1)
+  select = sim >= th
+  knn.idx = t(apply(select, 1, function(x)head(which(x),k)))
+  return(knn.idx)
+}
+
+knn_cor <- function(ref.dat, query.dat, k = 15)
+{
+  #sim = cor(as.matrix(query.dat), as.matrix(ref.dat), use="pairwise.complete.obs")
+  sim = cor(as.matrix(query.dat), as.matrix(ref.dat))
+  sim[is.na(sim)] = 0
+  knn.idx = sim_knn(sim, k=k)
+  return(knn.idx)
+}
+
+knn_cosine <- function(ref.dat, query.dat, k = 15)
+  {
+    library(qlcMatrix)
+    sim=cosSparse(query.dat, ref.dat)
+    sim[is.na(sim)] = 0
+    knn.idx = sim_knn(sim, k=k)
+    return(knn.idx)
+  }
+
+
+jaccard2 <- function(m) {
+  library(Matrix)
+  
+  ## common values:
+  A <-  tcrossprod(m)
+  B <- as(A, "dgTMatrix")
+  
+  ## counts for each row
+  b <- Matrix::rowSums(m)  
+  
+   
+  ## Jacard formula: #common / (#i + #j - #common)
+  x = B@x / (b[B@i+1] + b[B@j+1] - B@x)
+  B@x = x
+  return(B)
+}
+
+
+knn_jaccard <- function(knn.index)
+  {
+    knn.df = data.frame(i = rep(1:nrow(knn.index), ncol(knn.index)), j=as.vector(knn.index))
+    knn.mat = sparseMatrix(i = knn.df[[1]], j=knn.df[[2]], x=1)
+    sim= jaccard2(knn.mat)
+    row.names(sim) = colnames(sim) = row.names(knn.index)
+    return(sim)
+  }
+
+
+knn_jaccard_louvain <- function(knn.index)
+  {
+    require(igraph)
+    cat("Get jaccard\n")
+    sim=knn_jaccard(knn.index)
+    cat("Louvain clustering\n")
+    gr <- igraph::graph.adjacency(sim, mode = "undirected", 
+                                  weighted = TRUE)
+    result <- igraph::cluster_louvain(gr)
+    return(result)
+  }
+
+
+predict_knn <- function(knn.idx, reference, cl)
+  {
+    query = row.names(knn.idx)
+    df = data.frame(nn=as.vector(knn.idx), query=rep(row.names(knn.idx), ncol(knn.idx)))
+    df$nn.cl = cl[reference[df$nn]]
+    tb=with(df, table(query, nn.cl))
+    tb = tb/ncol(knn.idx)
+    pred.cl = setNames(colnames(tb)[apply(tb, 1, which.max)], row.names(tb))
+    pred.score = setNames(rowMaxs(tb), row.names(tb))
+    pred.df = data.frame(pred.cl, pred.score)
+    return(list(pred.df=pred.df, pred.prob = tb))
+  }
+
+
+impute_knn <- function(knn.idx, reference, dat)
+  {
+    query = row.names(knn.idx)
+    impute.dat=  dat[reference[knn.idx[,1]],]
+    for(i in 2:ncol(knn.idx)){
+      print(i)
+      impute.dat= impute.dat +  dat[reference[knn.idx[,i]],]
+    }
+    impute.dat = impute.dat / ncol(knn.idx)
+    row.names(impute.dat) = row.names(knn.idx)
+    colnames(impute.dat) = colnames(dat)
+    return(impute.dat)
+  }
+
+unify <- function(comb.dat, prefix, overwrite=TRUE, ...)
+  {
+    if(!overwrite){
+      fn = paste0(prefix, ".rda")
+      if(file.exists(fn)){
+        load(fn)
+        return(result)
+      }
+    }
+    result = knn_joint(comb.dat, ...)
+    if(is.null(result)){
+      return(NULL)
+    }
+    #save(result, file=paste0(prefix, ".rda"))
+    print("Cluster size")
+    print(table(result$cl))
+    #g = plot_cl_meta_barplot(result$cl, meta.df[names(result$cl), "platform"])
+    #g = g + theme(axis.text.x = element_text(angle=45,hjust=1, vjust=1))
+    #ggsave(paste0(prefix, ".platform.barplot.pdf"),g,height=5, width=12)
+    #plot_confusion(result$cl, prefix,comb.dat)
+    return(result)
+  }
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param comb.dat 
+##' @param select.cells 
+##' @param prefix 
+##' @param result 
+##' @param ... 
+##' @return 
+##' @author Zizhen Yao
+iter_unify <- function(comb.dat, select.cells, ref.sets, prefix, result=NULL, overwrite=TRUE, ...)
+  {
+    
+    #attach(comb.dat)
+    if(is.null(result)){
+      result = unify(comb.dat=comb.dat, select.cells=select.cells, ref.sets=ref.sets, prefix=prefix, overwrite=overwrite,...)
+    }
+    if(is.null(result)){
+      return(NULL)
+    }
+    all.results= list(result)
+    names(all.results) = prefix
+    cl = result$cl
+    for(i in as.character(sort(unique(result$cl)))){
+      tmp.result = with(comb.dat, {
+        tmp.prefix=paste(prefix, i,sep=".")
+        print(tmp.prefix)
+        select.cells= names(cl)[cl == i]
+        platform.size = table(meta.df[select.cells, "platform"])
+        
+        print(platform.size)
+        pass.th = sapply(ref.sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells)
+        pass.th2 = sapply(ref.sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells*2)
+        if(sum(pass.th) == length(ref.sets) & sum(pass.th2) >= 1){
+          tmp.result = iter_unify(comb.dat, select.cells=select.cells, ref.sets=ref.sets, prefix=tmp.prefix, overwrite=overwrite, ...)
+          }
+        else{
+          tmp.result = NULL
+        }
+      })
+      if(!is.null(tmp.result)){
+        all.results[names(tmp.result)] = tmp.result
+      }           
+    }
+    return(all.results) 
+  }
+
+
+
+combine_cl <- function(all.results)
+  {
+    cl = all.results[[1]]$cl
+    cl = setNames(as.integer(cl),names(cl))
+    markers=all.results[[1]]$markers
+    n.cl = max(cl)
+    for(i in 2:length(all.results)){
+      if(is.null(all.results[[i]]$cl) | length(unique(all.results[[i]]$cl)) < 2) next
+      new.cl = all.results[[i]]$cl
+      new.cl = setNames(as.integer(new.cl)+ n.cl,names(new.cl))
+      cl[names(new.cl)] = new.cl
+      n.cl = max(cl)
+      cat(names(all.results)[i], n.cl, "\n")
+    }
+    return(cl)
+  }
+
+
+
+
+merge_knn_result <- function(split.results)
+  {
+    ref.cells = unlist(lapply(split.results, function(x)x$ref.cells))
+    ref.cells = ref.cells[!duplicated(ref.cells)]
+    markers =  unique(unlist(lapply(split.results, function(x)x$markers)))
+    n.cl = 0
+    cl = NULL
+    cl.df = NULL
+    knn = NULL
+    knn.merge= NULL
+    for(result in split.results){
+      tmp.cl = setNames(as.integer(as.character(result$cl)) + n.cl, names(result$cl))
+      tmp.cl.df = result$cl.df
+      row.names(tmp.cl.df) = as.integer(row.names(tmp.cl.df)) + n.cl 
+      cl = c(cl, tmp.cl)
+      cl.df = rbind(cl.df, tmp.cl.df)
+      n.cl = max(as.integer(as.character(cl)))
+      orig.index = match(result$ref.cells, ref.cells)
+      tmp.knn = result$knn[names(tmp.cl),]
+      tmp.knn = matrix(orig.index[tmp.knn], nrow=nrow(tmp.knn))
+      knn = rbind(knn, tmp.knn)
+      tmp.knn = result$knn.merge[names(tmp.cl),]
+      tmp.knn = matrix(orig.index[tmp.knn], nrow=nrow(tmp.knn))
+      knn.merge = rbind(knn.merge, tmp.knn)
+    }
+    new.result = list(cl = as.factor(cl), cl.df = cl.df, markers=markers, knn=knn, ref.cells =ref.cells, knn.merge = knn.merge)
+    return(new.result)
+  }
+
+
+
+
+
+plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, height=8, width=10)
+  {
+    library(ggplot2)
+    library(gridExtra)
+    with(comb.dat,{
+    #cl.df$cluster_color = adjust_color(cl.df$cluster_color, adj.col)
+    tmp = plot_tsne_cl(cl=cl, cl.df=cl.df,  tsne.df = tsne.df, cex=cex, fn.size = fn.size)
+    tsne.df = tmp$tsne.df
+    ggsave(paste("tsne.cl",prefix,"pdf", sep="."), tmp$g, height=height,width=width)
+    
+    tmp.df = meta.df[row.names(tsne.df),]
+    tmp= setNames(as.factor(tmp.df$platform), row.names(tsne.df))
+    meta.col=NULL
+    if(length(levels(tmp))==2){
+      meta.col = setNames(c("blue", "orange"), levels(tmp))
+    }
+    g= plot_tsne_meta(tsne.df, tmp, meta.col=meta.col, cex=cex)
+    ggsave(paste("tsne",prefix, "platform.pdf", sep="."), g, height=height, width=width)
+
+    plots = lapply(names(cl.list),function(x){
+      tmp.cl = cl.list[[x]]
+      tmp.cl = droplevels(tmp.cl[names(tmp.cl) %in% names(cl)])
+      if(length(tmp.cl)==0){
+        return(NULL)
+      }
+      g = plot_tsne_cl(cl=cl.list[[x]], cl.df=cl.df.list[[x]],  tsne.df = tsne.df[names(cl.list[[x]]),], cex=cex, fn.size = fn.size)$g
+      g = g + ggtitle(x)
+    })
+    plots = plots[!sapply(plots, is.null)]
+    ggsave(paste("tsne",prefix, "by.platform.cl.pdf", sep="."), marrangeGrob(grobs=plots, nrow=1, ncol=1), height=height, width=width)
+
+    plots = lapply(names(cl.list),function(x){
+      tmp.cells = names(cl)[meta.df[names(cl),"platform"]==x]
+      if(length(tmp.cells)==0){
+        return(NULL)
+      }
+      g = plot_tsne_cl(cl=droplevels(cl[tmp.cells]), cl.df=cl.df,  tsne.df = tsne.df[names(cl.list[[x]]),], cex=cex, fn.size = fn.size)$g
+      g = g + ggtitle(x)
+    })
+    plots = plots[!sapply(plots, is.null)]
+    ggsave(paste("tsne",prefix, "by.platform.pdf", sep="."), marrangeGrob(grobs=plots, nrow=1, ncol=1), height=height, width=width)
+  })
+    
+  }
+
+
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param consensus.cl 
+##' @param prefix 
+##' @param comb.dat 
+##' @param ... 
+##' @return 
+##' @author Zizhen Yao
+plot_confusion <- function(consensus.cl, prefix, comb.dat,...)
+{
+  with(comb.dat,{
+    for(x in names(cl.list)){
+      if(sum(names(cl.list[[x]]) %in% names(consensus.cl)) > 0){
+        ggsave(paste(prefix, x, "pdf", sep="."), compare_annotate(consensus.cl, cl.list[[x]], cl.df.list[[x]], rename = FALSE)$g,...)
+      }
+    }
+  })
+}
+
+plot_markers <- function(comb.dat, cl, prefix, sets = names(comb.dat$dat.list),  maxGenes=500, cl.col=NULL, select.genes=NULL, save.matrix=FALSE,...)
+  {
+    with(comb.dat,{
+      jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+      blue.red <-colorRampPalette(c("blue", "white", "red"))
+      de.result=NULL
+      if(is.null(select.genes)){
+        de.result = lapply(sets, function(set){
+          dat = dat.list[[set]]
+          tmp.cells=  intersect(names(cl), colnames(dat))
+          if(length(tmp.cells)==0){
+            return(NULL)
+          }
+          tmp.cl = droplevels(cl[tmp.cells])
+          print(table(tmp.cl))
+          display_cl(tmp.cl, norm.dat=dat, max.cl.size = 200, de.param=de.param.list[[set]], n.markers=20)
+        })
+        gene.score = table(unlist(lapply(de.result, function(x)x$markers)))
+        select.genes= names(head(sort(gene.score, decreasing=T), maxGenes))
+        if(!is.null(common.genes)){
+          select.genes = intersect(select.genes, common.genes)
+        }
+      }
+      tmp.dat= dat.list[[sets[1]]]
+      tmp.cl.means = get_cl_means(tmp.dat[select.genes,], droplevels(cl[intersect(names(cl), colnames(tmp.dat))]))
+      gene.hc = hclust(dist(tmp.cl.means), method="ward.D")
+      if(is.null(cl.col)){
+        cl.col = jet.colors(length(unique(cl)))
+      }
+      cl.col = cl.col[as.factor(cl)]
+      tmp.col =t(as.matrix(cl.col, ncol=1))
+      colnames(tmp.col)= names(cl)
+      if(save.matrix){
+        dat.matrix = list()
+      }
+      else{
+        dat.matrix=NULL
+      }
+      for(set in sets){
+        dat = dat.list[[set]]
+        tmp.cells=  sample_cells(droplevels(cl[intersect(names(cl), colnames(dat))]), 100)
+        tmp.cl = droplevels(cl[tmp.cells])      
+        cells = plot_cl_heatmap(dat, cl=tmp.cl, markers= select.genes, gene.hc=gene.hc, prefix=paste(prefix, set, "markers.pdf", sep="."),ColSideColors=tmp.col,...)
+        if(save.matrix){
+          dat.matrix[[set]] = dat[gene.hc$labels[gene.hc$order], cells]
+        }
+      }
+      return(list(select.genes=select.genes, dat.matrix = dat.matrix, de.result= de.result))
+    })
+  }
+
+
+get_cl_means_list <- function(comb.dat, select.genes, cl)
+  {
+    cl.means =  with(comb.dat, sapply(sets, function(x){
+      tmp.cells = intersect(names(cl), row.names(meta.df)[meta.df$platform==x])
+      tmp.cl = droplevels(cl[tmp.cells])
+      cl.size = table(tmp.cl)
+      if(!is.null(de.param.list[[x]])){
+        select.cl = names(cl.size)[cl.size >= de.param.list[[x]]$min.cells]
+      }
+      else{
+        select.cl = names(cl.size)[cl.size >= 4]
+      }
+      tmp.cl = droplevels(tmp.cl[tmp.cl %in% select.cl])
+      tmp=get_cl_means(comb.dat$dat.list[[x]], tmp.cl)
+    },simplify=F))
+    return(cl.means)
+  }
+
+plot_markers_cl <- function(select.genes, gene.ordered=FALSE, cl.means.list = NULL, comb.dat=NULL, cl=NULL, cl.col=NULL, prefix="",...)
+  {
+    jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+    blue.red <-colorRampPalette(c("blue", "white", "red"))
+    if(is.null(cl.means.list)){
+      cl.means.list=get_cl_means_list(comb.dat, select.genes)
+    }
+    else{
+      cl.means.list = sapply(cl.means.list, function(x)x[select.genes,],simplify=F)
+    }
+    if(!gene.ordered){
+      gene.hc = hclust(dist(cl.means.list[[1]]), method="ward.D")
+      select.genes = select.genes[gene.hc$order]
+    }
+    if(is.null(cl.col)){
+      cl.col = jet.colors(length(unique(cl)))
+    }
+    cl.col = matrix(cl.col, nrow=1)
+    colnames(cl.col) = levels(cl)
+    pdf(paste0(prefix, ".cl.heatmap.pdf"),...)
+    for(set in names(cl.means.list)){
+      dat = cl.means.list[[set]][select.genes, ]
+      cexCol = min(70/ncol(dat),1)
+      cexRow = min(60/nrow(dat),1)
+      heatmap.3(dat, Rowv=NULL, Colv=NULL, col=blue.red(100), trace="none",dendrogram="none", cexCol=cexCol, cexRow=cexRow, ColSideColors = cl.col, main=set)
+    }
+    dev.off()
+  }
+
+
+
+get_set_cl_means <- function(comb.dat, cl, min.cells=4)
+  {
+    cl.means =  with(comb.dat, sapply(names(dat.list), function(x){
+      tmp.cells = intersect(names(cl), colnames(comb.dat$dat.list[[x]]))
+      tmp.cl = cl[tmp.cells]
+      tmp.size = table(tmp.cl)
+      tmp.cl = droplevels(tmp.cl[tmp.cl %in% names(tmp.size)[tmp.size >= min.cells]])
+      get_cl_means(dat.list[[x]], tmp.cl)
+    },simplify=F))
+  }
+
+get_gene_cl_correlation <- function(cl.means.list)
+  {
+    sets=names(cl.means.list)
+    gene.cl.cor = list()
+    for(i in 1:(length(cl.means.list)-1)){
+      for(j in (i+1):length(cl.means.list)){
+        pair= paste(sets[i], sets[j], sep=":")
+        common.cl = intersect(colnames(cl.means.list[[i]]), colnames(cl.means.list[[j]]))
+        gene.cor =  pair_cor(cl.means[[i]][common.genes,common.cl],cl.means[[j]][common.genes,common.cl])
+        gene.cl.cor[[pair]] = gene.cor
+      }
+    }
+    return(gene.cl.cor)
+  }
+
+
+simple_dend <- function(cl.means.list)
+{
+  levels = unique(unlist(lapply(cl.means.list, colnames)))
+  n.counts = tmp.cor=matrix(0, nrow=length(levels), ncol=length(levels))
+  row.names(n.counts) = row.names(tmp.cor)=levels
+  colnames(n.counts)=colnames(tmp.cor)=levels
+  for(x in cl.means.list){
+    tmp.cor[colnames(x),colnames(x)] = cor(x)
+    n.counts[colnames(x),colnames(x)] =   n.counts[colnames(x),colnames(x)] +1
+  }
+  tmp.cor = tmp.cor/n.counts
+  hclust(as.dist(1-tmp.cor))
+}
+
+impute_val_cor <- function(dat, impute.dat)
+  {
+    gene.cor = pair_cor(dat, impute.dat)
+    gene.cor[is.na(gene.cor)] = 0
+    return(gene.cor)
+  }

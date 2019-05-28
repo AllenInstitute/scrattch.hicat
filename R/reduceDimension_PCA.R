@@ -1,37 +1,24 @@
-rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2,w=NULL)
-{
-  require(Matrix)
-  if(is.null(w)){
-    pca = prcomp(t(as.matrix(norm.dat[select.genes,sampled.cells])),tol=0.01)
-    pca.importance = summary(pca)$importance
-    v = pca.importance[2,]
-  }
-  else{
-    dat <- scale(norm.dat[select.genes, select.cells], center = TRUE, scale = TRUE)
-    w = w[select.genes, select.cells]
-    
-    for (x in 1:nsamp) {
-      for (y in 1:nsamp) {
-        wt1 <- w[, x] * w[, y]
-        cov1 <- cov.wt(e[, c(x, y)], wt = wt1, center = FALSE)$cov
-        e.cov[x, y] <- cov1[1, 2]
-      }
-    }
-        
-    nsamp <- ncol(e)
-    wt <- crossprod(w)
-    cov = cov.wt(dat, wt, center=FALSE)$cov
-    eig1 <- eigen(cov, symmetric = TRUE)
-    eig.val <- eig1$values
-    eig.val[is.na(eig.val) | eig.val < 0] <- 0
-    eig.vec <- eig1$vectors
-    dimnames(eig.vec) <- list(colnames(e), paste0("PC", 1:ncol(eig.vec)))
-    pca1 <- list()
-    pca1$sdev <- sqrt(eig.val)
-    pca1$rotation <- eig.vec
-    pca1$x <- e %*% eig.vec
+prcomp.irlba <- function(x, max.rank=500, maxit=1000, tol=1e-05, center=TRUE,...)
+  {
+    library(irlba)
+    s <- irlba(x, nv=max.rank, nu=max.rank, maxit = maxit, tol=tol, ...)
+    s$d <- s$d / sqrt(max(1, nrow(x) - 1))
+    dimnames(s$v) <- list(colnames(x), paste0("PC", seq_len(ncol(s$v))))
+    r <- list(sdev = s$d, rotation = s$v)
+    r$x <- x %*% s$v
+    class(r) <- "prcomp"
+    r
   }
 
+
+rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2)
+{
+  require(Matrix)
+  
+  pca = prcomp(t(as.matrix(norm.dat[select.genes,sampled.cells])),tol=0.01)
+  pca.importance = summary(pca)$importance
+  v = pca.importance[2,]
+  
   select= which((v - mean(v))/sd(v)>th) 
   tmp = head(select,max.pca)
   if(length(tmp)==0){
