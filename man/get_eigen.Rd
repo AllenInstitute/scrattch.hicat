@@ -25,9 +25,3 @@ get_eigen(gene.mod, norm.dat, select.cells = colnames(norm.dat),
 \value{
 A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells.
 }
-\description{
-.. content for \description{} (no empty lines) ..
-}
-\details{
-.. content for \details{} ..
-}
