@@ -1,3 +1,24 @@
+# Function call map
+# function_1()
+#   called_by_function_1() called_function_file.R
+#
+# rd_PCA()
+#   
+
+#' Reduce dimensionality using PCA
+#'
+#' @param norm.dat a normalized data matrix.
+#' @param select.genes a character vector of genes to use for dimensionality reduction.
+#' @param select.cells a character vector of samples to use for dimensionality reduction.
+#' @param sampled.cells 
+#' @param max.pca 
+#' @param th 
+#' @param w 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 rd_PCA <- function(norm.dat, 
                    select.genes = NULL, 
                    select.cells = NULL,

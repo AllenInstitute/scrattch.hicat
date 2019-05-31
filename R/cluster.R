@@ -8,6 +8,30 @@
 #
 # pass_louvain()
 #
+# jaccard_louvain.RANN()
+#   knn_jaccard() cluster.R
+#   pass_louvain() cluster.R
+#    
+# jaccard_louvain()
+#
+# onestep_clust()
+#   lm_normalize() normalize.R
+#   find_vg() vg.R
+#   rd_WGCNA() reduceDimension_WGCNA.R
+#   rd_PCA() reduceDimension_PCA.R
+#   jaccard_louvain() cluster.R
+#   merge_cl() merge_cl.R
+#   get_cl_means() util.R
+#   display_cl() plot.R
+#
+# iter_clust()
+#   onestep_clust() cluster.R
+#   iter_clust() cluster.R
+#
+# reorder_cl()
+#   get_cl_means() util.R
+#   
+# combine_finer_split()
 #
 
 
@@ -56,6 +80,14 @@ knn_jaccard <- function(knn) {
 }
 
 
+#' Test louvain modularity scores based on an adjacency matrix
+#'
+#' @param mod.sc a vector of modularity scores
+#' @param adj.mat an adjacency matrix
+#'
+#' @return a logical vector
+#' @export
+#'
 pass_louvain <- function(mod.sc, 
                          adj.mat) {
   
@@ -133,8 +165,8 @@ jaccard_louvain <- function(dat,
 #' @param rm.th The cutoff for correlation between reduced dimensions and rm.eigen. Reduced dimensions with correlatin with any rm.eigen vectors are not used for clustering. Default 0.7
 #' @param de.param The differential gene expression threshold. See de_param() function for details. 
 #' @param type Can either be "undirectional" or "directional". If "undirectional", the differential gene threshold de.param is applied to combined up-regulated and down-regulated genes, if "directional", then the differential gene threshold is applied to both up-regulated and down-regulated genes. 
-#' @param maxGenes Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules. 
-#' @param sampleSize The number of sampled cells to compute reduced dimensions.
+#' @param max.genes Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules. 
+#' @param sample.size The number of sampled cells to compute reduced dimensions.
 #' @param max.cl.size Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.    
 #' @param prefix Used to keep track of intermediate results in "verbose" mode. Default NULL.
 #' @param verbose Default FALSE
@@ -154,8 +186,8 @@ onestep_clust <- function(norm.dat,
                           rm.th = 0.7, 
                           de.param = de_param(),
                           merge.type = c("undirectional", "directional"), 
-                          maxGenes = 3000,
-                          sampleSize = 4000,
+                          max.genes = 3000,
+                          sample.size = 4000,
                           max.cl.size = 300,
                           k.nn = 15,
                           prefix = NULL, 
@@ -181,9 +213,9 @@ onestep_clust <- function(norm.dat,
     norm.dat <- reg_results[[1]]
   }
   
-  if(length(select.cells) > sampleSize) {
+  if(length(select.cells) > sample.size) {
     sampled.cells <- sample(select.cells, 
-                            pmin(length(select.cells), sampleSize))
+                            pmin(length(select.cells), sample.size))
   } else{
     sampled.cells <- select.cells
   }
@@ -208,7 +240,7 @@ onestep_clust <- function(norm.dat,
     plot_file <- paste0(prefix,".vg.pdf")
   }
   
-  vg <- find_vg(as.matrix(counts[select.genes,sampled.cells]),
+  vg <- find_vg(as.matrix(counts[select.genes, sampled.cells]),
                 plot_file = plot_file)
   
   if(dim.method == "auto") {
@@ -223,8 +255,8 @@ onestep_clust <- function(norm.dat,
     ###Ignore vg.padj.th for WGCNA, choose top "maxGgenes" for analysis
     select.genes <- as.character(vg[which(vg$loess.padj < 1), "gene"])
     select.genes <- head(select.genes[order(vg[select.genes, "padj"], -vg[select.genes, "z"])],
-                         maxGenes)
-    rd.dat <- rd_WGCNA(norm.dat, 
+                         max.genes)
+    rd.dat <- rd_WGCNA(norm.dat = norm.dat, 
                        select.genes = select.genes, 
                        select.cells = select.cells, 
                        sampled.cells = sampled.cells, 
@@ -234,93 +266,126 @@ onestep_clust <- function(norm.dat,
   } else if(dim.method == "pca") {
     ###If most genes are differentially expressed, then use absolute dispersion value
     select.genes <- as.character(vg[which(vg$loess.padj < vg.padj.th | vg$dispersion >3), "gene"])
-    select.genes <- head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])], maxGenes)
+    select.genes <- head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])], max.genes)
     
     if(verbose){
       cat("Num high variance genes:", length(select.genes), "\n")
     }
-    if(length(select.genes)< de.param$min.genes){
+    if(length(select.genes) < de.param$min.genes){
+      if(verbose) warning("Not eanough differentially expressed genes. Returning NULL.")
       return(NULL)
     }
-    rd.dat <- rd_PCA(norm.dat,
-                    select.genes, 
-                    select.cells, 
-                    sampled.cells = sampled.cells, 
-                    max.pca = max.dim)$rd.dat
+    rd.dat <- rd_PCA(norm.dat = norm.dat,
+                     select.genes, 
+                     select.cells, 
+                     sampled.cells = sampled.cells, 
+                     max.pca = max.dim)$rd.dat
   }
-  if(is.null(rd.dat)||ncol(rd.dat)==0){
+  
+  if(is.null(rd.dat) || ncol(rd.dat) == 0) {
+    if(verbose) warning("Dimensionality reduction returned NULL.")
     return(NULL)
   }
+  
   if(!is.null(rm.eigen)){
-    rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
-    rm.cor[is.na(rm.cor)]=0
-    rm.score = rowMaxs(abs(rm.cor))
-    select = rm.score < rm.th
-    if(sum(!select)>0 & verbose){
-      print("Remove dimension:")
+    rm.cor <- cor(rd.dat, rm.eigen[row.names(rd.dat),])
+    rm.cor[is.na(rm.cor)] <- 0
+    rm.score <- rowMaxs(abs(rm.cor))
+    select <- rm.score < rm.th
+    if(sum(!select) > 0 & verbose) {
+      if(verbose) print("Removing dimension based on rm.eigen correlation:")
       print(rm.score[!select])
     }
-    if(sum(select)==0){
+    if(sum(select) == 0) {
+      if(verbose) warning("All reduced dimensions match rm.eigen. Returning NULL.")
       return(NULL)
     }
-    rd.dat = rd.dat[,select,drop=F]
+    rd.dat <- rd.dat[, select, drop = FALSE]
   }
-  if(verbose){
+  
+  if(verbose) {
     print(method)
   }
-  max.cl = ncol(rd.dat)*2 + 1
-  if(method=="louvain"){
-    k = pmin(k.nn, round(nrow(rd.dat)/2))
-    tmp = jaccard_louvain(rd.dat, k)
-    if(is.null(tmp)){
+  
+  max.cl <- ncol(rd.dat) * 2 + 1
+  
+  if(method == "louvain") {
+    k <- pmin(k.nn, round(nrow(rd.dat) / 2))
+    jl_result <- jaccard_louvain(rd.dat, k)
+    
+    if(is.null(jl_result)){
+      if(verbose) warning("jaccard_louvain() returned NULL.")
       return(NULL)
     }
-    cl = tmp$cl
-    if(length(unique(cl))>max.cl){
-      tmp.means =do.call("cbind",tapply(names(cl),cl, function(x){
-        colMeans(rd.dat[x,,drop=F])
-      },simplify=F))
-      tmp.hc = hclust(dist(t(tmp.means)), method="average")
-      tmp.cl= cutree(tmp.hc, pmin(max.cl, length(unique(cl))))
-      cl = setNames(tmp.cl[as.character(cl)], names(cl))
+    
+    cl <- jl_result$cl
+    
+    if(length(unique(cl)) > max.cl) {
+      # If overclustered, merge based on average hierarchical clustering of means
+      # to max.cl using cutree
+      jl_means <- do.call("cbind", 
+                          tapply(names(cl), 
+                                 cl, 
+                                 function(x) {
+                                   colMeans(rd.dat[x, , drop = FALSE])
+                                 },
+                                 simplify = FALSE))
+      jl_hc <- hclust(dist(t(jl_means)), 
+                      method = "average")
+      jl_cut <- cutree(cl_hc, 
+                       pmin(max.cl, length(unique(cl))))
+      cl <- setNames(jl_cut[as.character(cl)], names(cl))
     }
+  } else if(method == "ward.D") {
+    ward_hc <- hclust(dist(rd.dat),
+                 method = "ward.D")
+    cl <- cutree(ward_hc, max.cl)
+  } else if(method == "kmeans") {
+    cl <- kmeans(rd.dat, max.cl)$cluster
   }
-  else if(method=="ward.D"){
-    hc = hclust(dist(rd.dat),method="ward.D")
-    #print("Cluster cells")
-    cl = cutree(hc, max.cl)
-  }
-  else if(method=="kmeans"){
-    cl = kmeans(rd.dat, max.cl)$cluster
-  }
-  else{
-    stop(paste("Unknown clustering method", method))
-  }
-  #print(table(cl))
-  rd.dat.t = t(rd.dat)
-  merge.result=merge_cl(norm.dat, cl=cl, rd.dat.t=rd.dat.t, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
+  
+  rd.dat.t <- t(rd.dat)
+  merge.result <- merge_cl(norm.dat, 
+                           cl = cl, 
+                           rd.dat.t = rd.dat.t, 
+                           merge.type = merge.type, 
+                           de.param = de.param, 
+                           max.cl.size = max.cl.size)
   gc()
-  if(is.null(merge.result))return(NULL)
-  sc = merge.result$sc
-  #print(sc)
-  cl = merge.result$cl
-  if(length(unique(cl))>1){
+  if(is.null(merge.result)) {
+    if(verbose) warning("merge_cl() returned NULL.")
+    return(NULL)
+  }
+  
+  sc <- merge.result$sc
+
+  cl <- merge.result$cl
+
+  # Assemble results
+  if(length(unique(cl)) > 1) {
     if(verbose){
-      cat("Expand",prefix, "\n")
-      cl.size=table(cl)
+      cat("Expand", prefix, "\n")
+      cl.size <- table(cl)
       print(cl.size)
-      save(cl, file=paste0(prefix, ".cl.rda"))
+      save(cl, 
+           file = paste0(prefix, ".cl.rda"))
     }
-    de.genes = merge.result$de.genes
-    markers= merge.result$markers
-    cl.dat = get_cl_means(norm.dat[markers,], cl[sample_cells(cl, max.cl.size)])
-    cl.hc = hclust(dist(t(cl.dat)),method="average")
-    cl = setNames(factor(as.character(cl), levels= colnames(cl.dat)[cl.hc$order]), names(cl))
+    de.genes <- merge.result$de.genes
+    markers <- merge.result$markers
+    cl.dat <- get_cl_means(norm.dat[markers,], 
+                           cl[sample_cells(cl, max.cl.size)])
+    cl.hc <- hclust(dist(t(cl.dat)),method="average")
+    cl <- setNames(factor(as.character(cl), levels = colnames(cl.dat)[cl.hc$order]), names(cl))
     if(verbose & !is.null(prefix)){
-      display_cl(cl, norm.dat, prefix=prefix, markers=markers, max.cl.size=max.cl.size)
+      display_cl(cl, 
+                 norm.dat, 
+                 prefix = prefix, 
+                 markers = markers, 
+                 max.cl.size = max.cl.size)
     }
-    levels(cl) = 1:length(levels(cl))
-    result=list(cl=cl, markers=markers)
+    levels(cl) <- 1:length(levels(cl))
+    result <- list(cl = cl, 
+                   markers = markers)
     return(result)
   }
   return(NULL)
@@ -335,112 +400,152 @@ onestep_clust <- function(norm.dat,
 #' @param split.size The minimal cluster size for further splitting
 #' @param result The current clustering result as basis for further splitting.
 #' @param method Clustering method. It can be "auto", "louvain", "hclust"
-#' @param ... Other parameters passed to method `onestep_clust()`
+#' @param ... Other parameters passed to `onestep_clust()`
 #'
 #' @return Clustering result is returned as a list with two elements: 
 #'         cl: cluster membership for each cell
-#'         markers: top markers that seperate clusters     
+#'         markers: top markers that separate clusters     
 #'         
 iter_clust <- function(norm.dat, 
-                       select.cells = colnames(norm.dat),
+                       select.cells = NULL,
                        prefix = NULL, 
                        split.size = 10, 
                        result = NULL,
                        method = "auto",
-                       ...)
-{
-  if(!is.null(prefix)) { print(prefix) }
+                       ...) {
+  
+  method <- match.arg(method,
+                      choices = c("auto","louvain","hclust"))
+  
+  if(is.null(select.cells)) {
+    select.cells <- colnames(norm.dat)
+  }
+  
+  if(!is.null(prefix)) { 
+    print(prefix)
+  }
+  
   if(method == "auto"){
-    if(length(select.cells) > 3000){
-      select.method="louvain"
-    }
-    else{
-      select.method="ward.D"
+    if(length(select.cells) > 3000) {
+      method <- "louvain"
+    } else {
+      method <- "ward.D"
     }
   }
-  else{
-    select.method=method
-  }
-  if(length(select.cells) <= 3000){
+  
+  if(length(select.cells) <= 3000) {
     if(!is.matrix(norm.dat)){
-      norm.dat = as.matrix(norm.dat[,select.cells])
+      norm.dat <- as.matrix(norm.dat[,select.cells])
     }
   }
+  
   if(is.null(result)){        
-    result=onestep_clust(norm.dat, select.cells=select.cells, prefix=prefix,method=select.method,...)
+    result <- onestep_clust(norm.dat, 
+                            select.cells = select.cells, 
+                            prefix = prefix,
+                            method = select.method,
+                            ...)
     gc()
   }
-  if(!is.null(result)){
-    select.cells= intersect(select.cells, names(result$cl))
-    #save(result, file=paste0(prefix,".rda"))
-    cl = result$cl[select.cells]
-    gene.mod = result$gene.mod
-    markers=result$markers
-    cl = setNames(as.integer(cl),names(cl))
-    new.cl =cl
-    cl.size = table(cl)
-    to.split = names(cl.size)[cl.size >=split.size]
-    if(length(to.split)>0){
-      n.cl = 1
-      for(x in sort(unique(cl))){
-        tmp.cells = names(cl)[cl==x]
-        if(!x %in% to.split){
-          new.cl[tmp.cells]=n.cl
-        }
-        else{
-          tmp.prefix = paste(prefix, x, sep=".")
-          tmp.result=iter_clust(norm.dat=norm.dat, select.cells=tmp.cells, prefix=tmp.prefix,split.size=split.size,method= method,...)
-          gc()
-          if(is.null(tmp.result)){
-            new.cl[tmp.cells]=n.cl
-          }
-          else{
-            tmp.cl = tmp.result$cl
-            if(length(unique(tmp.cl)>1)){
-              new.cl[names(tmp.cl)] = n.cl + as.integer(tmp.cl)
-              markers=union(markers, tmp.result$markers)
-            }
-          }
-        }
-        n.cl = max(new.cl)+1
-      }
-      cl = new.cl
-    }
-    result=list(cl=cl, markers=markers)
-    return(result)
+  
+  if(is.null(result)) {
+    return(NULL)
   }
-  return(NULL)
+  
+  select.cells <- intersect(select.cells, names(result$cl))
+  cl <- result$cl[select.cells]
+  gene.mod <- result$gene.mod
+  markers <- result$markers
+  
+  cl <- setNames(as.integer(cl),names(cl))
+  new.cl <- cl
+  cl.size <- table(cl)
+  to.split <- names(cl.size)[cl.size >= split.size]
+  
+  if(length(to.split) > 0) {
+    n.cl <- 1
+    for(x in sort(unique(cl))) {
+      tmp.cells <- names(cl)[cl == x]
+      
+      if(!x %in% to.split) {
+        new.cl[tmp.cells] <- n.cl
+      } else {
+        tmp.prefix <- paste(prefix, x, sep = ".")
+        tmp.result <- iter_clust(norm.dat = norm.dat, 
+                                 select.cells = tmp.cells, 
+                                 prefix = tmp.prefix,
+                                 split.size = split.size,
+                                 method = method,
+                                 ...)
+        gc()
+        
+        if(is.null(tmp.result)) {
+          new.cl[tmp.cells] <- n.cl
+        } else {
+          tmp.cl <- tmp.result$cl
+          if(length(unique(tmp.cl) > 1)) {
+            new.cl[names(tmp.cl)] <- n.cl + as.integer(tmp.cl)
+            markers <- union(markers, tmp.result$markers)
+          }
+        }
+      }
+      n.cl <- max(new.cl) + 1
+    }
+    
+    cl <- new.cl
+  }
+  result <- list(cl = cl, 
+                 markers = markers)
+  return(result)
 }
 
 
-#' Reorder cluster based on hiearchical clustering of clusters based on average cluster values for the input data matrix 
+#' Reorder cluster based on hiearchical clustering of mean values from the input data matrix 
 #'
 #' @param cl A vector of cluster membership with cells as names, and cluster id as values. 
 #' @param dat The data matrix with cells as columns. 
 #'
-#' @return Reorder cluster membership vector. The cluster id start from 1 to the number of clusters.
+#' @return Reordered cluster membership vector. The cluster ids will start from 1 to the number of clusters.
 #' @export 
 #'
-reorder_cl <- function(cl, dat)
-{
-  cl.means = get_cl_means(dat,cl)
-  cl.hc = hclust(as.dist(1 - cor(cl.means)),method = "average")
-  cl = setNames(factor(as.character(cl), levels = cl.hc$labels[cl.hc$order]),names(cl))
-  cl = setNames(as.integer(cl),names(cl))
+reorder_cl <- function(cl, 
+                       dat) {
+  
+  cl.means <- get_cl_means(dat,
+                           cl)
+  
+  cl.hc <- hclust(as.dist(1 - cor(cl.means)),
+                  method = "average")
+  
+  cl <- setNames(factor(as.character(cl), 
+                        levels = cl.hc$labels[cl.hc$order]),
+                 names(cl))
+  
+  cl <- setNames(as.integer(cl),
+                 names(cl))
+  
+  return(cl)
 }
 
 
 
-combine_finer_split <- function(cl, finer.cl)
-{
+combine_finer_split <- function(cl,
+                                finer.cl) {
+  
   if(is.factor(cl)){
-    cl = setNames(as.integer(cl), names(cl))
+    cl <- setNames(as.integer(cl),
+                   names(cl))
   }
+  
   if(is.factor(finer.cl)){
-    finer.cl = setNames(as.integer(finer.cl), names(finer.cl))
+    finer.cl <- setNames(as.integer(finer.cl),
+                         names(finer.cl))
   }
-  max.cl = max(cl)
-  finer.cl = finer.cl + max.cl
-  cl[names(finer.cl)] = finer.cl
+  
+  max.cl <- max(cl)
+  finer.cl <- finer.cl + max.cl
+  
+  cl[names(finer.cl)] <- finer.cl
+  
   return(cl)
 }

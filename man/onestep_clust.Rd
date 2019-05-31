@@ -9,7 +9,7 @@ onestep_clust(norm.dat, select.cells = colnames(norm.dat),
   vg.padj.th = 0.5, dim.method = c("pca", "WGCNA", "auto"),
   max.dim = 20, rm.eigen = NULL, rm.th = 0.7,
   de.param = de_param(), merge.type = c("undirectional",
-  "directional"), maxGenes = 3000, sampleSize = 4000,
+  "directional"), max.genes = 3000, sample.size = 4000,
   max.cl.size = 300, k.nn = 15, prefix = NULL, verbose = FALSE,
   regress.x = NULL)
 }
@@ -34,9 +34,9 @@ onestep_clust(norm.dat, select.cells = colnames(norm.dat),
 
 \item{de.param}{The differential gene expression threshold. See de_param() function for details.}
 
-\item{maxGenes}{Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules.}
+\item{max.genes}{Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules.}
 
-\item{sampleSize}{The number of sampled cells to compute reduced dimensions.}
+\item{sample.size}{The number of sampled cells to compute reduced dimensions.}
 
 \item{max.cl.size}{Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.}
 

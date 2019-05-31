@@ -1,3 +1,24 @@
+# Function call map
+# function_1()
+#   called_by_function_1() called_function_file.R
+#
+# score_gene_mod()
+#   get_eigen() reduceDimension_WGCNA.R
+#   jaccard_louvain() cluster.R
+#   de_stats_all_pairs() de.genes.R
+#   
+# filter_gene_mod()
+#   get_eigen() reduceDimension_WGCNA.R
+#   score_gene_mod() reduceDimension_WGCNA.R
+#
+# get_eigen()
+#   heatmap.3() heatmap.R
+#   
+# rd_WGCNA()
+#   get_eigen() reduceDimension_WGCNA.R
+#   filter_gene_mod() reduceDimension_WGCNA.R
+#
+
 score_gene_mod <-  function(norm.dat, 
                             select.cells, 
                             gene.mod, 
@@ -91,13 +112,13 @@ score_gene_mod <-  function(norm.dat,
 filter_gene_mod <- function(norm.dat, 
                             select.cells, 
                             gene.mod, 
-                            minModuleSize = 10, 
+                            min.module.size = 10, 
                             min.deScore = 40, 
                             de.param = de_param(), 
                             max.cl.size = NULL,
                             rm.eigen = NULL, 
                             rm.th = 0.7, 
-                            maxSize = 200, 
+                            max.size = 200, 
                             prefix = "cl", 
                             max.mod = NULL) {
 
@@ -194,7 +215,7 @@ filter_gene_mod <- function(norm.dat,
 
 
 
-#' Compute module eigen genes 
+#' Compute module eigengenes 
 #' 
 #' @param gene.mod A list of gene modules. 
 #' @param norm.dat log transformed normalized data matrix. 
@@ -285,17 +306,17 @@ rd_WGCNA <- function(norm.dat,
                      select.genes, 
                      select.cells, 
                      sampled.cells = select.cells,
-                     minModuleSize = 10, 
+                     min.module.size = 10, 
                      cutHeight = 0.99,
                      type = "unsigned",
-                     softPower = 4,
+                     soft.power = 4,
                      rm.gene.mod = NULL,
                      rm.eigen = NULL,
                      ...) {
   
   dat <- as.matrix(norm.dat[select.genes, sampled.cells])
   adj <- WGCNA::adjacency(t(dat), 
-                          power = softPower,
+                          power = soft.power,
                           type = type)
   adj[is.na(adj)] <- 0
   
@@ -318,7 +339,7 @@ rd_WGCNA <- function(norm.dat,
                                                cutHeight = cutHeight,
                                                deepSplit = 2, 
                                                pamRespectsDendro = FALSE,
-                                               minClusterSize = minModuleSize)
+                                               minClusterSize = min.module.size)
   
   gene.mod <- split(row.names(dissTOM), dynamicMods)
   gene.mod <- gene.mod[setdiff(names(gene.mod), "0")]
@@ -338,7 +359,7 @@ rd_WGCNA <- function(norm.dat,
   gm <- filter_gene_mod(norm.dat, 
                         select.cells, 
                         gene.mod, 
-                        minModuleSize = minModuleSize, 
+                        min.module.size = min.module.size, 
                         rm.eigen = rm.eigen,
                         ...)
   if(is.null(gm)) {

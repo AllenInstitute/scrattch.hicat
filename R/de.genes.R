@@ -379,7 +379,7 @@ de_pair_chisq <- function(pair,
 
 #' Perform pairwise differential gene expression tests between main pairs of clusters in parallel
 #' 
-#' @param norm.dat a normalized data matrix for data.
+#' @param norm.dat a normalized data matrix.
 #' @param cl a cluster factor object.
 #' @param pairs A 2-column matrix of cluster pairs.
 #' @param method Either "limma" or "chisq".
