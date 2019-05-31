@@ -37,3 +37,16 @@ plot_tSNE_gene <- function(tsne.df, ...)
   }
 
 
+build_tsne <- function(dat, select.genes = rownames(dat), select.samples = colnames(dat), dims=2, ...)
+{
+  library(Rtsne)
+  if(length(select.genes)<2)   select.genes   <- 1:dim(dat)[1]
+  if(length(select.samples)<2) select.samples <- 1:dim(dat)[2]
+  tsne.result = Rtsne(t(as.matrix(dat[select.genes,select.samples])), dims=dims, ...)$Y
+  row.names(tsne.result) = select.samples
+  tsne.df = as.data.frame(tsne.result[select.samples, ])
+  colnames(tsne.df) = letters[c(24:26,1:23)][1:dims]
+  tsne.df$sample_name = rownames(tsne.df)
+  tsne.df
+}
+
