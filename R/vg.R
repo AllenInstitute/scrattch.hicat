@@ -157,7 +157,7 @@ compute_vg_stats <- function(dat,
                                padj = p.adjust(1 - pnorm(z), method = "fdr"),
                                loess.z = loess_z,
                                loess.pval = 1 - pnorm(loess_z),
-                               loess.pad = p.adjust(1 - pnorm(loess_z), method = "fdr"))
+                               loess.padj = p.adjust(1 - pnorm(loess_z), method = "fdr"))
   
   return(gene_var_stats)
 }
