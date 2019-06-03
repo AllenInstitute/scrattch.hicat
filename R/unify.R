@@ -245,6 +245,78 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
       return(select.genes)
    })
   }
+
+
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param comb.dat 
+##' @param select.genes 
+##' @param ref.list 
+##' @param select.sets 
+##' @param select.cells 
+##' @param k 
+##' @param method 
+##' @param self.method 
+##' @param batch.size 
+##' @param mc.cores 
+##' @return 
+##' @author Zizhen Yao
+##'
+##'
+##'
+compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb.dat$dat.list), select.cells=comb.dat$all.cells, k=15, method="cor", self.method="RANN", batch.size=10000, mc.cores=1)
+  {
+    cat("Number of select genes", length(select.genes), "\n")
+    cat("Get knn\n")
+    dat.list = comb.dat$dat.list
+###index is the index of knn from all the cells
+    knn.comb = do.call("cbind",lapply(names(ref.list), function(ref.set){
+      cat("Ref ", ref.set, "\n")
+      if(length(ref.list[[ref.set]]) <= k) {
+        ##Not enough reference points to compute k
+        return(NULL)
+      }
+      k.tmp = k
+      if(length(ref.list[[ref.set]]) <= k*2) {
+        k.tmp = round(k/2)
+      }
+      ref.dat = dat.list[[ref.set]][select.genes, ref.list[[ref.set]],drop=F]
+      knn =do.call("rbind", lapply(select.sets, function(set){
+        cat("Set ", set, "\n")
+        map.cells=  intersect(select.cells, colnames(dat.list[[set]]))
+        map.cells=  intersect(select.cells, dat.list[[set]]$col_id)
+        if(length(map.cells)==0){
+          return(NULL)
+        }
+        dat = dat.list[[set]][select.genes, tmp.cells,drop=F]      
+        if(set == ref.set & self.method =="RANN"){
+          rd.dat = rd_PCA(dat,select.genes=row.names(dat), select.cells=colnames(dat), max.pca = 50, sampled.cells=colnames(ref.dat), th=1)$rd.dat
+          if(is.null(rd.dat)){
+            return(NULL)
+          }
+          knn = RANN::nn2(rd.dat[colnames(ref.dat),,drop=F] , rd.dat[colnames(dat),,drop=F], k=k.tmp)[[1]]
+          row.names(knn) = colnames(dat)
+        }
+        else{
+          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = self.method, batch.size = batch.size, mc.cores=mc.cores) 
+        }
+        if(!is.null(comb.dat$cl.list)){
+          test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])
+          if(!is.null(test.knn)){
+            cat("Knn", set, ref.set, method, "cl.score", test.knn$cl.score, "cell.score", test.knn$cell.score,"\n")
+          }
+        }
+        idx = match(colnames(ref.dat), comb.dat$all.cells)
+        knn = matrix(idx[knn], nrow=nrow(knn))
+        row.names(knn) = tmp.cells
+        knn
+      }))    
+    }))
+    return(knn.comb)
+  }
+
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
@@ -260,7 +332,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
 ##' @param ... 
 ##' @return 
 ##' @author Zizhen Yao
-knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, method="cor", self.method = "RANN", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,...)
+knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, method="cor", self.method = "RANN", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,mc.cores=1,...)
 {
   #attach(comb.dat)
   with(comb.dat,{
@@ -275,64 +347,11 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   if(length(select.genes) < 5){
     return(NULL)
   }
+  
   cat("Number of select genes", length(select.genes), "\n")
   cat("Get knn\n")
-  ###index is the index of knn from all the cells
-  knn.comb =do.call("rbind",lapply(select.sets, function(set){
-    print(set)
-    tmp.cells=  intersect(select.cells, colnames(dat.list[[set]]))
-    if(length(tmp.cells)==0){
-      return(NULL)
-    }
-    dat = dat.list[[set]][select.genes, tmp.cells,drop=F]
-    #gene.cor = cor(t(as.matrix(dat[,sample(1:ncol(dat),pmin(ncol(dat),1000))])))
-    
-    print(length(tmp.cells))
-    knn = do.call("cbind", lapply(names(ref.list), function(ref.set){
-      cat("Test ", set, "Ref ", ref.set, "\n")
-      if(length(ref.list[[ref.set]]) <= k) {
-        ##Not enough reference points to compute k
-        return(NULL)
-      }
-      k.tmp = k
-      if(length(ref.list[[ref.set]]) <= k*2) {
-        k.tmp = round(k/2)
-      }
-      ref.dat = dat.list[[ref.set]][select.genes, ref.list[[ref.set]],drop=F]
-      if(set == ref.set){
-        if(self.method =="RANN"){
-          rd.dat = rd_PCA(dat,select.genes=row.names(dat), select.cells=colnames(dat), max.pca = 100, sampled.cells=colnames(ref.dat), th=1)$rd.dat
-          if(is.null(rd.dat)){
-            return(NULL)
-          }
-          knn = RANN::nn2(rd.dat[colnames(ref.dat),,drop=F] , rd.dat[colnames(dat),,drop=F], k=k.tmp)[[1]]
-          row.names(knn) = colnames(dat)
-        }
-        else{
-          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = self.method, batch.size = batch.size)
-          
-        }
-      }
-      else{
-        #ref.gene.cor = cor(t(as.matrix(ref.dat[,sample(1:ncol(ref.dat),pmin(ncol(ref.dat), 1000))])))
-        #ref.gene.cor = cor(t(as.matrix(ref.dat)))
-        #gene.cor.score = setNames(sapply(1:nrow(gene.cor), function(i)cor(gene.cor[i,], ref.gene.cor[i,],use = "pairwise.complete.obs")),row.names(gene.cor))
-        knn=get_knn_batch(dat=dat, ref.dat=ref.dat, k=k.tmp, method = method, batch.size=batch.size)
-      }
-      if(!is.null(cl.list)){
-        test.knn = test_knn(knn, cl.list[[set]], colnames(ref.dat), cl.list[[ref.set]])
-        if(!is.null(test.knn)){
-          cat("Knn", set, ref.set, method, "cl.score", test.knn$cl.score, "cell.score", test.knn$cell.score,"\n")
-        }
-      }
-      idx = match(colnames(ref.dat), all.cells)
-      knn = matrix(idx[knn], nrow=nrow(knn))
-      row.names(knn) = tmp.cells
-      knn
-    }))    
-  }))
-  #########
-  #save(knn.comb, file="knn.comb.rda")
+  knn.comb= compute_knn(comb.dat, select.genes=select.genes, ref.list=ref.list, select.sets=select.sets, select.cells=select.cells, k=k, method=method, self.method=self.method, batch.size=batch.size, mc.cores=mc.cores)
+  
   sampled.cells = unlist(cells.list)
   result = knn_jaccard_louvain(knn.comb[sampled.cells,])
   result$cl.mat = t(result$memberships)

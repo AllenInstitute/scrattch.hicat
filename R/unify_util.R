@@ -372,9 +372,13 @@ plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb
     }
     for(set in sets){
       dat = dat.list[[set]]
-      tmp.cells=  sample_cells(cl[intersect(names(cl), colnames(dat))], 100)
-      tmp.cl = cl[tmp.cells]
-      tmp.col = cl.col[,tmp.cells]
+      tmp.cl = cl[intersect(names(cl), colnames(dat))]
+      if(is.factor(tmp.cl)){
+        tmp.cl=droplevels(tmp.cl)
+      }
+      tmp.cells=  sample_cells(tmp.cl, 100)
+      tmp.cl = tmp.cl[tmp.cells]
+      tmp.col = t(as.matrix(cl.col[,tmp.cells]))
       if(!is.null(col.list) & !is.null(col.list[[set]])){
         tmp.col = rbind(tmp.col,col.list[[set]][,tmp.cells])
       }
