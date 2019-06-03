@@ -27,6 +27,3 @@ This function is very specific to brain cell/nuclear data where Neun is used as 
   stain for neuronal vs. non-neuronal identity.  This function determine's whether 
   a cluster is predicted to be neuronal or non-neuronal based on expression of Neun.
 }
-\examples{
-check_neun(anno, anno$cluster, neun.thresh = 0.5)
-}

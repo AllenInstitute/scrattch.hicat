@@ -61,6 +61,3 @@ This function checks for outliers looks for unexpected combinations of marker ge
   clusters and clusters of doublets.  Specific genes and thresholds currnetly
   hard-coded in, but might be updated in later iterations.
 }
-\examples{
-check_outlier()
-}

@@ -42,6 +42,3 @@ This function identifies clusters that are nearly exclusively expressed in one d
   or >50% more than expected based on the total number of cells per donor.  Later
   function iterations will include these options as parameters.
 }
-\examples{
-check_donor()
-}

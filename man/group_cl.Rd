@@ -47,6 +47,3 @@ This function assigns each cluster to a predefined set of classes (exc, inh, gli
   donor, outlier) using test.genes (default GAD1, GAD2, SLC17A7, SLC17A6).
   Later iterations of the function will allow for user-defined classes and genes.
 }
-\examples{
-group_cl()
-}
