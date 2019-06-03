@@ -392,7 +392,7 @@ compare_annotate <- function(cl,
   ###Find clusters not present in ref.cl
   tmp.cl <- droplevels(cl[common.cells])
   ref.cl <- droplevels(ref.cl[common.cells])
-  absent.cl = setdiff(levels(cl), levels(tmp.cl))
+  absent.cl <- setdiff(levels(cl), levels(tmp.cl))
   # compare predicted cluster member with the new clustering result 
   tb <- table(tmp.cl, ref.cl)
   cl.id.map <- NULL
@@ -401,7 +401,7 @@ compare_annotate <- function(cl,
   if(reorder){
     tmp <- apply(tb, 1, which.max)
     cl_names <- names(cl)
-    cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)],absent.cl))
+    cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)], absent.cl))
     cl <- setNames(cl, cl_names)
     if(rename){
       cl.id.map <- data.frame(new = 1:length(levels(cl)),
@@ -429,7 +429,7 @@ compare_annotate <- function(cl,
       cl_label[x] <- label
     }
   }
-  absent.cl = row.names(tb)[rowSums(tb)==0]
+  absent.cl <- row.names(tb)[rowSums(tb) == 0]
   cl.df$cluster_label <- cl_label
   row.names(cl.df) <- levels(cl)
   cl.size <- table(cl)
@@ -475,7 +475,8 @@ compare_annotate <- function(cl,
                    cl.df = cl.df,
                    g = g,
                    tb.df = tb.df,
-                   cl.id.map = cl.id.map, absent.cl=absent.cl)
+                   cl.id.map = cl.id.map, 
+                   absent.cl = absent.cl)
   
   return(out_list)
 }

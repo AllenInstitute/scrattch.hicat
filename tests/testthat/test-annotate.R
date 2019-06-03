@@ -153,7 +153,7 @@ test_that(
                                          rename = TRUE)
     
     expect_is(glial_comparison, "list")
-    expect_equal(length(glial_comparison), 5)
+    expect_equal(length(glial_comparison), 6)
     expect_is(glial_comparison$cl, "factor")
     expect_is(glial_comparison$cl.df, "data.frame")
     expect_is(glial_comparison$g, "ggplot")
@@ -186,7 +186,7 @@ test_that(
     expect_is(glial_mapping$cor.matrix, "matrix")
     expect_is(glial_mapping$annotate, "list")
     
-    expect_equal(length(glial_mapping$annotate), 5)
+    expect_equal(length(glial_mapping$annotate), 6)
   }
 )
 
@@ -212,7 +212,7 @@ test_that(
     expect_is(glial_mapping$cor.matrix, "matrix")
     expect_is(glial_mapping$annotate, "list")
     
-    expect_equal(length(glial_mapping$annotate), 5)
+    expect_equal(length(glial_mapping$annotate), 6)
   }
 )
 
