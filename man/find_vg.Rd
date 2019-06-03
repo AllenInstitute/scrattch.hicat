@@ -4,7 +4,7 @@
 \alias{find_vg}
 \title{Identify high variability genes using Brennecke's method}
 \usage{
-find_vg(dat, plot_file = NULL, return_type = "data")
+find_vg(dat, plot_file = NULL, return_type = "data", verbose = FALSE)
 }
 \arguments{
 \item{dat}{A matrix or dgCMatrix with samples as columns and genes as rows}
@@ -15,6 +15,8 @@ find_vg(dat, plot_file = NULL, return_type = "data")
 a data.frame with results for each gene. Other options are "plots", which will return a list 
 containing plot objects, and "both" which will return a list with the statistics (gene_var_stats) 
 and plots.}
+
+\item{verbose}{logical - whether or not to display status messages}
 }
 \value{
 Either a data.frame or a list (see return_type parameter).

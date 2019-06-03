@@ -550,13 +550,9 @@ de_all_pairs <- function(norm.dat,
   if(sum(names(cl) %in% colnames(norm.dat)) != length(cl)) {
     stop("Missing data for some cells in cl.")
   }
-  
+
   cn <- as.character(sort(unique(cl)))
-  cl.n <- length(cn)
-  pairs <- cbind(rep(cn, rep(cl.n,cl.n)), 
-                 rep(cn, cl.n))
-  pairs <- pairs[pairs[, 1] < pairs[, 2], , drop = FALSE]
-  
+  pairs = create_pairs(cn)
   de_selected_pairs(norm.dat = norm.dat,
                     cl = cl,
                     pairs = pairs, 
@@ -816,10 +812,7 @@ de_stats_all_pairs <- function(norm.dat,
   }
   
   cn <- as.character(sort(unique(cl)))
-  cl.n <- length(cn)	
-  pairs <- cbind(rep(cn, rep(cl.n, cl.n)), rep(cn, cl.n))
-  pairs <- pairs[pairs[, 1] < pairs[, 2], , drop = FALSE]
-  row.names(pairs) <- paste(pairs[, 1], pairs[, 2], sep = "_")
+  pairs= create_pairs(cn)
   
   if(!is.null(de.genes)){
     missing_pairs <- pairs[!row.names(pairs) %in% names(de.genes), , drop = FALSE]
@@ -1098,5 +1091,4 @@ plot_pair_matrix <- function(pair.num, file, directed=FALSE, dend=NULL, col=jet.
               cexRow = 0.3, cexCol = 0.3)
     dev.off()     
   }
-
 

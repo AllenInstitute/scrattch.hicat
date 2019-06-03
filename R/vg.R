@@ -55,6 +55,7 @@
 #' a data.frame with results for each gene. Other options are "plots", which will return a list 
 #' containing plot objects, and "both" which will return a list with the statistics (gene_var_stats) 
 #' and plots.
+#' @param verbose logical - whether or not to display status messages
 #' 
 #' @return Either a data.frame or a list (see return_type parameter).
 #' 
@@ -62,19 +63,21 @@
 #' 
 find_vg <- function(dat, 
                     plot_file = NULL, 
-                    return_type = "data") {
+                    return_type = "data",
+                    verbose = FALSE) {
   
   return_type <- match.arg(return_type,
                            choices = c("data","plots","both"))
   
-  gene_var_stats <- compute_vg_stats(dat)
+  gene_var_stats <- compute_vg_stats(dat,
+                                     verbose = verbose)
   
   if(return_type == "data") {
     return(gene_var_stats)
   }
   
   if(!is.null(plot_file) | return_type %in% c("plots","both")){
-    
+    if(verbose) { cat("Generating plots\n") }
     loess_fit <- gene_loess_fit(dat = NULL,
                                 dispersions = gene_var_stats$dispersion,
                                 means = gene_var_stats$g.means,
@@ -103,41 +106,45 @@ find_vg <- function(dat,
   
 }
 
-#' reverse-compatibility wrapper around find_vg()
-#' 
-findVG <- function(...) {
-  find_vg(...)
-}
 
 #' Compute gene expression variance statistics
 #' 
 #' @param dat A matrix or dgCMatrix with samples as columns and genes as rows
 #' 
 #' @return a data.frame with gene symbols, mean, variance, dispersion, z score, pvalues, and loess statistics
-#' 
+#' @param verbose logical - whether or not to display status messages
+#'
 #' @export
 #' 
-compute_vg_stats <- function(dat) {
+compute_vg_stats <- function(dat,
+                             verbose = FALSE) {
   
+  if(verbose) { cat("Rescaling data\n") }
   scaled_data <- rescale_samples(dat)
   
+  if(verbose) { cat("Computing scaled means\n") }
   means <- gene_means(scaled_data)
   
+  if(verbose) { cat("Computing gene variance\n") }
   vars <- gene_vars(scaled_data,
                     means = means)
   
+  if(verbose) { cat("Computing dispersions\n") }
   dispersion <- gene_dispersion(scaled_data,
                                 means = means,
                                 vars = vars)
   
+  if(verbose) { cat("Computing z scores\n") }
   z <- gene_z(scaled_data,
               dispersions = dispersion)
   
   ###loess regression
+  if(verbose) { cat("Performing Loess fit\n") }
   loess_fit <- gene_loess_fit(scaled_data,
                               dispersions = dispersion,
                               means = means)
   
+  if(verbose) { cat("Computing Loess z\n") }
   loess_z <- gene_loess_fit_z(loess_fit,
                               dispersions = dispersion)
   
@@ -150,7 +157,7 @@ compute_vg_stats <- function(dat) {
                                padj = p.adjust(1 - pnorm(z), method = "fdr"),
                                loess.z = loess_z,
                                loess.pval = 1 - pnorm(loess_z),
-                               loess.pad = p.adjust(1 - pnorm(loess_z), method = "fdr"))
+                               loess.padj = p.adjust(1 - pnorm(loess_z), method = "fdr"))
   
   return(gene_var_stats)
 }
@@ -253,7 +260,7 @@ gene_vars <- function(dat,
 #'
 #' @return a numeric vector of dispersion values for each gene
 #' 
-#' @ export
+#' @export
 #' 
 gene_dispersion <- function(dat,
                             means = NULL,

@@ -153,7 +153,7 @@ test_that(
                                          rename = TRUE)
     
     expect_is(glial_comparison, "list")
-    expect_equal(length(glial_comparison), 5)
+    expect_equal(length(glial_comparison), 6)
     expect_is(glial_comparison$cl, "factor")
     expect_is(glial_comparison$cl.df, "data.frame")
     expect_is(glial_comparison$g, "ggplot")
@@ -186,7 +186,7 @@ test_that(
     expect_is(glial_mapping$cor.matrix, "matrix")
     expect_is(glial_mapping$annotate, "list")
     
-    expect_equal(length(glial_mapping$annotate), 5)
+    expect_equal(length(glial_mapping$annotate), 6)
   }
 )
 
@@ -212,7 +212,7 @@ test_that(
     expect_is(glial_mapping$cor.matrix, "matrix")
     expect_is(glial_mapping$annotate, "list")
     
-    expect_equal(length(glial_mapping$annotate), 5)
+    expect_equal(length(glial_mapping$annotate), 6)
   }
 )
 
@@ -366,10 +366,10 @@ test_that(
   {
     glial_hq_cl <- glial_train_cl[glial_train_cl %in% c(45, 48,49)]
     
-    glial_de_genes <- de_score(norm.dat = glial_train_data, 
-                               cl = glial_train_cl,  
-                               de.param = de_param(), 
-                               method = "limma")
+    glial_de_genes <- de_stats_all_pairs(norm.dat = glial_train_data, 
+                                         cl = glial_train_cl,  
+                                         de.param = de_param(), 
+                                         method = "limma")
     
     cl_test <- find_low_quality_cl(cl.df = train_cl.df,
                                    cl.good = glial_hq_cl,
@@ -385,12 +385,6 @@ test_that(
 test_that(
   "plot_low_qc() needs tests.",
   {
-    glial_hq_cl <- glial_train_cl[glial_train_cl %in% c(45, 48,49)]
-    
-    glial_de_genes <- de_score(norm.dat = glial_train_data, 
-                               cl = glial_train_cl,  
-                               de.param = de_param(), 
-                               method = "limma")
-    
+
   }
 )

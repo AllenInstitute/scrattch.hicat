@@ -30,7 +30,3 @@ Clustering result is returned as a list with two elements:
 \description{
 Iterative clustering algorithm for single cell RNAseq dataset
 }
-\examples{
-clust.result <- iter_clust(norm.dat)
-          clust.result <- iter_clust(norm.dat, de.param = de_param(q1.th = 0.5, de.score.th = 100))
-}

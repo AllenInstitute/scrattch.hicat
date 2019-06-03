@@ -127,74 +127,147 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
 #' 
 #' @return A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells. 
 #' 
-get_eigen <- function(gene.mod, norm.dat, select.cells=colnames(norm.dat), prefix=NULL,method="ward.D",hc=NULL,...)
-  {
-    #gene.vector = setNames(rep(names(gene.mod), sapply(gene.mod, length)), unlist(gene.mod))
-    #eigen = moduleEigengenes(t(norm.dat[names(gene.vector),select.cells]), gene.vector)[[1]]
-    tmp.dat= as.matrix(norm.dat[unlist(gene.mod),select.cells, drop=F])
-    eigen = sapply(gene.mod, function(x){
-      tmp.num=sum(rowSums(tmp.dat[x, select.cells] > 0) > 0)
-      if(tmp.num < 3){
-        return(rep(0, length(select.cells)))
-      }
-      pr.result = prcomp(t(tmp.dat[x,select.cells]),tol=0.8)
-      pc1=pr.result$x[,1]
-      rot  =  pr.result$rotatio[,1,drop=F]
-      if(sum(rot>0) < length(x)/2){
-        pc1 = -pc1
-      }
-      pc1
-    })
-    colnames(eigen) = paste0("ME", names(gene.mod))
-    row.names(eigen)= select.cells
-    kME=cor(t(as.matrix(norm.dat[unlist(gene.mod),select.cells])), eigen)
-    hub=sapply(names(gene.mod), function(i){
-      x = gene.mod[[i]]
-      x[which.max(kME[x, paste0("ME",i)])]
-    })
-    hub = setNames(hub, paste0("ME",names(gene.mod)))
-    colnames(eigen)=paste(colnames(eigen),hub[colnames(eigen)])
-    row.names(eigen)=select.cells
-    if(!is.null(prefix) & ncol(eigen)>1){
-      if(is.null(hc)){
-        hc = hclust(dist(eigen), method=method)
-      }
-      colv = as.dendrogram(hc)
-      pdf(paste0(prefix, ".eigen.pdf"),height=6,width=7)
-      heatmap.3(t(eigen), Colv= colv, col=blue.red(100), trace="none", dendrogram="column",...)
-      dev.off()
+get_eigen <- function(gene.mod, 
+                      norm.dat, 
+                      select.cells = colnames(norm.dat), 
+                      prefix = NULL,
+                      method = "ward.D",
+                      hc = NULL,
+                      ...) {
+  
+  #gene.vector = setNames(rep(names(gene.mod), sapply(gene.mod, length)), unlist(gene.mod))
+  #eigen = moduleEigengenes(t(norm.dat[names(gene.vector),select.cells]), gene.vector)[[1]]
+  tmp.dat <- as.matrix(norm.dat[unlist(gene.mod), select.cells, drop = FALSE])
+  
+  eigen <- sapply(gene.mod, 
+                  function(x) {
+                    tmp.num <- sum(rowSums(tmp.dat[x, select.cells] > 0) > 0)
+                    
+                    if(tmp.num < 3){
+                      return(rep(0, length(select.cells)))
+                    }
+                    
+                    pr.result <- prcomp(t(tmp.dat[x,select.cells]),
+                                        tol = 0.8)
+                    
+                    pc1 <- pr.result$x[,1]
+                    rot <- pr.result$rotation[,1, drop = FALSE]
+                    
+                    if(sum(rot > 0) < length(x) / 2) {
+                      pc1 <- -pc1
+                    }
+                    
+                    pc1
+                  })
+  
+  colnames(eigen) <- paste0("ME", names(gene.mod))
+  rownames(eigen) <- select.cells
+  
+  kME <- cor(t(as.matrix(norm.dat[unlist(gene.mod), select.cells])), 
+             eigen)
+  
+  hub <- sapply(names(gene.mod), 
+                function(i) {
+                  x <- gene.mod[[i]]
+                  x[which.max(kME[x, paste0("ME",i)])]
+                })
+  
+  hub <- setNames(hub, paste0("ME", names(gene.mod)))
+  
+  colnames(eigen) <- paste(colnames(eigen), hub[colnames(eigen)])
+  rownames(eigen) <- select.cells
+  
+  if(!is.null(prefix) & ncol(eigen) > 1){
+    if(is.null(hc)) {
+      hc <- hclust(dist(eigen), 
+                   method = method)
     }
-    return(list(eigen,hc))
+    
+    colv <- as.dendrogram(hc)
+    
+    pdf(paste0(prefix, ".eigen.pdf"),
+        height = 6,
+        width = 7)
+    heatmap.3(t(eigen), 
+              Colv = colv, 
+              col = blue.red(100), 
+              trace = "none", 
+              dendrogram = "column",
+              ...)
+    dev.off()
   }
+  
+  return(list(eigen = eigen,
+              hc = hc))
+}
 
 
-rd_WGCNA <- function(norm.dat, select.genes, select.cells, sampled.cells=select.cells,minModuleSize=10, cutHeight=0.99,type="unsigned",softPower=4,rm.gene.mod=NULL,rm.eigen=NULL,...)
-  {
-    suppressPackageStartupMessages(require(WGCNA))
-    dat = as.matrix(norm.dat[select.genes,sampled.cells])
-    adj = adjacency(t(dat), power = softPower,type=type)
-    adj[is.na(adj)]=0
-    TOM = TOMsimilarity(adj,TOMType=type,verbose=0)
-    dissTOM = as.matrix(1-TOM)
-    row.names(dissTOM)= colnames(dissTOM) = row.names(dat)
-    rm(dat)
-    gc()
-    geneTree = hclust(as.dist(dissTOM), method = "average")
-    dynamicMods = dynamicTreeCut::cutreeDynamic(dendro = geneTree, distM = dissTOM, cutHeight=cutHeight,
-      deepSplit = 2, pamRespectsDendro = FALSE,minClusterSize = minModuleSize)
-    gene.mod = split(row.names(dissTOM), dynamicMods)
-    gene.mod = gene.mod[setdiff(names(gene.mod),"0")]
-    if (!is.null(rm.gene.mod)) {                                              
-      rm.eigen = get_eigen(rm.gene.mod, norm.dat, select.cells)[[1]]
-    }
-    else{
-      rm.eigen=NULL
-    }
-    if(is.null(gene.mod)|length(gene.mod)==0){return(NULL)}
-    gm= filter_gene_mod(norm.dat, select.cells, gene.mod, minModuleSize=minModuleSize, rm.eigen=rm.eigen,...)
-    if(is.null(gm)){
-      return(NULL)
-    }
-    rd.dat = gm$eigen    
-    return(list(rd.dat=rd.dat, gm=gm))
+rd_WGCNA <- function(norm.dat, 
+                     select.genes, 
+                     select.cells, 
+                     sampled.cells=select.cells,
+                     minModuleSize=10, 
+                     cutHeight=0.99,
+                     type="unsigned",
+                     softPower=4,
+                     rm.gene.mod=NULL,
+                     rm.eigen=NULL,
+                     ...) {
+  
+  dat <- as.matrix(norm.dat[select.genes, sampled.cells])
+  adj <- WGCNA::adjacency(t(dat), 
+                          power = softPower,
+                          type = type)
+  adj[is.na(adj)] <- 0
+  
+  TOM <- WGCNA::TOMsimilarity(adj,
+                              TOMType = type,
+                              verbose = 0)
+  
+  dissTOM <- as.matrix(1 - TOM)
+  rownames(dissTOM) <- rownames(dat)
+  colnames(dissTOM) <- rownames(dat)
+  
+  rm(dat)
+  gc()
+  
+  geneTree <- hclust(as.dist(dissTOM), 
+                     method = "average")
+  
+  dynamicMods <- dynamicTreeCut::cutreeDynamic(dendro = geneTree, 
+                                               distM = dissTOM, 
+                                               cutHeight = cutHeight,
+                                               deepSplit = 2, 
+                                               pamRespectsDendro = FALSE,
+                                               minClusterSize = minModuleSize)
+  
+  gene.mod <- split(row.names(dissTOM), dynamicMods)
+  gene.mod <- gene.mod[setdiff(names(gene.mod), "0")]
+  
+  if (!is.null(rm.gene.mod)) {                                              
+    rm.eigen <- get_eigen(rm.gene.mod, 
+                          norm.dat, 
+                          select.cells)[[1]]
+  } else {
+    rm.eigen <- NULL
   }
+  
+  if(is.null(gene.mod) | length(gene.mod) == 0) {
+    return(NULL)
+  }
+  
+  gm <- filter_gene_mod(norm.dat, 
+                        select.cells, 
+                        gene.mod, 
+                        minModuleSize = minModuleSize, 
+                        rm.eigen = rm.eigen,
+                        ...)
+  if(is.null(gm)) {
+    return(NULL)
+  }
+  
+  rd.dat <- gm$eigen
+  
+  return(list(rd.dat = rd.dat, 
+              gm = gm))
+}

@@ -18,6 +18,3 @@ returns binary result of whether qc failed or passed
 \description{
 Identifies values in a numeric vector that are sufficiently higher than expected.
 }
-\examples{
-check_qc(x,  qc.iqr.mult = 3)
-}
