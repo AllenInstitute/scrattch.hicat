@@ -381,7 +381,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
     cl[names(pred.cl)]= pred.cl
   }
   
-  cl  = merge_cl_multiple(comb.dat, merge.dat.list=comb.dat$dat.list, cl=cl, anchor.genes=select.genes, merge.sets=merge.sets)
+  cl  = merge_cl_multiple(comb.dat, merge.dat.list=comb.dat$dat.list[merge.sets], cl=cl, anchor.genes=select.genes)
   if(length(unique(cl))<=1){
     return(NULL)
   }
