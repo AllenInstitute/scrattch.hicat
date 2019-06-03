@@ -1100,7 +1100,7 @@ plot_pair_matrix <- function(pair.num, file, directed=FALSE, dend=NULL, col=jet.
   }
 
 
-plot_de_num <- function(de.genes, dend, file, cl.label=NULL, directed=FALSE, file="log10.de.num.pdf", ...)
+plot_de_num <- function(de.genes, dend, cl.label=NULL, directed=FALSE, file="log10.de.num.pdf", ...)
   {
     label = as.hclust(dend)$label
     de.num.matrix <- get_de_matrix(de.genes, directed = directed)
