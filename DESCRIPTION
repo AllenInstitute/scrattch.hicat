@@ -28,7 +28,7 @@ Imports:
   Rtsne
 RoxygenNote: 6.1.1
 Suggests: 
-    WGCNA
+    WGCNA,
     knitr,
     rmarkdown,
     testthat,
