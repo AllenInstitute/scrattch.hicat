@@ -213,7 +213,9 @@ rd_WGCNA <- function(norm.dat,
                      rm.gene.mod=NULL,
                      rm.eigen=NULL,
                      ...) {
-  
+  if(!require(WGCNA)){
+    stop("WGCNA package needs to be installed to use rd_WGCNA function")
+  }
   dat <- as.matrix(norm.dat[select.genes, sampled.cells])
   adj <- WGCNA::adjacency(t(dat), 
                           power = softPower,

@@ -20,14 +20,15 @@ Imports:
   ggplot2,
   grid,
   limma,
+  Matrix,
   matrixStats,
   pvclust,
   qlcMatrix,
   Rphenograph,
-  Rtsne,
-  WGCNA
+  Rtsne
 RoxygenNote: 6.1.1
 Suggests: 
+    WGCNA
     knitr,
     rmarkdown,
     testthat,

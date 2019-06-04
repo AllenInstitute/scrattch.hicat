@@ -773,18 +773,14 @@ de_stats_selected_pairs <- function(norm.dat,
                                       select.genes = select.genes)
                        },
                        simplify = FALSE)
-  } else {
-    de.df <- list()
   }
-  
+    
   for(i in which(!select.pair)) {
     pair <- paste(pairs[i, 1], pairs[i, 2], sep = "_")
     de.genes[[pair]] <- list()
-    de.df[[pair]] <- list()
   }
-  
-  list(de.df = de.df, 
-       de.genes = de.genes)
+  ###Not returning de.df anymore to save memory
+  return(de.genes)
 }
 
 
@@ -818,25 +814,16 @@ de_stats_all_pairs <- function(norm.dat,
     missing_pairs <- pairs[!row.names(pairs) %in% names(de.genes), , drop = FALSE]
   } else {
     missing_pairs <- pairs
-  }
+  }  
 
-  de.result <- de_selected_pairs(norm.dat, 
-                                 cl = cl, 
-                                 pairs = missing_pairs, 
-                                 low.th = de.param$low.th,
-                                 method = method,
-                                 ...)
+  de.genes <- c(de.genes, de_stats_selected_pairs(norm.dat,
+                                      cl = cl,
+                                      pairs = missing_pairs,
+                                      de.param = de.param,
+                                      method = method,
+                                      ...))
   
-  de.genes <- c(de.genes, de.result$de.genes)
-  
-  de.stats <- de_stats_selected_pairs(norm.dat,
-                                 cl = cl,
-                                 pairs = pairs,
-                                 de.df = de.genes,
-                                 de.param = de.param,
-                                 method = method)
-  
-  return(de.stats)
+  return(de.genes)
 }
 
 

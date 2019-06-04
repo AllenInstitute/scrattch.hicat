@@ -1,17 +1,9 @@
-library(Matrix)
-library(ggplot2)
-
-jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
-blue.red <-colorRampPalette(c("blue", "white", "red"))
-
-
 ###comb.dat include the following elements
 ###dat.list a list of data matrix
 ###ref.de.param.list the DE gene criteria for each reference dataset (optional)
 ###meta.df merged meta data for all datasets. 
 ###cl.list clusters for each dataset (optional)
 ###cl.df.list cluster annotations for each dataset (optional) 
-
 prepare_unify  <- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = NULL, de.param.list=NULL, de.genes.list=NULL, rename=TRUE)
   {
     common.genes = row.names(dat.list[[1]])
@@ -286,11 +278,10 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
       knn =do.call("rbind", lapply(select.sets, function(set){
         cat("Set ", set, "\n")
         map.cells=  intersect(select.cells, colnames(dat.list[[set]]))
-        map.cells=  intersect(select.cells, dat.list[[set]]$col_id)
         if(length(map.cells)==0){
           return(NULL)
         }
-        dat = dat.list[[set]][select.genes, tmp.cells,drop=F]      
+        dat = dat.list[[set]][select.genes,map.cells,drop=F]      
         if(set == ref.set & self.method =="RANN"){
           rd.dat = rd_PCA(dat,select.genes=row.names(dat), select.cells=colnames(dat), max.pca = 50, sampled.cells=colnames(ref.dat), th=1)$rd.dat
           if(is.null(rd.dat)){
@@ -300,7 +291,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
           row.names(knn) = colnames(dat)
         }
         else{
-          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = self.method, batch.size = batch.size, mc.cores=mc.cores) 
+          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = method, batch.size = batch.size, mc.cores=mc.cores) 
         }
         if(!is.null(comb.dat$cl.list)){
           test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])
@@ -310,7 +301,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
         }
         idx = match(colnames(ref.dat), comb.dat$all.cells)
         knn = matrix(idx[knn], nrow=nrow(knn))
-        row.names(knn) = tmp.cells
+        row.names(knn) = map.cells
         knn
       }))    
     }))

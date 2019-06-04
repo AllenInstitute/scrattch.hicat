@@ -151,7 +151,7 @@ merge_cl<- function(norm.dat,
       while(length(new.pairs) > 0){
         new.pairs = new.pairs[head(order(merge.pairs[new.pairs,"sim"],decreasing=T), pairBatch)]
         pairs = rbind(pairs, merge.pairs[new.pairs,,drop=F])
-        tmp.de.genes =de_score_pairs(norm.dat, cl=tmp.cl, pairs=merge.pairs[new.pairs,,drop=F], de.param= de.param, method=de.method)$de.genes
+        tmp.de.genes =de_stats_selected_pairs(norm.dat, cl=tmp.cl, pairs=merge.pairs[new.pairs,,drop=F], de.param= de.param, method=de.method)
         de.genes[names(tmp.de.genes)] = tmp.de.genes
         gc()
         tmp.pairs= intersect(names(de.genes), row.names(merge.pairs))
@@ -212,7 +212,7 @@ merge_cl<- function(norm.dat,
       else{
         tmp.cl= cl
       }
-      de.genes = de_score(norm.dat, cl=tmp.cl, de.genes=de.genes, de.param=de.param)
+      de.genes = de_stats_all_pairs(norm.dat, cl=tmp.cl, de.genes=de.genes, de.param=de.param)
     }
     markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=50)$markers
     sc = sapply(de.genes, function(x){
