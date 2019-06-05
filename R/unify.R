@@ -703,30 +703,12 @@ plot_markers <- function(comb.dat, cl, prefix, sets = names(comb.dat$dat.list), 
   }
 
 
-get_cl_means_list <- function(comb.dat, select.genes, cl)
-  {
-    cl.means =  with(comb.dat, sapply(sets, function(x){
-      tmp.cells = intersect(names(cl), row.names(meta.df)[meta.df$platform==x])
-      tmp.cl = droplevels(cl[tmp.cells])
-      cl.size = table(tmp.cl)
-      if(!is.null(de.param.list[[x]])){
-        select.cl = names(cl.size)[cl.size >= de.param.list[[x]]$min.cells]
-      }
-      else{
-        select.cl = names(cl.size)[cl.size >= 4]
-      }
-      tmp.cl = droplevels(tmp.cl[tmp.cl %in% select.cl])
-      tmp=get_cl_means(comb.dat$dat.list[[x]], tmp.cl)
-    },simplify=F))
-    return(cl.means)
-  }
-
 plot_markers_cl <- function(select.genes, gene.ordered=FALSE, cl.means.list = NULL, comb.dat=NULL, cl=NULL, cl.col=NULL, prefix="",...)
   {
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
     blue.red <-colorRampPalette(c("blue", "white", "red"))
     if(is.null(cl.means.list)){
-      cl.means.list=get_cl_means_list(comb.dat, select.genes)
+      cl.means.list=get_cl_means_list(comb.dat$dat.list,  comb.dat$de.param.list,select.genes=select.genes, cl=cl)
     }
     else{
       cl.means.list = sapply(cl.means.list, function(x)x[select.genes,],simplify=F)
@@ -750,18 +732,6 @@ plot_markers_cl <- function(select.genes, gene.ordered=FALSE, cl.means.list = NU
     dev.off()
   }
 
-
-
-get_set_cl_means <- function(comb.dat, cl, min.cells=4)
-  {
-    cl.means =  with(comb.dat, sapply(names(dat.list), function(x){
-      tmp.cells = intersect(names(cl), colnames(comb.dat$dat.list[[x]]))
-      tmp.cl = cl[tmp.cells]
-      tmp.size = table(tmp.cl)
-      tmp.cl = droplevels(tmp.cl[tmp.cl %in% names(tmp.size)[tmp.size >= min.cells]])
-      get_cl_means(dat.list[[x]], tmp.cl)
-    },simplify=F))
-  }
 
 get_gene_cl_correlation <- function(cl.means.list)
   {
