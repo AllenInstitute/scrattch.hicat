@@ -457,7 +457,7 @@ plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 #'
 #' @export
 #' 
-run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, co.result=NULL, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("undirectional","directional"), override=FALSE, init.result=NULL, cut.method="auto",...)
+run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, co.result=NULL, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("undirectional","directional"), override=FALSE, init.result=NULL, cut.method="auto",confusion.th=0.6,...)
 {
   if(!dir.exists(output_dir)){
     dir.create(output_dir)
@@ -477,28 +477,27 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
     save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
     result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
     save(result, file=outfile)
-  }  
-  if (mc.cores==1){
-    sapply(1:niter, function(i){run(i,...)})
   }
-  else{
-    require(foreach)
-    require(doParallel)
-    cl <- makeCluster(mc.cores)
-    registerDoParallel(cl)
-    foreach(i=1:niter, .combine='c') %dopar% run(i)
-    stopCluster(cl)
-  }
-  result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))
-  load(result.files[[1]])
-  cl.size = table(result$cl)
-  graph.size = sum(cl.size^2)
   if(is.null(co.result)){
+    if (mc.cores==1){
+      sapply(1:niter, function(i){run(i,...)})
+    }
+    else{
+      require(foreach)
+      require(doParallel)
+      cl <- makeCluster(mc.cores)
+      registerDoParallel(cl)
+      foreach(i=1:niter, .combine='c') %dopar% run(i)
+      stopCluster(cl)
+    }
+    result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))
     co.result <- collect_subsample_cl_matrix(norm.dat,result.files,all.cells)
   }
+  cl.size = table(co.result$cl.list[[1]])
+  graph.size = sum(cl.size^2)
   if(graph.size < 10^9){
     consensus.result = iter_consensus_clust(cl.list=co.result$cl.list, cl.mat = co.result$cl.mat, norm.dat=norm.dat, select.cells=all.cells, de.param = de.param, merge.type=merge.type, method=cut.method, result= init.result)
-    refine.result = refine_cl(consensus.result$cl, cl.mat = co.result$cl.mat, tol.th=0.01, confusion.th=0.6, min.cells= de.param$min.cells)
+    refine.result = refine_cl(consensus.result$cl, cl.mat = co.result$cl.mat, tol.th=0.01, confusion.th=confusion.th, min.cells= de.param$min.cells)
     markers = consensus.result$markers
   }
   else{

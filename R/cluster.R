@@ -20,7 +20,7 @@ jaccard <-  function(m) {
 knn_jaccard <- function(knn)
 {
   knn.df = data.frame(i = rep(1:nrow(knn), ncol(knn)), j=as.vector(knn))
-  knn.mat = sparseMatrix(i = knn.df[[1]], j=knn.df[[2]], x=1)
+  knn.mat = sparseMatrix(i = knn.df[[1]], j=knn.df[[2]], x=1, giveCsparse=FALSE)
   jaccard(knn.mat)
 }
 
@@ -54,6 +54,8 @@ jaccard_louvain.RANN <- function(dat,
     knn.matrix = nn2(dat, k = k)[[1]]
     
     jaccard.adj  <- knn_jaccard(knn.matrix)
+    leiden.result = leiden(jaccard.adj)
+    
     jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
                                           mode = "undirected", 
                                           weighted = TRUE)
@@ -70,6 +72,41 @@ jaccard_louvain.RANN <- function(dat,
       return(NULL)
     }
   }
+
+#' Perform Jaccard/Louvain clustering based on RANN
+#'
+#' @param dat A matrix of features (rows) x samples (columns)
+#' @param k K nearest neighbors to use
+#' 
+#' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
+#' 
+jaccard_leiden.RANN <- function(dat, 
+                                k = 10)
+  {
+    library(igraph)
+    library(matrixStats)
+    library(RANN)  
+    library(leiden)
+    
+    knn.matrix = nn2(dat, k = k)[[1]]
+    
+    jaccard.adj  <- knn_jaccard(knn.matrix)
+
+    
+    leiden.result <- igraph::cluster_louvain(jaccard.gr)
+    mod.sc <- igraph::modularity(louvain.result)
+    
+    if(pass_louvain(mod.sc, jaccard.adj)) {
+      
+      cl <- setNames(louvain.result$membership, row.names(dat))
+      
+      return(list(cl = cl, result = louvain.result))
+    
+    } else{
+      return(NULL)
+    }
+  }
+
 
 #' Perform Jaccard/Louvain clustering using Rphenograph
 #' 
@@ -238,7 +275,7 @@ onestep_clust <- function(norm.dat,
     }
     #print(table(cl))
     rd.dat.t = t(rd.dat)
-    merge.result=merge_cl(norm.dat, cl=cl, rd.dat.t=rd.dat.t, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
+    merge.result=merge_cl(norm.dat, cl=cl, rd.dat.t=rd.dat.t, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size,verbose=verbose)
     gc()
     if(is.null(merge.result))return(NULL)
     sc = merge.result$sc

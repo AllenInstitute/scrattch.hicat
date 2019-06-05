@@ -106,21 +106,20 @@ sample_sets_list <- function(cells.list, cl.list, cl.sample.size=100, sample.siz
     return(cells.list)
   }
 
-batch_process <- function(x, batch.size, FUN, mc.cores=1, ...)
+batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
   {
-    FUN <- match.fun(FUN)
-    bins = split(x, floor((1:length(x))/batch.size))
-    if(mc.cores==1){
-      results <- lapply(bins, function(x){FUN(x,...)})
+    require(foreach)
+    require(doParallel)
+    if (mc.cores == 1) {
+      registerDoSEQ()
     }
-    else{
-      require(foreach)
-      require(doParallel)
-      cl <- makeCluster(mc.cores)
-      registerDoParallel(cl)
-      results= foreach(i=1:length(bins), .combine='c') %dopar% FUN(bins[[i]],...)
-      stopCluster(cl)
-    }    
+    else {
+      cl <- makeForkCluster(mc.cores)
+      doParallel::registerDoParallel(cl)
+      on.exit(parallel::stopCluster(cl), add = TRUE)
+    }
+    bins = split(x, floor((1:length(x))/batch.size))
+    results= foreach(i=1:length(bins), .combine=.combine) %dopar% FUN(bins[[i]],...)
     return(results)
   }
 ##' .. content for \description{} (no empty lines) ..
@@ -135,12 +134,11 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, ...)
 ##' @param ... 
 ##' @return 
 ##' @author Zizhen Yao
-get_knn_batch <- function(dat, batch.size, mc.cores=1, ...)
+get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1)
   {
-    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, function(x){
-      get_knn(dat=dat[,x], ...)
-    })                       
-    results <- do.call("rbind", results)
+    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine="rbind", FUN=function(x){
+      get_knn(dat=dat[,x], ref.dat=ref.dat, k=k, method=method, dim=dim)
+    })
     return(results)
   }
 
@@ -171,71 +169,73 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL)
   }
 
 
-select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20,use.markers=TRUE, top.n=50,rm.eigen=NULL, rm.th=0.7)
+select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20,use.markers=TRUE, top.n=100,rm.eigen=NULL, rm.th=rep(0.7, ncol(rm.eigen)))
   {
-    with(comb.dat, {
-      select.genes = lapply(names(ref.list), function(ref.set){
-        print(ref.set)
-        ref.cells = ref.list[[ref.set]]
-        ref.dat = dat.list[[ref.set]]
-        tmp.cells=  intersect(select.cells, ref.cells)
-        ###if cluster membership is available, use cluster DE genes
-        if(use.markers & !is.null(de.genes.list[[ref.set]])){
-          cl = droplevels(cl.list[[ref.set]][tmp.cells])
-          cl.size = table(cl)
-          cl = droplevels(cl[cl %in% names(cl.size)[cl.size > de.param.list[[ref.set]]$min.cells]])
-          if(length(levels(cl)) <= 1){
-            return(NULL)
-          }
-          de.genes = de.genes.list[[ref.set]]
-          print(length(de.genes.list[[ref.set]]))
+    select.genes = lapply(names(ref.list), function(ref.set){
+      print(ref.set)
+      ref.cells = ref.list[[ref.set]]
+      ref.dat = comb.dat$dat.list[[ref.set]]
+      tmp.cells=  intersect(select.cells, ref.cells)
+###if cluster membership is available, use cluster DE genes
+      if(use.markers & !is.null(comb.dat$de.genes.list[[ref.set]])){
+        cl = droplevels(comb.dat$cl.list[[ref.set]][tmp.cells])
+        cl.size = table(cl)
+        cl = droplevels(cl[cl %in% names(cl.size)[cl.size > de.param.list[[ref.set]]$min.cells]])
+        if(length(levels(cl)) <= 1){
+          return(NULL)
+        }
+        de.genes = comb.dat$de.genes.list[[ref.set]]
+        print(length(de.genes.list[[ref.set]]))
 
           
-          select.genes = display_cl(cl, norm.dat=ref.dat, max.cl.size = 200, n.markers=20, de.genes= de.genes)$markers
-          select.genes = intersect(select.genes, common.genes)
-        }
-      ####if cluster membership is not available, use high variance genes and genes with top PCA loading
-        else{
-          norm.dat = dat.list[[ref.set]][common.genes,ref.cells]
-          vg = findVG(2^norm.dat -1)
-          select.genes = row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)]
-          if(length(select.genes) < 5){
-            return(NULL)
-          }
-          select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
-          rd = rd_PCA(norm.dat,select.genes, ref.cells, max.pca = max.dim)
-          if(is.null(rd)){
-            return(NULL)
-          }
-          rd.dat = rd$rd.dat
-          rot = t(rd$pca$rotation[,1:ncol(rd$rd.dat)])
-          if(!is.null(rm.eigen)){
-            rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
-            rm.cor[is.na(rm.cor)]=0
-            rm.score = rowMaxs(abs(rm.cor))
-            print(rm.score)
-            select = rm.score < rm.th
-            if(sum(select)==0){
-              return(NULL)
-            }
-            rot = rot[,select,drop=FALSE]
-          }
-          if(is.null(rot)){
-            return(NULL)
-          }
-          rot.scaled = (rot  - rowMeans(rot))/rowSds(rot)
-          gene.rank = t(apply(-abs(rot), 1, rank))
-          select = gene.rank <= top.n & abs(rot.scaled ) > 2
-          select.genes = colnames(select)[colSums(select)>0]
-        }
-      })
-      gene.score = table(unlist(select.genes))
-      if(length(gene.score)==0){
-        return(NULL)
+        select.genes = display_cl(cl, norm.dat=ref.dat, max.cl.size = 200, n.markers=20, de.genes= de.genes)$markers
+        select.genes = intersect(select.genes, comb.dat$common.genes)
       }
-      select.genes= names(head(sort(gene.score, decreasing=T), maxGenes))
-      return(select.genes)
-   })
+####if cluster membership is not available, use high variance genes and genes with top PCA loading
+      else{
+        tmp.dat = ref.dat
+        tmp.dat@x = 2^tmp.dat@x - 1
+        vg = find_vg(tmp.dat)
+        rm(tmp.dat)
+        gc()
+        select.genes = intersect(row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)],comb.dat$common.genes)
+        
+        if(length(select.genes) < 5){
+          return(NULL)
+        }
+        select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
+        rd = rd_PCA(norm.dat=ref.dat,select.genes, ref.cells, max.pca = max.dim)
+        if(is.null(rd)){
+          return(NULL)
+        }
+        rd.dat = rd$rd.dat
+        rot = t(rd$pca$rotation[,1:ncol(rd$rd.dat)])
+        if(!is.null(rm.eigen)){
+          rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
+          rm.cor[is.na(rm.cor)]=0
+          rm.score = rowMaxs(abs(rm.cor))
+          print(rm.score)
+          select = rm.score < rm.th
+          if(sum(select)==0){
+            return(NULL)
+          }
+          rot = rot[,select,drop=FALSE]
+        }
+        if(is.null(rot)){
+          return(NULL)
+        }
+        rot.scaled = (rot  - rowMeans(rot))/rowSds(rot)
+        gene.rank = t(apply(-abs(rot), 1, rank))
+        select = gene.rank <= top.n & abs(rot.scaled ) > 2
+        select.genes = colnames(select)[colSums(select)>0]
+      }
+    })
+    gene.score = table(unlist(select.genes))
+    if(length(gene.score)==0){
+      return(NULL)
+    }
+    select.genes= names(head(sort(gene.score, decreasing=T), maxGenes))
+    return(select.genes)
   }
 
 
@@ -274,7 +274,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
       if(length(ref.list[[ref.set]]) <= k*2) {
         k.tmp = round(k/2)
       }
-      ref.dat = dat.list[[ref.set]][select.genes, ref.list[[ref.set]],drop=F]
+      ref.dat = comb.dat$dat.list[[ref.set]][select.genes, ref.list[[ref.set]],drop=F]
       knn =do.call("rbind", lapply(select.sets, function(set){
         cat("Set ", set, "\n")
         map.cells=  intersect(select.cells, colnames(dat.list[[set]]))
@@ -414,32 +414,6 @@ knn_cosine <- function(ref.dat, query.dat, k = 15)
   }
 
 
-jaccard2 <- function(m) {
-  library(Matrix)
-  
-  ## common values:
-  A <-  tcrossprod(m)
-  B <- as(A, "dgTMatrix")
-  
-  ## counts for each row
-  b <- Matrix::rowSums(m)  
-  
-   
-  ## Jacard formula: #common / (#i + #j - #common)
-  x = B@x / (b[B@i+1] + b[B@j+1] - B@x)
-  B@x = x
-  return(B)
-}
-
-
-knn_jaccard <- function(knn.index)
-  {
-    knn.df = data.frame(i = rep(1:nrow(knn.index), ncol(knn.index)), j=as.vector(knn.index))
-    knn.mat = sparseMatrix(i = knn.df[[1]], j=knn.df[[2]], x=1)
-    sim= jaccard2(knn.mat)
-    row.names(sim) = colnames(sim) = row.names(knn.index)
-    return(sim)
-  }
 
 
 knn_jaccard_louvain <- function(knn.index)
@@ -457,6 +431,7 @@ knn_jaccard_louvain <- function(knn.index)
 
 predict_knn <- function(knn.idx, reference, cl)
   {
+    library(matrixStats)
     query = row.names(knn.idx)
     df = data.frame(nn=as.vector(knn.idx), query=rep(row.names(knn.idx), ncol(knn.idx)))
     df$nn.cl = cl[reference[df$nn]]
@@ -483,20 +458,21 @@ impute_knn <- function(knn.idx, reference, dat)
     return(impute.dat)
   }
 
-unify <- function(comb.dat, prefix, overwrite=TRUE, ...)
+unify <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
   {
+    fn = file.path(dir, paste0(prefix, ".rda"))
+    print(fn)
     if(!overwrite){
-      fn = paste0(prefix, ".rda")
       if(file.exists(fn)){
         load(fn)
         return(result)
       }
     }
     result = knn_joint(comb.dat, ...)
+    save(result, file=fn)
     if(is.null(result)){
       return(NULL)
     }
-    #save(result, file=paste0(prefix, ".rda"))
     print("Cluster size")
     print(table(result$cl))
     #g = plot_cl_meta_barplot(result$cl, meta.df[names(result$cl), "platform"])
@@ -516,7 +492,7 @@ unify <- function(comb.dat, prefix, overwrite=TRUE, ...)
 ##' @param ... 
 ##' @return 
 ##' @author Zizhen Yao
-iter_unify <- function(comb.dat, select.cells, ref.sets, prefix, result=NULL, overwrite=TRUE, ...)
+iter_unify <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=names(comb.dat$dat.list), prefix="", result=NULL, overwrite=TRUE, ...)
   {
     
     #attach(comb.dat)
