@@ -171,14 +171,14 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL)
 
 select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20,use.markers=TRUE, top.n=100,rm.eigen=NULL, rm.th=rep(0.7, ncol(rm.eigen)))
   {
-    select.genes = lapply(names(ref.list), function(ref.set){
+    select.genes.list = list()
+    for(ref.set in names(ref.list)){
       print(ref.set)
-      ref.cells = ref.list[[ref.set]]
-      ref.dat = comb.dat$dat.list[[ref.set]]
-      tmp.cells=  intersect(select.cells, ref.cells)
+      ref.cells = intersect(ref.list[[ref.set]], select.cells)
+      ref.dat = comb.dat$dat.list[[ref.set]][,ref.cells]
 ###if cluster membership is available, use cluster DE genes
       if(use.markers & !is.null(comb.dat$de.genes.list[[ref.set]])){
-        cl = droplevels(comb.dat$cl.list[[ref.set]][tmp.cells])
+        cl = droplevels(comb.dat$cl.list[[ref.set]][ref.cells])
         cl.size = table(cl)
         cl = droplevels(cl[cl %in% names(cl.size)[cl.size > de.param.list[[ref.set]]$min.cells]])
         if(length(levels(cl)) <= 1){
@@ -186,8 +186,6 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
         }
         de.genes = comb.dat$de.genes.list[[ref.set]]
         print(length(de.genes.list[[ref.set]]))
-
-          
         select.genes = display_cl(cl, norm.dat=ref.dat, max.cl.size = 200, n.markers=20, de.genes= de.genes)$markers
         select.genes = intersect(select.genes, comb.dat$common.genes)
       }
@@ -211,13 +209,15 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
         rd.dat = rd$rd.dat
         rot = t(rd$pca$rotation[,1:ncol(rd$rd.dat)])
         if(!is.null(rm.eigen)){
-          rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
+          rm.cor=abs(cor(rd.dat, rm.eigen[row.names(rd.dat),]))
           rm.cor[is.na(rm.cor)]=0
-          rm.score = rowMaxs(abs(rm.cor))
-          print(rm.score)
-          select = rm.score < rm.th
+          select = t(t(rm.cor) < rm.th)
+          select = apply(select, 1, all)          
           if(sum(select)==0){
             return(NULL)
+          }
+          if(sum(!select)>0){
+            print(rm.cor[!select,,drop=F])
           }
           rot = rot[,select,drop=FALSE]
         }
@@ -229,8 +229,9 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
         select = gene.rank <= top.n & abs(rot.scaled ) > 2
         select.genes = colnames(select)[colSums(select)>0]
       }
-    })
-    gene.score = table(unlist(select.genes))
+      select.genes.list[[ref.set]] = select.genes
+    }
+    gene.score = table(unlist(select.genes.list))
     if(length(gene.score)==0){
       return(NULL)
     }
@@ -291,7 +292,11 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
           row.names(knn) = colnames(dat)
         }
         else{
-          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = method, batch.size = batch.size, mc.cores=mc.cores) 
+          tmp.cores = mc.cores
+          if(ncol(dat)< batch.size){
+            tmp.cores = 1
+          }
+          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = method, batch.size = batch.size, mc.cores=tmp.cores) 
         }
         if(!is.null(comb.dat$cl.list)){
           test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])
@@ -339,8 +344,6 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
     return(NULL)
   }
   
-  cat("Number of select genes", length(select.genes), "\n")
-  cat("Get knn\n")
   knn.comb= compute_knn(comb.dat, select.genes=select.genes, ref.list=ref.list, select.sets=select.sets, select.cells=select.cells, k=k, method=method, self.method=self.method, batch.size=batch.size, mc.cores=mc.cores)
   
   sampled.cells = unlist(cells.list)

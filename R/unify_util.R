@@ -88,6 +88,9 @@ get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, c
     if(is.null(de.param.list)){
       de.param.list = sapply(names(dat.list), function(x)de_param(), simplify=F)
     }
+    platform = setNames(rep(names(dat.list),sapply(dat.list, ncol)), unlist(lapply(dat.list, colnames)))
+    cl.platform.size = table(cl, platform[names(cl)])
+    select.platform = setNames(colnames(cl.platform.size)[apply(cl.platform.size, 1, which.max)],row.names(cl.platform.size))
     cl.means =  sapply(sets, function(x){
       tmp.cells = intersect(names(cl), colnames(dat.list[[x]]))
       tmp.cl = cl[tmp.cells]
@@ -98,6 +101,7 @@ get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, c
       else{
         select.cl = names(cl.size)[cl.size >= 4]
       }
+      select.cl = union(select.cl, names(select.platform)[select.platform==x])
       if(length(select.cl)==0){
         return(NULL)
       }
@@ -109,7 +113,7 @@ get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, c
         tmp=get_cl_means(dat.list[[x]], tmp.cl)
       }
       else{
-        tmp=get_cl_means(dat.list[[x]][select.genes,], tmp.cl)
+        tmp=get_cl_means(dat.list[[x]], tmp.cl)[select.genes,]
       }
     },simplify=F)
     return(cl.means)
