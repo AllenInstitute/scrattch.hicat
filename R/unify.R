@@ -374,8 +374,13 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
     pred.cl= setNames(pred.df$pred.cl, row.names(pred.df))
     cl[names(pred.cl)]= pred.cl
   }
-  
-  cl  = merge_cl_multiple(comb.dat, merge.dat.list=comb.dat$dat.list[merge.sets], cl=cl, anchor.genes=select.genes)
+  merge.dat.list = comb.dat$dat.list[merge.sets]
+  if(length(cl) < 5000  & length(cl) < length(comb.dat$all.cells)/2){
+    for(x in names(merge.dat.list)){
+      merge.dat.list[[x]] = merge.dat.list[[x]][, colnames(merge.dat.list[[x]]) %in% names(cl),drop=F]
+    }
+  }
+  cl  = merge_cl_multiple(comb.dat, merge.dat.list=merge.dat.list, cl=cl, anchor.genes=select.genes)
   if(length(unique(cl))<=1){
     return(NULL)
   }
@@ -463,6 +468,9 @@ impute_knn <- function(knn.idx, reference, dat)
 
 unify <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
   {
+    if(!file.exists(dir)){
+      dir.create(dir)
+    }
     fn = file.path(dir, paste0(prefix, ".rda"))
     print(fn)
     if(!overwrite){
