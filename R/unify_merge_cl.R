@@ -111,6 +111,7 @@ get_cl_sim_multiple <- function(cl.rd.list, FUN =pmax)
 ##' @author Zizhen Yao
 merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbose=TRUE, pairBatch=40, de.genes.list=NULL, lfc.conservation.th=0.7, merge.type="undirectional")
 {
+  cl = setNames(as.character(cl),names(cl))
   merge_x_y <- function(x, y, cl, cl.rd.list, cl.sim, cl.means.list=NULL, cl.present.list=NULL)
   {
     cl[cl==x]= y

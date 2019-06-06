@@ -113,7 +113,7 @@ get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, c
         tmp=get_cl_means(dat.list[[x]], tmp.cl)
       }
       else{
-        tmp=get_cl_means(dat.list[[x]], tmp.cl)[select.genes,]
+        tmp=get_cl_means(dat.list[[x]], tmp.cl)[select.genes,,drop=F]
       }
     },simplify=F)
     return(cl.means)
