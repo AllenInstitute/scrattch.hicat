@@ -1,16 +1,19 @@
+get_RD_cl_center <- function(rd.dat, cl)
+{
+  cl.center=do.call("rbind",tapply(1:nrow(rd.dat), cl[row.names(rd.dat)], function(x){
+    x = sample(x, pmin(length(x),500))
+    center  = c(median(rd.dat[x,1]), median(rd.dat[x,2]))
+    dist = as.matrix(dist(rd.dat[x,1:2]))
+    tmp= x[which.min(rowSums(dist))]
+    c(x=rd.dat[tmp, 1], y= rd.dat[tmp,2])
+  }))
+}
+
 plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE)
   {
     rd.dat$cl = cl[row.names(rd.dat)] 
     rd.dat$cl_label = droplevels(factor(cl.label[as.character(rd.dat$cl)]), levels=cl.label)
-    
-    cl.center=do.call("rbind",tapply(1:nrow(rd.dat), rd.dat$cl_label, function(x){
-      x = sample(x, pmin(length(x),500))
-      center  = c(median(rd.dat[x,1]), median(rd.dat[x,2]))
-      dist = as.matrix(dist(rd.dat[x,1:2]))
-      tmp= x[which.min(rowSums(dist))]
-      c(x=rd.dat[tmp, 1], y= rd.dat[tmp,2])
-    }))
-    
+    cl.center = get_RD_cl_center(rd.dat, cl)
     shape = setNames(1:length(levels(rd.dat$cl_label)) %% 20 + 1,levels(rd.dat$cl_label))
     g=ggplot(rd.dat, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
     g = g+ scale_color_manual(values=alpha(as.vector(cl.color[levels(rd.dat$cl_label)]),alpha.val))+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl_label)]))

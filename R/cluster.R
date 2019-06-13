@@ -7,7 +7,7 @@
 jaccard <-  function(m) {
   library(Matrix)
   ## common values:                                                                                                                                              
-  A <-  tcrossprod(m)
+  A <-  Matrix::tcrossprod(m)
   A <- as(A, "dgTMatrix")
   ## counts for each row                                                                                                                                         
   b <- Matrix::rowSums(m)
