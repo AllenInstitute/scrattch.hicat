@@ -22,7 +22,7 @@ impute_knn <- function(knn.idx, reference, dat)
 
 #### assume within data modality have been performed
 ####
-impute_knn_global <- function(comb.dat, split.results, select.genes, select.cells, ref.list, sets=comb.dat$sets, rm.eigen=NULL,max.dim=80, th=0.5)
+impute_knn_global <- function(comb.dat, split.results, select.genes, select.cells, ref.list, sets=comb.dat$sets, max.dim=80, th=0.5, rm.eigen=NULL,rm.th=0.65)
   {
     org.rd.dat.list <- list()
     knn.list <- list()
@@ -33,8 +33,10 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         print(x)
         tmp.cells= select.cells[comb.dat$meta.df[select.cells,"platform"]==x]
         ref.cells = intersect(ref.list[[x]],tmp.cells)
-        rd.result <- rd_PCA(comb.dat$dat.list[[x]], select.genes, select.cells=tmp.cells, sampled.cells = ref.cells, max.dim=max.dim, th=th, rm.eigen=rm.eigen, ncores=10)
-        rd.dat  = rd.result$rd.dat
+        rd.result <- rd_PCA(comb.dat$dat.list[[x]], select.genes, select.cells=tmp.cells, sampled.cells = ref.cells, max.pca =max.dim, th=th)
+        if(!is.null(rm.eigen)){
+          rd.dat  = filter_RD(rd.result$rd.dat, rm.eigen, rm.th)
+        }
         print(ncol(rd.dat))
         knn.result <- RANN::nn2(data=rd.dat[ref.cells,], query=rd.dat, k=15)
         knn <- knn.result[[1]]

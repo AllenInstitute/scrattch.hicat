@@ -126,6 +126,24 @@ jaccard_louvain <- function(dat, k = 10)
   return(list(cl = cl, result = rpheno))
 }
 
+filter_RD <- function(rd.dat, rm.eigen, rm.th)
+  {
+    rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
+    rm.cor[is.na(rm.cor)]=0
+    rm.score = rowMaxs(abs(rm.cor))
+    select = colSums(t(abs(rm.cor)) >= rm.th) ==0
+    if(sum(!select)>0 & verbose){
+      print("Remove dimension:")
+      print(rm.score[!select])
+    }
+    if(sum(select)==0){
+      return(NULL)
+    }
+    rd.dat = rd.dat[,select,drop=F]
+  }
+
+
+
 #' One round of clustering in the iteractive clustering pipeline 
 #'
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).
@@ -228,19 +246,8 @@ onestep_clust <- function(norm.dat,
     if(is.null(rd.dat)||ncol(rd.dat)==0){
       return(NULL)
     }
-    if(!is.null(rm.eigen)){
-      rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
-      rm.cor[is.na(rm.cor)]=0
-      rm.score = rowMaxs(abs(rm.cor))
-      select = rm.score < rm.th
-      if(sum(!select)>0 & verbose){
-        print("Remove dimension:")
-        print(rm.score[!select])
-      }
-      if(sum(select)==0){
-        return(NULL)
-      }
-      rd.dat = rd.dat[,select,drop=F]
+    if(!is.null(rm.eigen){
+      rd.dat <- filter_RD(rd.dat, rm.eigen, rm.th)
     }
     if(verbose){
       print(method)
