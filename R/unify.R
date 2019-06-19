@@ -58,6 +58,9 @@ test_knn <- function(knn, cl, reference, ref.cl)
     }
     pred.result = predict_knn(knn, reference, ref.cl)
     pred.prob = as.matrix(pred.result$pred.prob)
+    if(ncol(pred.prob) <= 1){
+      return(NULL)
+    }
     cl.pred.prob=as.matrix(do.call("rbind",tapply(names(cl), cl, function(x){
       colMeans(pred.prob[x,,drop=F])
     })),ncol=ncol(pred.prob))
@@ -176,7 +179,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
       print(ref.set)
       ref.cells = intersect(ref.list[[ref.set]], select.cells)
       ref.dat = comb.dat$dat.list[[ref.set]][,ref.cells]
-###if cluster membership is available, use cluster DE genes
+      ###if cluster membership is available, use cluster DE genes
       if(use.markers & !is.null(comb.dat$de.genes.list[[ref.set]])){
         cl = droplevels(comb.dat$cl.list[[ref.set]][ref.cells])
         cl.size = table(cl)
@@ -191,7 +194,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
       }
 ####if cluster membership is not available, use high variance genes and genes with top PCA loading
       else{
-        tmp.dat = ref.dat
+        tmp.dat = ref.dat[rowSums(ref.dat >= 1) >=comb.dat$de.param.list[[ref.set]]$min.cells, ]
         tmp.dat@x = 2^tmp.dat@x - 1
         vg = find_vg(tmp.dat)
         rm(tmp.dat)

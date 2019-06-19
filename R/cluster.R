@@ -211,6 +211,7 @@ onestep_clust <- function(norm.dat,
     ###Find high variance genes.
     if(is.null(counts)){
       counts = 2^(norm.dat[select.genes, sampled.cells])-1
+      counts = counts[Matrix::rowSums(counts > 0) >= de.param$min.cells,]
     }
     plot_file=NULL
     if(verbose & !is.null(prefix)){
