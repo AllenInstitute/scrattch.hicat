@@ -246,7 +246,7 @@ onestep_clust <- function(norm.dat,
     if(is.null(rd.dat)||ncol(rd.dat)==0){
       return(NULL)
     }
-    if(!is.null(rm.eigen){
+    if(!is.null(rm.eigen)){
       rd.dat <- filter_RD(rd.dat, rm.eigen, rm.th)
     }
     if(verbose){
