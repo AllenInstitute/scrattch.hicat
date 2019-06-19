@@ -485,7 +485,7 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
     else{
       require(foreach)
       require(doParallel)
-      cl <- makeCluster(mc.cores)
+      cl <- makeForkCluster(mc.cores)
       registerDoParallel(cl)
       foreach(i=1:niter, .combine='c') %dopar% run(i)
       stopCluster(cl)
