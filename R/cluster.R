@@ -126,7 +126,7 @@ jaccard_louvain <- function(dat, k = 10)
   return(list(cl = cl, result = rpheno))
 }
 
-filter_RD <- function(rd.dat, rm.eigen, rm.th)
+filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
   {
     rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
     rm.cor[is.na(rm.cor)]=0
@@ -202,16 +202,16 @@ onestep_clust <- function(norm.dat,
       sampled.cells = select.cells
     }
     ###Find high variance genes
-    if(is.matrix(norm.dat)){
-      select.genes = row.names(norm.dat)[which(rowSums(norm.dat[,select.cells] > de.param$low.th) >= de.param$min.cells)]
-    }
-    else{
-      select.genes = row.names(norm.dat)[which(Matrix::rowSums(norm.dat[,select.cells] > de.param$low.th) >= de.param$min.cells)]
-    }
+    select.genes = row.names(norm.dat)[which(Matrix::rowSums(norm.dat[,select.cells] > de.param$low.th) >= de.param$min.cells)]
     ###Find high variance genes.
     if(is.null(counts)){
-      counts = 2^(norm.dat[select.genes, sampled.cells])-1
-      counts = counts[Matrix::rowSums(counts > 0) >= de.param$min.cells,]
+      if(is.matrix(norm.dat)){
+        counts = 2^(norm.dat[,sampled.cells])-1
+      }
+      else{
+        counts = norm.dat[,sampled.cells]
+        counts@x = 2^(norm.dat@x) - 1
+      }
     }
     plot_file=NULL
     if(verbose & !is.null(prefix)){
@@ -248,7 +248,10 @@ onestep_clust <- function(norm.dat,
       return(NULL)
     }
     if(!is.null(rm.eigen)){
-      rd.dat <- filter_RD(rd.dat, rm.eigen, rm.th)
+      rd.dat <- filter_RD(rd.dat, rm.eigen, rm.th, verbose=verbose)
+    }
+    if(is.null(rd.dat)||ncol(rd.dat)==0){
+      return(NULL)
     }
     if(verbose){
       print(method)
