@@ -219,6 +219,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
           if(sum(select)==0){
             return(NULL)
           }
+          print(rm.cor)
           if(sum(!select)>0){
             print(rm.cor[!select,,drop=F])
           }
@@ -443,11 +444,14 @@ knn_jaccard_louvain <- function(knn.index)
 predict_knn <- function(knn.idx, reference, cl)
   {
     library(matrixStats)
+    library(dplyr)
     query = row.names(knn.idx)
     df = data.frame(nn=as.vector(knn.idx), query=rep(row.names(knn.idx), ncol(knn.idx)))
-    df$nn.cl = cl[reference[df$nn]]
+    df = df %>% filter(!is.na(nn))
+    tmp.df = data.frame(nn=1:length(reference), nn.cl=cl[reference])
+    df = df %>% left_join(tmp.df)
     tb=with(df, table(query, nn.cl))
-    tb = tb/ncol(knn.idx)
+    tb = tb/rowSums(!is.na(knn.idx))[row.names(tb)]
     pred.cl = setNames(colnames(tb)[apply(tb, 1, which.max)], row.names(tb))
     pred.score = setNames(rowMaxs(tb), row.names(tb))
     pred.df = data.frame(pred.cl, pred.score)
