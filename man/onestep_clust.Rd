@@ -4,14 +4,12 @@
 \alias{onestep_clust}
 \title{One round of clustering in the iteractive clustering pipeline}
 \usage{
-onestep_clust(norm.dat, select.cells = colnames(norm.dat),
-  counts = NULL, method = c("louvain", "ward.D", "kmeans"),
-  vg.padj.th = 0.5, dim.method = c("pca", "WGCNA", "auto"),
+onestep_clust(norm.dat, select.cells = NULL, counts = NULL,
+  method = "louvain", vg.padj.th = 0.5, dim.method = "pca",
   max.dim = 20, rm.eigen = NULL, rm.th = 0.7,
-  de.param = de_param(), merge.type = c("undirectional",
-  "directional"), max.genes = 3000, sample.size = 4000,
-  max.cl.size = 300, k.nn = 15, prefix = NULL, verbose = FALSE,
-  regress.x = NULL)
+  de.param = de_param(), merge.type = "undirectional",
+  max.genes = 3000, sample.size = 4000, max.cl.size = 300,
+  k.nn = 15, prefix = NULL, verbose = FALSE, regress.x = NULL)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).}

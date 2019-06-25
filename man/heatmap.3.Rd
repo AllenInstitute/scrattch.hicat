@@ -2,7 +2,7 @@
 % Please edit documentation in R/heatmap.R
 \name{heatmap.3}
 \alias{heatmap.3}
-\title{A modified version of heatmap.2 from gplots for cluster plotting}
+\title{A modified version of heatmap.2 from the gplots package for cluster plotting}
 \usage{
 heatmap.3(x, Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE,
   distfun = dist, hclustfun = hclust, dendrogram = c("both", "row",
@@ -203,11 +203,11 @@ parameters that can be passed to \code{axis}.  See examples.}
 can be passed to \code{par}.}
 
 \item{extrafun}{A function to be called after all other work. See
-examples.}
+code{\link{gplots::heatmap.2}}.}
 }
 \value{
 a base R plot
 }
 \description{
-A modified version of heatmap.2 from gplots for cluster plotting
+A modified version of heatmap.2 from the gplots package for cluster plotting
 }
