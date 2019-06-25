@@ -755,7 +755,7 @@ de_stats_selected_pairs <- function(norm.dat,
 }
 
 
-#' Title
+#' Compute differential expression stats for all pairs of clusters
 #'
 #' @param norm.dat a normalized data matrix for data.
 #' @param cl a cluster factor object.
@@ -764,7 +764,11 @@ de_stats_selected_pairs <- function(norm.dat,
 #' @param de.df Optional. Pre-computed results from \code{de_all_pairs()} or \code{de_selected_pairs}. Default = NULL.
 #' @param ... Additional parameters passed to \code{de_selected_pairs()}
 #'
-#' @return a character vector of all differentially expressed genes. 
+#' @return A list with two objects:
+#' \itemize{
+#' \item{de.df} A list of results from \code{de_selected_pairs()} for each pair.
+#' \item{de.genes} A list of results from \code{de_stats_pair()} for each pair.
+#' }
 #' @export
 #'
 de_stats_all_pairs <- function(norm.dat, 
@@ -800,11 +804,11 @@ de_stats_all_pairs <- function(norm.dat,
   de.genes <- c(de.genes, de.result$de.genes)
   
   de.stats <- de_stats_selected_pairs(norm.dat,
-                                 cl = cl,
-                                 pairs = pairs,
-                                 de.df = de.genes,
-                                 de.param = de.param,
-                                 method = method)
+                                      cl = cl,
+                                      pairs = pairs,
+                                      de.df = de.genes,
+                                      de.param = de.param,
+                                      method = method)
   
   return(de.stats)
 }

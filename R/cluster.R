@@ -176,16 +176,16 @@ jaccard_louvain <- function(dat,
 #'         markers: top markers that seperate clusters     
 #'         
 onestep_clust <- function(norm.dat, 
-                          select.cells = colnames(norm.dat), 
+                          select.cells = NULL, 
                           counts = NULL, 
-                          method = c("louvain","ward.D", "kmeans"), 
+                          method = "louvain", 
                           vg.padj.th = 0.5, 
-                          dim.method = c("pca","WGCNA","auto"), 
+                          dim.method = "pca", 
                           max.dim = 20, 
                           rm.eigen = NULL, 
                           rm.th = 0.7, 
                           de.param = de_param(),
-                          merge.type = c("undirectional", "directional"), 
+                          merge.type = "undirectional", 
                           max.genes = 3000,
                           sample.size = 4000,
                           max.cl.size = 300,
@@ -193,6 +193,14 @@ onestep_clust <- function(norm.dat,
                           prefix = NULL, 
                           verbose = FALSE, 
                           regress.x = NULL) {
+  
+  if(is.null(select.cells)) {
+    select.cells <- colnames(norm.dat)
+  }
+  
+  if(is.null(counts)){
+    counts <- 2 ^ (norm.dat[select.genes, sampled.cells]) - 1
+  }
   
   method <- match.arg(method,
                       choices = c("louvain","ward.D","kmeans"))
@@ -203,13 +211,12 @@ onestep_clust <- function(norm.dat,
   merge.type <- match.arg(merge.type,
                           choices = c("undirectional","directional"))
   
-  
   if(!is.null(regress.x)){
     if(verbose) cat("running regression\n")
     
     reg_results <- lm_normalize(as.matrix(norm.dat[,select.cells]), 
-                         regress.x[select.cells], 
-                         R_2.th = 0.1)
+                                regress.x[select.cells], 
+                                R_2.th = 0.1)
     norm.dat <- reg_results[[1]]
   }
   
@@ -219,7 +226,7 @@ onestep_clust <- function(norm.dat,
   } else{
     sampled.cells <- select.cells
   }
-  
+  print(head(select.cells))
   #Filter genes based on de_params: low.th and min.cells
   if(is.matrix(norm.dat)){
     cells_gt_low.th <- rowSums(norm.dat[,select.cells] > de.param$low.th)
@@ -230,16 +237,13 @@ onestep_clust <- function(norm.dat,
   select.genes <- row.names(norm.dat)[which(genes_gt_min.cells)]
   
   #Find high variance genes.
-  if(is.null(counts)){
-    counts <- 2 ^ (norm.dat[select.genes, sampled.cells]) - 1
-  }
-  
+
   plot_file <- NULL
   
   if(verbose & !is.null(prefix)){
     plot_file <- paste0(prefix,".vg.pdf")
   }
-  
+
   vg <- find_vg(as.matrix(counts[select.genes, sampled.cells]),
                 plot_file = plot_file)
   
@@ -265,14 +269,14 @@ onestep_clust <- function(norm.dat,
                        max.cl.size = max.cl.size)$rd.dat
   } else if(dim.method == "pca") {
     ###If most genes are differentially expressed, then use absolute dispersion value
-    select.genes <- as.character(vg[which(vg$loess.padj < vg.padj.th | vg$dispersion >3), "gene"])
+    select.genes <- as.character(vg[which(vg$loess.padj < vg.padj.th | vg$dispersion > 3), "gene"])
     select.genes <- head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])], max.genes)
     
     if(verbose){
       cat("Num high variance genes:", length(select.genes), "\n")
     }
     if(length(select.genes) < de.param$min.genes){
-      if(verbose) warning("Not eanough differentially expressed genes. Returning NULL.")
+      if(verbose) warning("Not enough differentially expressed genes. Returning NULL.")
       return(NULL)
     }
     rd.dat <- rd_PCA(norm.dat = norm.dat,

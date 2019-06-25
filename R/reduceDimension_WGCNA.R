@@ -301,7 +301,23 @@ get_eigen <- function(gene.mod,
               hc = hc))
 }
 
-
+#' Compute reduced dimensions using WGCNA
+#' 
+#' @param norm.dat
+#' @param select.genes
+#' @param select.cells
+#' @param sampled.cells
+#' @param min.module.size
+#' @param cutHeight
+#' @param type Character, type parameter passed to \code{WGCNA::adjacency()}. Must be one of "unsigned", "signed", "signed hybrid", or "distance". Default is "unsigned".
+#' @param soft.power Numeric, power parameter passed to \code{WGCNA::adjacency()}
+#' @param rm.gene.mod
+#' @param rm.eigen
+#' @param ... Additional parameters passed to \code{filter_gene_mod()}
+#' 
+#' @return a list object with reduced dimensions (rd.dat) and gene modules (gm)
+#' @export
+#' 
 rd_WGCNA <- function(norm.dat, 
                      select.genes, 
                      select.cells, 
@@ -314,7 +330,11 @@ rd_WGCNA <- function(norm.dat,
                      rm.eigen = NULL,
                      ...) {
   
+  type <- match.arg(type,
+                    choices = c("unsigned", "signed", "signed hybrid", "distance"))
+  
   dat <- as.matrix(norm.dat[select.genes, sampled.cells])
+  
   adj <- WGCNA::adjacency(t(dat), 
                           power = soft.power,
                           type = type)
