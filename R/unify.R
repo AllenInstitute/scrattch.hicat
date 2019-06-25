@@ -194,7 +194,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
       }
 ####if cluster membership is not available, use high variance genes and genes with top PCA loading
       else{
-        tmp.dat = ref.dat[rowSums(ref.dat >= 1) >=comb.dat$de.param.list[[ref.set]]$min.cells, ]
+        tmp.dat = ref.dat[Matrix::rowSums(ref.dat >= 1) >=comb.dat$de.param.list[[ref.set]]$min.cells, ]
         tmp.dat@x = 2^tmp.dat@x - 1
         vg = find_vg(tmp.dat)
         rm(tmp.dat)
