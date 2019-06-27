@@ -1,5 +1,5 @@
 library(ggplot2)
-plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, alpha.val=1, ...)
+plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, alpha.val=1, legend.size=4 , ...)
   {
     require(Rtsne)
     if(is.null(tsne.df)){
@@ -32,6 +32,7 @@ plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
     g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
     if(show.legend){
       g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),ncol=5)
+      g <- g + guides(color = guide_legend(override.aes = list(size = legend.size)))
       g = g + theme(legend.position="bottom")
     }
     else{
