@@ -19,6 +19,20 @@
 #   filter_gene_mod() reduceDimension_WGCNA.R
 #
 
+
+#' Compute scores for a set of gene modules
+#' 
+#' @param norm.dat
+#' @param select.cells
+#' @param gene.mod
+#' @param eigen
+#' @param method
+#' @param de.param
+#' @param max.cl.size
+#' 
+#' @return 
+#' @export
+#' 
 score_gene_mod <-  function(norm.dat, 
                             select.cells, 
                             gene.mod, 
@@ -42,68 +56,84 @@ score_gene_mod <-  function(norm.dat,
   colnames(eigen) <- names(gene.mod)
   
   gene.mod.val <- sapply(names(gene.mod), 
-                         function(y) {
-    x <- gene.mod[[y]]
-    if(is.null(max.cl.size)) {
-      tmp.dat <- norm.dat[x,select.cells]
-    } else {
-      v <- eigen[select.cells, y]
-      ord <- order(v)
-      tmp.cells <- unique(select.cells[c(head(ord, max.cl.size), tail(ord, max.cl.size))])
-      tmp.dat <- norm.dat[x, tmp.cells]
-    }
-    
-    tmp.dat <- as.matrix(tmp.dat)
-    tmp.dat <- tmp.dat - rowMeans(tmp.dat)
-    
-    if(method == "average") {
-      tmp.cl <- cutree(hclust(dist(t(tmp.dat)),
-                              method = "average"),
-                       k = 2)
-    } else if(method == "ward.D") {
-      tmp.cl <- cutree(hclust(dist(t(tmp.dat)),
-                              method = "ward.D"),
-                       k = 2)
-    } else if(method == "kmeans") {
-      tmp.cl <- kmeans(t(tmp.dat), 
-                       centers = 2)$cluster
-    } else if(method == "louvain") {
-      tmp <- jaccard_louvain(t(tmp.dat), 
-                             k = 15)
-      if(is.null(tmp)) {
-        return(list(c(0,0),
-                    NULL))
-      }
-      
-      tmp.cl <- tmp$cl
-    } else {
-      stop(paste("Unknown method", method))
-    }
-    
-    de.genes <- de_stats_all_pairs(as.matrix(norm.dat[,names(tmp.cl)]), 
-                                   cl = tmp.cl, 
-                                   de.param = de.param)
-    
-    de.genes <- de.genes[sapply(de.genes, length) > 1]
-    
-    if(length(de.genes) > 0) {
-      sc <- max(sapply(de.genes, 
-                       function(x) {
-                         x$score
-                       }))
-      gene.num <- max(sapply(de.genes, 
-                             function(x) {
-                               x$num
-                             }))
-    } else {
-      sc <- 0
-      gene.num <- 0
-    }
-    
-    return(list(c(sc=sc, 
-                  gene.num = gene.num),
-                de.genes = de.genes))
-  }, simplify = FALSE)
+                         function(gene.mod.name) {
+                           gene.mod.genes <- gene.mod[[gene.mod.name]]
+                           
+                           if(is.null(max.cl.size)) {
+                             # If no max.cl.size, use all cells
+                             gene.mod.dat <- norm.dat[gene.mod.genes, select.cells]
+                           } else {
+                             # Otherwise, use cells at the ends of the eigengene
+                             v <- eigen[select.cells, gene.mod.name]
+                             ord <- order(v)
+                             
+                             top.cells <- select.cells[head(ord, max.cl.size)]
+                             bot.cells <- select.cells[tail(ord, max.cl.size)]
+                             
+                             select.cells <- unique(c(top.cells, bot.cells))
+                             
+                             gene.mod.dat <- norm.dat[gene.mod.genes, select.cells]
+                           }
+                           
+                           gene.mod.dat <- as.matrix(gene.mod.dat)
+                           
+                           # Re-center each gene based on means
+                           gene.mod.dat <- gene.mod.dat - rowMeans(gene.mod.dat)
+                           
+                           if(method == "average") {
+                             gene.mod.dist <- dist(t(gene.mod.dat))
+                             gene.mod.hclust <- hclust(gene.mod.dist,
+                                                       method = "average")
+                             gene.mod.cl <- cutree(gene.mod.hclust,
+                                                   k = 2)
+                           } else if(method == "ward.D") {
+                             gene.mod.dist <- dist(t(gene.mod.dat))
+                             gene.mod.hclust <- hclust(gene.mod.dist,
+                                                       method = "ward.D")
+                             gene.mod.cl <- cutree(gene.mod.hclust,
+                                                   k = 2)
+                           } else if(method == "kmeans") {
+                             gene.mod.kmeans <- kmeans(t(gene.mod.dat),
+                                                       centers = 2)
+                             gene.mod.cl <- gene.mod.kmeans$cluster
+                           } else if(method == "louvain") {
+                             gene.mod.jl <- jaccard_louvain(t(gene.mod.dat), 
+                                                            k = 15)
+                             if(is.null(gene.mod.jl)) {
+                               return(list(c(0,0),
+                                           NULL))
+                             }
+                             
+                             gene.mod.cl <- gene.mod.jl$cl
+                           } else {
+                             stop(paste("Unknown method", method))
+                           }
+                           
+                           de.gene.stats <- de_stats_all_pairs(as.matrix(norm.dat[,select.cells]), 
+                                                               cl = gene.mod.cl, 
+                                                               de.param = de.param)
+                           de.genes <- de.gene.stats$de.genes
+                           
+                           de.genes <- de.genes[sapply(de.genes, length) > 1]
+                           
+                           if(length(de.genes) > 0) {
+                             sc <- max(sapply(de.genes, 
+                                              function(x) {
+                                                x$score
+                                              }))
+                             gene.num <- max(sapply(de.genes, 
+                                                    function(x) {
+                                                      x$num
+                                                    }))
+                           } else {
+                             sc <- 0
+                             gene.num <- 0
+                           }
+                           
+                           return(list(c(sc=sc, 
+                                         gene.num = gene.num),
+                                       de.genes = de.genes))
+                         }, simplify = FALSE)
   
   return(gene.mod.val)
 }
@@ -121,7 +151,7 @@ filter_gene_mod <- function(norm.dat,
                             max.size = 200, 
                             prefix = "cl", 
                             max.mod = NULL) {
-
+  
   eigen <- get_eigen(gene.mod = gene.mod, 
                      norm.dat = norm.dat,
                      select.cells = select.cells)[[1]]

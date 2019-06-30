@@ -2,4 +2,9 @@ context("test-reduceDimension_PCA")
 library(scrattch.hicat)
 
 ## rd_PCA() tests
-
+test_that(
+  "rd_PCA() reduces dimensions using PCA",
+  {
+    
+  }
+)

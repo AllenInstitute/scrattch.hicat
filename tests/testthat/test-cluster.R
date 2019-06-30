@@ -169,7 +169,7 @@ test_that(
     # differ due to a random id assigned by igraph.
     
     expect_is(results, "list")
-    expet_equal(length(results), 2)
+    expect_equal(length(results), 2)
     
     expect_identical(results[[2]],
                      ref_results[[2]])
@@ -186,7 +186,7 @@ test_that(
 
 ## onestep_clust() tests
 test_that(
-  "onestep_clust() performs clustering of cells.",
+  "onestep_clust() louvain clustering.",
   {
     de.param <- de_param(low.th = 1,
                          padj.th = 0.01,
@@ -231,6 +231,216 @@ test_that(
                                      counts = glial_counts,
                                      vg.padj.th = 0.5,
                                      method = "louvain",
+                                     dim.method = "WGCNA",
+                                     max.dim = 20,
+                                     rm.eigen = NULL,
+                                     rm.th = 0.7,
+                                     de.param = de.param,
+                                     merge.type = "undirectional",
+                                     max.genes = 3000,
+                                     sample.size = 4000,
+                                     max.cl.size = 300,
+                                     k.nn = 15,
+                                     prefix = NULL,
+                                     verbose = FALSE,
+                                     regress.x = NULL)
+    
+    expect_is(onestep_result2, "list")
+    expect_equal(length(onestep_result2), 2)
+    
+    expect_is(onestep_result2$cl, "factor")
+    expect_equal(length(onestep_result2$cl), length(glial_cells$sample_name))
+    expect_identical(names(onestep_result2$cl), glial_cells$sample_name)
+    
+  }
+)
+
+test_that(
+  "onestep_clust() Rphenograph clustering.",
+  {
+    de.param <- de_param(low.th = 1,
+                         padj.th = 0.01,
+                         lfc.th = 1,
+                         q1.th = 0.5,
+                         q2.th = NULL,
+                         q.diff.th = 0.7,
+                         de.score.th = 150,
+                         min.cells = 4,
+                         min.genes = 5)
+    
+    # PCA for dimensionality reduction with Rphenograph clustering
+    onestep_result1 <- onestep_clust(glial_data_sparse, 
+                                     select.cells = glial_cells$sample_name, 
+                                     counts = glial_counts_sparse,
+                                     vg.padj.th = 0.5,
+                                     method = "Rphenograph",
+                                     dim.method = "pca",
+                                     max.dim = 20,
+                                     rm.eigen = NULL,
+                                     rm.th = 0.7,
+                                     de.param = de.param,
+                                     merge.type = "undirectional",
+                                     max.genes = 3000,
+                                     sample.size = 4000,
+                                     max.cl.size = 300,
+                                     k.nn = 15,
+                                     prefix = NULL,
+                                     verbose = FALSE,
+                                     regress.x = NULL)
+    
+    expect_is(onestep_result1, "list")
+    expect_equal(length(onestep_result1), 2)
+    
+    expect_is(onestep_result1$cl, "factor")
+    expect_equal(length(onestep_result1$cl), length(glial_cells$sample_name))
+    expect_identical(names(onestep_result1$cl), glial_cells$sample_name)
+    
+    # WGCNA for dimensionality reduction with Rphenograph clustering
+    onestep_result2 <- onestep_clust(glial_data_sparse, 
+                                     select.cells = glial_cells$sample_name, 
+                                     counts = glial_counts,
+                                     vg.padj.th = 0.5,
+                                     method = "Rphenograph",
+                                     dim.method = "WGCNA",
+                                     max.dim = 20,
+                                     rm.eigen = NULL,
+                                     rm.th = 0.7,
+                                     de.param = de.param,
+                                     merge.type = "undirectional",
+                                     max.genes = 3000,
+                                     sample.size = 4000,
+                                     max.cl.size = 300,
+                                     k.nn = 15,
+                                     prefix = NULL,
+                                     verbose = FALSE,
+                                     regress.x = NULL)
+    
+    expect_is(onestep_result2, "list")
+    expect_equal(length(onestep_result2), 2)
+    
+    expect_is(onestep_result2$cl, "factor")
+    expect_equal(length(onestep_result2$cl), length(glial_cells$sample_name))
+    expect_identical(names(onestep_result2$cl), glial_cells$sample_name)
+    
+  }
+)
+
+test_that(
+  "onestep_clust() hclust clustering.",
+  {
+    de.param <- de_param(low.th = 1,
+                         padj.th = 0.01,
+                         lfc.th = 1,
+                         q1.th = 0.5,
+                         q2.th = NULL,
+                         q.diff.th = 0.7,
+                         de.score.th = 150,
+                         min.cells = 4,
+                         min.genes = 5)
+    
+    # PCA for dimensionality reduction with louvain clustering
+    onestep_result1 <- onestep_clust(glial_data_sparse, 
+                                     select.cells = glial_cells$sample_name, 
+                                     counts = glial_counts_sparse,
+                                     vg.padj.th = 0.5,
+                                     method = "ward.D",
+                                     dim.method = "pca",
+                                     max.dim = 20,
+                                     rm.eigen = NULL,
+                                     rm.th = 0.7,
+                                     de.param = de.param,
+                                     merge.type = "undirectional",
+                                     max.genes = 3000,
+                                     sample.size = 4000,
+                                     max.cl.size = 300,
+                                     k.nn = 15,
+                                     prefix = NULL,
+                                     verbose = FALSE,
+                                     regress.x = NULL)
+    
+    expect_is(onestep_result1, "list")
+    expect_equal(length(onestep_result1), 2)
+    
+    expect_is(onestep_result1$cl, "factor")
+    expect_equal(length(onestep_result1$cl), length(glial_cells$sample_name))
+    expect_identical(names(onestep_result1$cl), glial_cells$sample_name)
+    
+    # WGCNA for dimensionality reduction with louvain clustering
+    onestep_result2 <- onestep_clust(glial_data_sparse, 
+                                     select.cells = glial_cells$sample_name, 
+                                     counts = glial_counts,
+                                     vg.padj.th = 0.5,
+                                     method = "ward.D",
+                                     dim.method = "WGCNA",
+                                     max.dim = 20,
+                                     rm.eigen = NULL,
+                                     rm.th = 0.7,
+                                     de.param = de.param,
+                                     merge.type = "undirectional",
+                                     max.genes = 3000,
+                                     sample.size = 4000,
+                                     max.cl.size = 300,
+                                     k.nn = 15,
+                                     prefix = NULL,
+                                     verbose = FALSE,
+                                     regress.x = NULL)
+    
+    expect_is(onestep_result2, "list")
+    expect_equal(length(onestep_result2), 2)
+    
+    expect_is(onestep_result2$cl, "factor")
+    expect_equal(length(onestep_result2$cl), length(glial_cells$sample_name))
+    expect_identical(names(onestep_result2$cl), glial_cells$sample_name)
+    
+  }
+)
+
+test_that(
+  "onestep_clust() kmeans clustering.",
+  {
+    de.param <- de_param(low.th = 1,
+                         padj.th = 0.01,
+                         lfc.th = 1,
+                         q1.th = 0.5,
+                         q2.th = NULL,
+                         q.diff.th = 0.7,
+                         de.score.th = 150,
+                         min.cells = 4,
+                         min.genes = 5)
+    
+    # PCA for dimensionality reduction with louvain clustering
+    onestep_result1 <- onestep_clust(glial_data_sparse, 
+                                     select.cells = glial_cells$sample_name, 
+                                     counts = glial_counts_sparse,
+                                     vg.padj.th = 0.5,
+                                     method = "kmeans",
+                                     dim.method = "pca",
+                                     max.dim = 20,
+                                     rm.eigen = NULL,
+                                     rm.th = 0.7,
+                                     de.param = de.param,
+                                     merge.type = "undirectional",
+                                     max.genes = 3000,
+                                     sample.size = 4000,
+                                     max.cl.size = 300,
+                                     k.nn = 15,
+                                     prefix = NULL,
+                                     verbose = FALSE,
+                                     regress.x = NULL)
+    
+    expect_is(onestep_result1, "list")
+    expect_equal(length(onestep_result1), 2)
+    
+    expect_is(onestep_result1$cl, "factor")
+    expect_equal(length(onestep_result1$cl), length(glial_cells$sample_name))
+    expect_identical(names(onestep_result1$cl), glial_cells$sample_name)
+    
+    # WGCNA for dimensionality reduction with louvain clustering
+    onestep_result2 <- onestep_clust(glial_data_sparse, 
+                                     select.cells = glial_cells$sample_name, 
+                                     counts = glial_counts,
+                                     vg.padj.th = 0.5,
+                                     method = "kmeans",
                                      dim.method = "WGCNA",
                                      max.dim = 20,
                                      rm.eigen = NULL,

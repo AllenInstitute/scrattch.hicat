@@ -542,7 +542,7 @@ onestep_clust <- function(norm.dat,
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)
 #' @param select.cells The cells to be clustered
 #' @param prefix The character string to indicate current iteration.
-#' @param split.size The minimal cluster size for further splitting
+#' @param split.size The minimum cluster size for further splitting. Default = 10.
 #' @param result The current clustering result as basis for further splitting.
 #' @param method Clustering method. It can be "auto", "louvain", "hclust"
 #' @param ... Other parameters passed to `onestep_clust()`
