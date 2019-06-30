@@ -6,6 +6,9 @@
 \usage{
 de_score(...)
 }
+\arguments{
+\item{...}{parameters passed to \code{link{de_all_pairs_stats}}}
+}
 \description{
 reverse-compatibility wrapper around de_all_pairs_stats()
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/reduceDimension_WGCNA.R
 \name{get_eigen}
 \alias{get_eigen}
-\title{Compute module eigen genes}
+\title{Compute module eigengenes}
 \usage{
 get_eigen(gene.mod, norm.dat, select.cells = colnames(norm.dat),
   prefix = NULL, method = "ward.D", hc = NULL, ...)
@@ -26,5 +26,5 @@ get_eigen(gene.mod, norm.dat, select.cells = colnames(norm.dat),
 A list with two elements: module eigen genes, and if prefix is not NULL, dendrogram for selected cells.
 }
 \description{
-Compute module eigen genes
+Compute module eigengenes
 }

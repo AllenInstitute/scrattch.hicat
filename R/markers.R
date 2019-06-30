@@ -1,18 +1,46 @@
-select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)                           
-  {
+#' Select a set of marker genes based on differential gene expression results.
+#' 
+#' @param norm.dat a normalized data matrix for data.
+#' @param cl a cluster factor object.
+#' @param n.markers Maximum of markers to return for each cluster (Default = 20)
+#' @param de.genes Optional, pre-computed DE Genes using de_stats_all_pairs()
+#' @param ... Additional parameters passed to de_stats_all_pairs()
+#' 
+#' @return a list with two objects: markers, a character vector of marker genes; 
+#' de.genes, a list object with differential expression results.
+#' @export
+#' 
+select_markers <- function(norm.dat, 
+                           cl, 
+                           n.markers = 20,
+                           de.genes = NULL, 
+                           ...) {
+  
     if(is.null(de.genes)){
-      de.genes=de_score(norm.dat, cl, ...)
+      de.genes <- de_stats_all_pairs(norm.dat = norm.dat, 
+                                     cl = cl, 
+                                     ...)$de.genes
     }
-    pairs = names(de.genes)
-    pairs.df = gsub("cl","", do.call("rbind",strsplit(pairs, "_")))
-    row.names(pairs.df)=pairs
-    select.pairs = pairs[pairs.df[,1] %in% cl & pairs.df[,2]%in% cl]
-    de.markers = sapply(select.pairs, function(s){
-      tmp = de.genes[[s]]
-      c(head(tmp$up.genes,n.markers), head(tmp$down.genes,n.markers))
-    },simplify=F)
-    markers = intersect(unlist(de.markers),row.names(norm.dat))
-    return(list(markers=markers, de.genes=de.genes[select.pairs]))
+    
+    pairs <- names(de.genes)
+    
+    pairs.df <- gsub("cl","", do.call("rbind", strsplit(pairs, "_")))
+    row.names(pairs.df) <- pairs
+    
+    select.pairs <- pairs[pairs.df[,1] %in% cl & pairs.df[,2] %in% cl]
+    
+    de.markers <- sapply(select.pairs, 
+                         function(s) {
+                           tmp <- de.genes[[s]]
+                           c(head(  tmp$up.genes, n.markers), 
+                             head(tmp$down.genes, n.markers))
+                         },
+                         simplify=F)
+    
+    markers <- intersect(unlist(de.markers), row.names(norm.dat))
+    
+    return(list(markers = markers, 
+                de.genes = de.genes[select.pairs]))
   }
 
 markers_max_tau <- function(cl.dat, th=0.5, tau.th=0.7,n.markers=3)

@@ -6,6 +6,9 @@
 \usage{
 findVG(...)
 }
+\arguments{
+\item{...}{parameters passed to \code{link{find_vg}}}
+}
 \description{
 reverse-compatibility wrapper around find_vg()
 }

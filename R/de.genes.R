@@ -6,26 +6,29 @@
 #
 # vec_chisq_test()
 #
-# score_pair_limma() Tests for one pair of clusters
+# de_pair_limma() Tests for one pair of clusters
 #
-# score_pair_chisq() Tests for one pair of clusters
+# de_pair_chisq() Tests for one pair of clusters
 #   vec_chisq_test() de.genes.R
 #
 # de_selected_pairs() Tests for multiple pairs of clusters. Was DE_genes_pairs().
 #   get_cl_means() util.R
-#   score_pair_limma() de.genes.R
-#   score_pair_chisq() de.genes.R
+#   de_pair_limma() de.genes.R
+#   de_pair_chisq() de.genes.R
 #
 # de_all_pairs() Tests for every pair of clusters. Was DE_genes_pw().
-#   DE_genes_pairs() de.genes.R
+#   de_selected_pairs() de.genes.R
 #
-# compute_pair_deScore() Compute deScores based on score_pair_X() results and de_param(). Was de_pairs().
+# de_stats_pair() Compute deScores based on score_pair_X() results and de_param(). Was de_pairs().
 # 
-# de_score()
-#   de_score_pairs() de.genes.R
+# de_stats_selected_pairs()
+#   de_stats_pair() de.genes.R
 #
-# de_score_pairs()
-#   DE_genes_pairs de.genes.R
+# de_stats_all_pairs()
+#   de_stats_selected_pairs de.genes.R
+#
+#  DE_genes_cat_by_cl
+#    deScore.pairs() ??
 #
 # get_de_matrix()
 #   get_pairs() de.genes.R
@@ -34,9 +37,6 @@
 # plot_de_num()
 #   get_de_matrix() de.genes.R
 #   heatmap.3() heatmap.R
-#
-#  DE_genes_cat_by_cl
-#    deScore.pairs() ??
 #
 # plot_de_lfc_num()
 
@@ -379,7 +379,7 @@ de_pair_chisq <- function(pair,
 
 #' Perform pairwise differential gene expression tests between main pairs of clusters in parallel
 #' 
-#' @param norm.dat a normalized data matrix for data.
+#' @param norm.dat a normalized data matrix.
 #' @param cl a cluster factor object.
 #' @param pairs A 2-column matrix of cluster pairs.
 #' @param method Either "limma" or "chisq".
@@ -792,7 +792,7 @@ de_stats_selected_pairs <- function(norm.dat,
 }
 
 
-#' Title
+#' Compute differential expression stats for all pairs of clusters
 #'
 #' @param norm.dat a normalized data matrix for data.
 #' @param cl a cluster factor object.
@@ -801,7 +801,11 @@ de_stats_selected_pairs <- function(norm.dat,
 #' @param de.df Optional. Pre-computed results from \code{de_all_pairs()} or \code{de_selected_pairs}. Default = NULL.
 #' @param ... Additional parameters passed to \code{de_selected_pairs()}
 #'
-#' @return a character vector of all differentially expressed genes. 
+#' @return A list with two objects:
+#' \itemize{
+#' \item{de.df} A list of results from \code{de_selected_pairs()} for each pair.
+#' \item{de.genes} A list of results from \code{de_stats_pair()} for each pair.
+#' }
 #' @export
 #'
 de_stats_all_pairs <- function(norm.dat, 
@@ -837,11 +841,11 @@ de_stats_all_pairs <- function(norm.dat,
   de.genes <- c(de.genes, de.result$de.genes)
   
   de.stats <- de_stats_selected_pairs(norm.dat,
-                                 cl = cl,
-                                 pairs = pairs,
-                                 de.df = de.genes,
-                                 de.param = de.param,
-                                 method = method)
+                                      cl = cl,
+                                      pairs = pairs,
+                                      de.df = de.genes,
+                                      de.param = de.param,
+                                      method = method)
   
   return(de.stats)
 }

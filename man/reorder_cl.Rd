@@ -2,7 +2,7 @@
 % Please edit documentation in R/cluster.R
 \name{reorder_cl}
 \alias{reorder_cl}
-\title{Reorder cluster based on hiearchical clustering of clusters based on average cluster values for the input data matrix}
+\title{Reorder cluster based on hiearchical clustering of mean values from the input data matrix}
 \usage{
 reorder_cl(cl, dat)
 }
@@ -12,8 +12,8 @@ reorder_cl(cl, dat)
 \item{dat}{The data matrix with cells as columns.}
 }
 \value{
-Reorder cluster membership vector. The cluster id start from 1 to the number of clusters.
+Reordered cluster membership vector. The cluster ids will start from 1 to the number of clusters.
 }
 \description{
-Reorder cluster based on hiearchical clustering of clusters based on average cluster values for the input data matrix
+Reorder cluster based on hiearchical clustering of mean values from the input data matrix
 }

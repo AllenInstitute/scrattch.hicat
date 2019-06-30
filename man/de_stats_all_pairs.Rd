@@ -2,7 +2,7 @@
 % Please edit documentation in R/de.genes.R
 \name{de_stats_all_pairs}
 \alias{de_stats_all_pairs}
-\title{Title}
+\title{Compute differential expression stats for all pairs of clusters}
 \usage{
 de_stats_all_pairs(norm.dat, cl, de.param = de_param(),
   method = "limma", de.genes = NULL, ...)
@@ -21,8 +21,12 @@ de_stats_all_pairs(norm.dat, cl, de.param = de_param(),
 \item{de.df}{Optional. Pre-computed results from \code{de_all_pairs()} or \code{de_selected_pairs}. Default = NULL.}
 }
 \value{
-a character vector of all differentially expressed genes.
+A list with two objects:
+\itemize{
+\item{de.df} A list of results from \code{de_selected_pairs()} for each pair.
+\item{de.genes} A list of results from \code{de_stats_pair()} for each pair.
+}
 }
 \description{
-Title
+Compute differential expression stats for all pairs of clusters
 }

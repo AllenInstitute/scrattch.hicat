@@ -8,7 +8,7 @@ de_selected_pairs(norm.dat, cl, pairs, method = "limma", low.th = 1,
   cl.present = NULL, use.voom = FALSE, counts = NULL, mc.cores = 1)
 }
 \arguments{
-\item{norm.dat}{a normalized data matrix for data.}
+\item{norm.dat}{a normalized data matrix.}
 
 \item{cl}{a cluster factor object.}
 
