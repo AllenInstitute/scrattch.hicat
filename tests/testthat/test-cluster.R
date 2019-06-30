@@ -3,13 +3,18 @@ library(scrattch.hicat)
 
 # Load glial test data
 library(tasic2016data)
+library(Matrix)
 
 glial_classes <- c("Astrocyte", "Endothelial Cell", "Microglia", 
                    "Oligodendrocyte", "Oligodendrocyte Precursor Cell")
 glial_cells <- tasic_2016_anno[tasic_2016_anno$broad_type %in% glial_classes, ]
 glial_cells <- glial_cells[glial_cells$secondary_type_id == 0, ]
 
-glial_data <- log2(tasic_2016_counts[, glial_cells$sample_name] + 1)
+glial_counts <- tasic_2016_counts[, glial_cells$sample_name]
+
+glial_counts_sparse <- as(glial_counts, "dgCMatrix")
+
+glial_data <- logCPM(glial_counts)
 
 glial_data_sparse <- as(glial_data, "dgCMatrix")
 
@@ -139,6 +144,38 @@ test_that(
   }
 )
 
+## phenograph_jaccard_coeff() tests
+test_that(
+  "phenograph_jaccard_coeff() needs tests.",
+  {
+    
+  }
+)
+
+## phenograph() tests
+test_that(
+  "phenograph() performs PhenoGraph clustering identical to Rphenograph",
+  {
+    pca <- rd_PCA(glial_data_sparse)
+    pcs <- pca$rd.dat
+    
+    ref_results <- Rphenograph::Rphenograph(pcs,
+                                        k = 10)
+    results <- phenograph(pcs,
+                          k = 10,
+                          verbose = TRUE)
+    
+    # results[[1]] and ref_results[[1]] will
+    # differ due to a random id assigned by igraph.
+    
+    expect_is(results, "list")
+    expet_equal(length(results), 2)
+    
+    expect_identical(results[[2]],
+                     ref_results[[2]])
+  }
+)
+
 ## jaccard_louvain() tests
 test_that(
   "jaccard_louvain() needs tests.",
@@ -164,7 +201,7 @@ test_that(
     # PCA for dimensionality reduction with louvain clustering
     onestep_result1 <- onestep_clust(glial_data_sparse, 
                                      select.cells = glial_cells$sample_name, 
-                                     counts = glial_counts,
+                                     counts = glial_counts_sparse,
                                      vg.padj.th = 0.5,
                                      method = "louvain",
                                      dim.method = "pca",
@@ -205,7 +242,7 @@ test_that(
                                      max.cl.size = 300,
                                      k.nn = 15,
                                      prefix = NULL,
-                                     verbose = TRUE,
+                                     verbose = FALSE,
                                      regress.x = NULL)
     
     expect_is(onestep_result2, "list")

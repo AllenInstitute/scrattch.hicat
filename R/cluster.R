@@ -133,7 +133,105 @@ jaccard_louvain.RANN <- function(dat,
   }
 }
 
-#' Perform Jaccard/Louvain clustering using Rphenograph
+phenograph_jaccard_coeff <- function(idx) {
+  n_rows <- nrow(idx)
+  n_cols <- ncol(idx)
+  
+  weights <- matrix(0,
+                    nrow = n_rows * n_cols,
+                    ncol = 3)
+  
+  colnames(weights) <- c("from","to","weight")
+  
+  w <- 1
+  
+  for(i in 1:n_rows) {
+    for(j in 1:n_cols) {
+      k <- idx[i, j]
+      node_i <- idx[i,]
+      node_j <- idx[k,]
+      u <- length(intersect(node_i, node_j))
+      
+      if(u > 0) {
+        weights[w, 1] <- i
+        weights[w, 2] <- k
+        weights[w, 3] <- u / (2*n_cols - u) / 2
+        w <- w + 1
+      }
+    }
+  }
+  
+  return(weights)
+}
+
+phenograph <- function(data, 
+                       k = 30,
+                       verbose = FALSE) {
+  
+  if (!is.matrix(data)) {
+    stop("data should be a matrix")
+  }
+  
+  if (k < 1) {
+    stop("k must be a positive integer")
+  } else if (k > nrow(data) - 2) {
+    stop("k must be smaller than the total number of points - 1")
+  }
+  
+  if(verbose) {
+    cat("phenograph:",nrow(data),"samples x",ncol(data),"features;","k =",k,"\n")
+  }
+  
+  # Compute nearest neighbors
+  if(verbose) {
+    cat("Finding NN                      ")
+    flush.console()
+    t1.1 <- system.time(knn <- RANN::nn2(data, data, k = k + 1))
+    t1.2 <- system.time(neighborMatrix <- knn[[1]][, -1])
+    t1 <- t1.1[3] + t1.2[3]
+  } else {
+    knn <- RANN::nn2(data, data, k = k + 1)
+    neighborMatrix <- knn[[1]][, -1]
+  }
+  
+  if(verbose) {
+    cat("\rComputing jaccard coefficients")
+    flush.console()
+    t2 <- system.time(links <- phenograph_jaccard_coeff(neighborMatrix))
+  } else {
+    links <- phenograph_jaccard_coeff(neighborMatrix)
+  }
+  
+  links <- links[links[,1] > 0, ]
+  relations <- as.data.frame(links)
+  
+  if(verbose) {
+    cat("\rBuilding undirected graph     ")
+    flush.console()
+    t3 <- system.time(g <- igraph::graph.data.frame(relations, directed = FALSE))
+  } else {
+    g <- igraph::graph.data.frame(relations,
+                                  directed = FALSE)
+  }
+  
+  if(verbose) {
+    cat("\rRunning Louvain clustering    ")
+    flush.console()
+    t4 <- system.time(community <- igraph::cluster_louvain(g))
+
+    total_time <- round(sum(c(t1, t2[3], t3[3], t4[3])), 4)
+    cat("\rTotal time:",total_time,"s              \n")
+    cat("Modularity:", igraph::modularity(community), "\n")
+    cat("N clusters:", length(unique(igraph::membership(community))))
+  } else {
+    community <- igraph::cluster_louvain(g)
+  }
+ 
+  return(list(g = g, 
+              community = community))
+}
+
+#' Perform Jaccard/Louvain clustering using PhenoGraph clustering
 #' 
 #' @param dat A matrix of features (rows) x samples (columns)
 #' @param k K-nearest neighbors to use for clustering
@@ -141,9 +239,16 @@ jaccard_louvain.RANN <- function(dat,
 #' @return A list object with the cluster factor object and (cl) and Rphenograph results (result)
 #' 
 jaccard_louvain <- function(dat, 
-                            k = 10) {
+                            k = 10,
+                            Rphenograph = FALSE) {
   
-  rpheno <- Rphenograph::Rphenograph(dat, k = k)
+  if(Rphenograph) {
+    rpheno <- Rphenograph::Rphenograph(dat, k = k)
+  } else {
+    rpheno <- phenograph(dat,
+                         k = k,
+                         verbose = FALSE)
+  }
   
   cl <- setNames(rpheno[[2]]$membership, 
                  row.names(dat)[as.integer(rpheno[[2]]$names)])
