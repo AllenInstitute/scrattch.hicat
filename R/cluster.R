@@ -133,6 +133,17 @@ jaccard_louvain.RANN <- function(dat,
   }
 }
 
+#' Compute Jaccard Coefficients from a K nearest neighbors matrix
+#' 
+#' This is an R implementation of the C++ version provided by the Rphenograph package.
+#' 
+#' See: https://github.com/JinmiaoChenLab/Rphenograph/blob/master/src/jaccard_coeff.cpp
+#' 
+#' @param idx a matrix of K-nearest neighbors. Each row contains the K neighbors for a sample.
+#' 
+#' @return a matrix of 3 columns with from, to, and weight for the coefficients
+#' @export
+#' 
 phenograph_jaccard_coeff <- function(idx) {
   n_rows <- nrow(idx)
   n_cols <- ncol(idx)
@@ -164,6 +175,20 @@ phenograph_jaccard_coeff <- function(idx) {
   return(weights)
 }
 
+#' Perform PhenoGraph clustering on a matrix of data
+#' 
+#' This is an R-only reimplementation of the RPhenograph package, which uses C++ for the jaccard coefficient step. 
+#' It also has a verbosity option, which makes it more useful for pipeline analysis.
+#' 
+#' For the original implementation, see: https://github.com/JinmiaoChenLab/Rphenograph
+#' 
+#' @param data a matrix with samples as rows and features as columns.
+#' @param k an integer, number of neighbors to use. Default = 30.
+#' @param verbose Whether or not to display status messages. Default is FALSE.
+#' 
+#' @return a list object with two results: g, an igraph graph object; community, an igraph communities object.
+#' @export
+#' 
 phenograph <- function(data, 
                        k = 30,
                        verbose = FALSE) {
@@ -265,7 +290,7 @@ jaccard_louvain <- function(dat,
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).
 #' @param select.cells The cells to be clustered. Default: columns of norm.dat
 #' @param counts Raw gene counts. Default NULL, inferred from norm.dat.
-#' @param method Clustering method. It can be "louvain", "hclust" and "kmeans". Default "louvain"
+#' @param method Clustering method. It can be "louvain", "Rphenograph", "hclust" and "kmeans". "louvain" and "Rphenograph" should return same results; "Rphenograph" may be faster. Default "louvain"
 #' @param vg.padj.th High variance gene adjusted pvalue cut off. Default 0.5.
 #' @param dim.method Dimension reduction techniques. Current options include "pca" and "WGCNA". Default "pca"
 #' @param max.dim The number of top dimensions retained. Default 20. Since clustering is performed iteratively, not all relevant dimensions need to be captured in one iterations. 
@@ -311,7 +336,7 @@ onestep_clust <- function(norm.dat,
   }
   
   method <- match.arg(method,
-                      choices = c("louvain","ward.D","kmeans"))
+                      choices = c("louvain","Rphenograph","ward.D","kmeans"))
   
   dim.method <- match.arg(dim.method,
                           choices = c("pca","WGCNA","auto"))
@@ -420,9 +445,18 @@ onestep_clust <- function(norm.dat,
   
   max.cl <- ncol(rd.dat) * 2 + 1
   
-  if(method == "louvain") {
+  if(method %in% c("louvain","Rphenograph")) {
     k <- pmin(k.nn, round(nrow(rd.dat) / 2))
-    jl_result <- jaccard_louvain(rd.dat, k)
+    if(method == "louvain") {
+      jl_result <- jaccard_louvain(rd.dat, 
+                                   k,
+                                   Rphenograph = FALSE)
+    } else if(method == "Rphenograph") {
+      jl_result <- jaccard_louvain(rd.dat, 
+                                   k,
+                                   Rphenograph = TRUE)
+    }
+    
     
     if(is.null(jl_result)){
       if(verbose) warning("jaccard_louvain() returned NULL.")

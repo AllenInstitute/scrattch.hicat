@@ -18,7 +18,7 @@ onestep_clust(norm.dat, select.cells = NULL, counts = NULL,
 
 \item{counts}{Raw gene counts. Default NULL, inferred from norm.dat.}
 
-\item{method}{Clustering method. It can be "louvain", "hclust" and "kmeans". Default "louvain"}
+\item{method}{Clustering method. It can be "louvain", "Rphenograph", "hclust" and "kmeans". "louvain" and "Rphenograph" should return same results; "Rphenograph" may be faster. Default "louvain"}
 
 \item{vg.padj.th}{High variance gene adjusted pvalue cut off. Default 0.5.}
 
