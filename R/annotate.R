@@ -365,7 +365,7 @@ map_cv <- function(norm.dat,
 #' 
 compare_annotate <- function(cl, 
                              ref.cl, 
-                             ref.cl.df, 
+                             ref.cl.df=NULL, 
                              reorder = TRUE,
                              rename = TRUE) {
 
@@ -374,9 +374,14 @@ compare_annotate <- function(cl,
   }
   
   if(!is.factor(ref.cl)){
-    ref.cl <- setNames(factor(as.character(ref.cl),
-                              levels = row.names(ref.cl.df)),
-                       names(ref.cl))
+    if(!is.null(ref.cl.df)){
+      ref.cl <- setNames(factor(as.character(ref.cl),
+                                levels = row.names(ref.cl.df)),
+                         names(ref.cl))
+    }
+   else{
+     ref.cl <- setNames(factor(ref.cl), names(ref.cl))
+   }
   }
   
   common.cells <- intersect(names(cl),names(ref.cl))
@@ -387,6 +392,7 @@ compare_annotate <- function(cl,
   ###Find clusters not present in ref.cl
   tmp.cl <- droplevels(cl[common.cells])
   ref.cl <- droplevels(ref.cl[common.cells])
+  absent.cl <- setdiff(levels(cl), levels(tmp.cl))
   # compare predicted cluster member with the new clustering result 
   tb <- table(tmp.cl, ref.cl)
   cl.id.map <- NULL
@@ -395,7 +401,7 @@ compare_annotate <- function(cl,
   if(reorder){
     tmp <- apply(tb, 1, which.max)
     cl_names <- names(cl)
-    cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)]))
+    cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)], absent.cl))
     cl <- setNames(cl, cl_names)
     if(rename){
       cl.id.map <- data.frame(new = 1:length(levels(cl)),
@@ -423,7 +429,7 @@ compare_annotate <- function(cl,
       cl_label[x] <- label
     }
   }
-  
+  absent.cl <- row.names(tb)[rowSums(tb) == 0]
   cl.df$cluster_label <- cl_label
   row.names(cl.df) <- levels(cl)
   cl.size <- table(cl)
@@ -469,7 +475,8 @@ compare_annotate <- function(cl,
                    cl.df = cl.df,
                    g = g,
                    tb.df = tb.df,
-                   cl.id.map = cl.id.map)
+                   cl.id.map = cl.id.map, 
+                   absent.cl = absent.cl)
   
   return(out_list)
 }

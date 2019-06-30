@@ -395,8 +395,10 @@ de_selected_pairs <- function(norm.dat,
                               cl,
                               pairs, 
                               method = "limma", 
-                              low.th = 1, 
-                              cl.present = NULL, 
+                              low.th = 1,
+                              min.cells = 4,
+                              cl.means = NULL,
+                              cl.present = NULL,
                               use.voom = FALSE, 
                               counts = NULL,
                               mc.cores = 1) {
@@ -411,8 +413,11 @@ de_selected_pairs <- function(norm.dat,
   # Sample filtering based on selected clusters
   select.cl <- unique(c(pairs[,1], pairs[,2]))
   
-  cl <- cl[cl %in% select.cl]
+  cl.size <- table(cl)
+  select.cl <- intersect(select.cl, names(cl.size)[cl.size >= min.cells])
   
+  cl <- cl[cl %in% select.cl]
+
   norm.dat <- norm.dat[, names(cl)]
 
   # Gene filtering based on low.th and min.cells thresholds
@@ -431,8 +436,11 @@ de_selected_pairs <- function(norm.dat,
   # norm.dat <- as.matrix(norm.dat[genes_above_min.cells, ])
   
   # Mean computation
-  cl.means <- as.data.frame(get_cl_means(norm.dat, 
-                                         cl))
+  if(is.null(cl.means)) {
+    cl.means <- as.data.frame(get_cl_means(norm.dat, cl))
+  } else {
+    cl.means <- as.data.frame(cl.means)
+  }
   
   # Set thresholds per gene
   if(length(low.th) == 1) {
@@ -442,10 +450,10 @@ de_selected_pairs <- function(norm.dat,
   # Compute fraction of cells in each cluster with expression >= low.th
   if(is.null(cl.present)){
     cl.present <- as.data.frame(get_cl_means(norm.dat >= low.th[row.names(norm.dat)],
-                                             cl))
+                                           cl))
+  } else {
+    cl.present <- as.data.frame(cl.present)
   }
-  
-  cl.size <- table(cl)
 
   if(method=="limma"){
     cl <- setNames(as.factor(paste0("cl",cl)),names(cl))
@@ -488,6 +496,7 @@ de_selected_pairs <- function(norm.dat,
       
     }
   } else {
+    # This needs to be moved to NAMESPACE
     library(foreach)
     
     cluster <- parallel::makeCluster(mc.cores)
@@ -510,6 +519,7 @@ de_selected_pairs <- function(norm.dat,
                            cl.means = cl.means,
                            cl.size = cl.size,
                            genes = row.names(norm.dat)))
+
     }
     
     parallel::stopCluster(cluster)
@@ -519,7 +529,6 @@ de_selected_pairs <- function(norm.dat,
   
   return(de_list)
 }
-
 
 ####Make sure dat and cl has the same dimension, and cells are in the same order
 
@@ -555,6 +564,21 @@ de_all_pairs <- function(norm.dat,
   
 }
 
+# Add docs and implement within functions
+create_pairs <- function(cn, direction="nondirectional", include.self = FALSE)
+  {
+    cl.n = length(cn)	
+    pairs = cbind(rep(cn, rep(cl.n,cl.n)), rep(cn, cl.n))
+    if(direction=="nondirectional"){
+      pairs = pairs[pairs[,1]<=pairs[,2],,drop=F]
+    }
+    if(!include.self){
+      pairs = pairs[pairs[,1]!=pairs[,2],,drop=F]
+    }
+    row.names(pairs) = paste0(pairs[,1],"_",pairs[,2])
+    return(pairs)
+  }
+
 
 #' Compute differential expression summary statistics based on a differential results data.frame and de_param().
 #' 
@@ -580,12 +604,17 @@ de_all_pairs <- function(norm.dat,
 de_stats_pair <- function(df,
                           de.param = de_param(), 
                           cl.size1 = NULL, 
-                          cl.size2 = NULL) {
+                          cl.size2 = NULL,
+                          select.genes = NULL) {
   
   df <- df[order(df$pval, -abs(df$lfc)), ]
   
   select <- with(df, which(padj < de.param$padj.th & abs(lfc) > de.param$lfc.th))
   select <- row.names(df)[select]
+  
+   if(!is.null(select.genes)){
+     select <- select[select %in% select.genes]
+   }
   
   if(is.null(select) | length(select) == 0){
     return(list())
@@ -607,6 +636,7 @@ de_stats_pair <- function(df,
     
     if(!is.null(cl.size1)){
       up <- with(df[up, , drop = FALSE], up[q1 * cl.size1 >= de.param$min.cells])
+
     }
     
     down <- with(df[down, , drop = FALSE], down[q2 > de.param$q1.th])
@@ -677,7 +707,10 @@ de_stats_selected_pairs <- function(norm.dat,
                                     de.df = NULL, 
                                     de.param = de_param(), 
                                     method = "limma", 
-                                    mc.cores = 1) {
+                                    select.genes = NULL,
+                                    mc.cores = 1,
+                                   cl.means = NULL,
+                                   cl.present = NULL) {
   
   # Filter data for only the provided pairs
   row.names(pairs) <- paste(pairs[, 1], pairs[, 2], sep = "_")
@@ -716,8 +749,11 @@ de_stats_selected_pairs <- function(norm.dat,
                                  cl[select.cells], 
                                  pairs[select.pair, , drop = FALSE], 
                                  low.th = low.th,
+                                 min.cells = de.param$min.cells,
                                  method = method, 
-                                 mc.cores = mc.cores)
+                                 mc.cores = mc.cores,
+                                cl.means = cl.means,
+                                cl.present = cl.present)
     }
     
     de.genes <- sapply(names(de.df), 
@@ -737,7 +773,8 @@ de_stats_selected_pairs <- function(norm.dat,
                          de_stats_pair(df, 
                                        de.param = de.param, 
                                        cl.size1, 
-                                       cl.size2)
+                                       cl.size2,
+                                      select.genes = select.genes)
                        },
                        simplify = FALSE)
   } else {
@@ -1051,4 +1088,33 @@ plot_de_lfc_num <- function(de.genes,
               de.summary = de.summary))
 }
 
+# New plotting functions from Zizhen - to be checked
+plot_pair_matrix <- function(pair.num, file, directed=FALSE, dend=NULL, col=jet.colors(100), cl.label=NULL,...)
+  {
+    pair.matrix <- convert_pair_matrix(pair.num, directed = directed)
+    if(!is.null(cl.label)){
+      colnames(pair.matrix) = row.names(pair.matrix) = cl.label[row.names(pair.matrix)]
+    }
+    breaks = c(min(pair.num)-0.1, quantile(pair.num, seq(0.05,0.95,length.out=100)), max(pair.num)+0.1)
+    pdf(file, ...)
+    heatmap.3(pair.matrix, col = col, 
+              trace = "none", Colv = dend, Rowv = dend, dendrogram = "row", 
+              cexRow = 0.3, cexCol = 0.3)
+    dev.off()     
+  }
 
+
+plot_de_num <- function(de.genes, dend, cl.label=NULL, directed=FALSE, file="log10.de.num.pdf", ...)
+  {
+    label = as.hclust(dend)$label
+    de.num.matrix <- get_de_matrix(de.genes, directed = directed)
+    de.num.matrix <- de.num.matrix[label, label]
+    breaks=c(-1,seq(0.2,4,length.out=100))
+    if(!is.null(cl.label)){
+      colnames(de.num.matrix) = row.names(de.num.matrix) = cl.label[row.names(de.num.matrix)]
+    }
+    tmp.dat=log10(de.num.matrix+1)
+    pdf(file, ...)
+    heatmap.3(tmp.dat, col=jet.colors(100), breaks=breaks,trace="none",Colv=dend, Rowv=dend,dendrogram="row",cexRow=0.3,cexCol=0.3)
+    dev.off()
+}

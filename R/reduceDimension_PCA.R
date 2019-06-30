@@ -2,8 +2,32 @@
 # function_1()
 #   called_by_function_1() called_function_file.R
 #
+# prcomp.irlba()
+#
 # rd_PCA()
-#   
+#  
+
+prcomp.irlba <- function(x, 
+                         max.rank = 500, 
+                         maxit = 1000, 
+                         tol = 1e-05, 
+                         center = TRUE,
+                         ...)
+  {
+    s <- irlba::irlba(x, 
+                      nv = max.rank, 
+                      nu = max.rank, 
+                      maxit = maxit, 
+                      tol = tol, 
+                      ...)
+    s$d <- s$d / sqrt(max(1, nrow(x) - 1))
+    dimnames(s$v) <- list(colnames(x), paste0("PC", seq_len(ncol(s$v))))
+    r <- list(sdev = s$d, rotation = s$v)
+    r$x <- x %*% s$v
+    class(r) <- "prcomp"
+  
+    return(r)
+  }
 
 #' Reduce dimensionality using PCA
 #'
