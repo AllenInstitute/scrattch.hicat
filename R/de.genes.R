@@ -455,7 +455,7 @@ de_selected_pairs <- function(norm.dat,
     cl.present <- as.data.frame(cl.present)
   }
 
-  if(method=="limma"){
+  if(method=="limma") {
     cl <- setNames(as.factor(paste0("cl",cl)),names(cl))
     design <- model.matrix(~0 + cl)
     colnames(design) <- levels(as.factor(cl))

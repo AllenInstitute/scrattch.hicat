@@ -111,7 +111,8 @@ score_gene_mod <-  function(norm.dat,
                            
                            de.gene.stats <- de_stats_all_pairs(as.matrix(norm.dat[,select.cells]), 
                                                                cl = gene.mod.cl, 
-                                                               de.param = de.param)
+                                                               de.param = de.param,
+                                                               min.cells = 1)
                            de.genes <- de.gene.stats$de.genes
                            
                            de.genes <- de.genes[sapply(de.genes, length) > 1]
