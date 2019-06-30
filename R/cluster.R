@@ -243,6 +243,9 @@ jaccard_louvain <- function(dat,
                             Rphenograph = FALSE) {
   
   if(Rphenograph) {
+    if(!"Rphenograph" %in% .packages(all.available = TRUE)) {
+      stop("jaccard_louvain() with Rphenograph = TRUE requires the Rphenograph package.\nInstall with: devtools::install_github(\"JinmiaoChenLab/Rphenograph\")")
+    }
     rpheno <- Rphenograph::Rphenograph(dat, k = k)
   } else {
     rpheno <- phenograph(dat,
@@ -331,7 +334,6 @@ onestep_clust <- function(norm.dat,
   } else{
     sampled.cells <- select.cells
   }
-  print(head(select.cells))
   #Filter genes based on de_params: low.th and min.cells
   if(is.matrix(norm.dat)){
     cells_gt_low.th <- rowSums(norm.dat[,select.cells] > de.param$low.th)
