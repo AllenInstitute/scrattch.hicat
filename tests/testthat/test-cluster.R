@@ -467,9 +467,87 @@ test_that(
 
 ## iter_clust() tests
 test_that(
-  "iter_clust() needs tests.",
+  "iter_clust() performs iterative clustering.",
   {
+    de.param <- de_param(low.th = 1,
+                         padj.th = 0.01,
+                         lfc.th = 1,
+                         q1.th = 0.5,
+                         q2.th = NULL,
+                         q.diff.th = 0.7,
+                         de.score.th = 150,
+                         min.cells = 4,
+                         min.genes = 5)
     
+    results <- iter_clust(norm.dat = glial_data, 
+                          select.cells = NULL,
+                          prefix = "cl", 
+                          split.size = 10, 
+                          result = NULL,
+                          method = "louvain",
+                          dim.method = "pca",
+                          de.param = de.param)
+    
+    expect_is(results, "list")
+    expect_equal(length(results), 2)
+    
+    expect_is(results$cl, "numeric")
+  }
+)
+
+test_that(
+  "iter_clust() performs repeated clustering at a higher resolution.",
+  {
+    de.param1 <- de_param(low.th = 1,
+                         padj.th = 0.01,
+                         lfc.th = 1,
+                         q1.th = 0.5,
+                         q2.th = NULL,
+                         q.diff.th = 0.7,
+                         de.score.th = 500, # higher than default
+                         min.cells = 20, # higher than default
+                         min.genes = 5)
+    
+    results1 <- iter_clust(norm.dat = glial_data, 
+                          select.cells = NULL,
+                          prefix = "cl", 
+                          split.size = 10, 
+                          result = NULL,
+                          method = "ward.D",
+                          dim.method = "pca",
+                          de.param = de.param1)
+    
+    expect_is(results1, "list")
+    expect_equal(length(results1), 2)
+    
+    expect_is(results1$cl, "numeric")
+    
+    
+    de.param2 <- de_param(low.th = 1,
+                          padj.th = 0.01,
+                          lfc.th = 1,
+                          q1.th = 0.3, # less stringent
+                          q2.th = NULL,
+                          q.diff.th = 0.5, # less stringent
+                          de.score.th = 50, # less stringent
+                          min.cells = 4, # allow smaller
+                          min.genes = 1) # fewer genes
+    
+    results2 <- iter_clust(norm.dat = glial_data, 
+                           select.cells = NULL,
+                           prefix = "cl", 
+                           split.size = 5, 
+                           result = results1, # Results from a previous attempt
+                           method = "louvain",
+                           dim.method = "WGCNA", # WGCNA instead of pca - finds finer clusters.
+                           de.param = de.param2)
+    
+    expect_is(results2, "list")
+    expect_equal(length(results2), 2)
+    
+    expect_is(results2$cl, "numeric")
+    
+    expect_true(length(unique(results2$cl)) > length(unique(results1$cl)))
   }
 )
 

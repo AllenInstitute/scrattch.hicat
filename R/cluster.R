@@ -331,10 +331,6 @@ onestep_clust <- function(norm.dat,
     select.cells <- colnames(norm.dat)
   }
   
-  if(is.null(counts)){
-    counts <- 2 ^ (norm.dat[select.genes, sampled.cells]) - 1
-  }
-  
   method <- match.arg(method,
                       choices = c("louvain","Rphenograph","ward.D","kmeans"))
   
@@ -369,7 +365,10 @@ onestep_clust <- function(norm.dat,
   select.genes <- row.names(norm.dat)[which(genes_gt_min.cells)]
   
   #Find high variance genes.
-
+  if(is.null(counts)){
+    counts <- 2 ^ (norm.dat[select.genes, sampled.cells]) - 1
+  }
+  
   plot_file <- NULL
   
   if(verbose & !is.null(prefix)){
@@ -544,7 +543,7 @@ onestep_clust <- function(norm.dat,
 #' @param prefix The character string to indicate current iteration.
 #' @param split.size The minimum cluster size for further splitting. Default = 10.
 #' @param result The current clustering result as basis for further splitting.
-#' @param method Clustering method. It can be "auto", "louvain", "hclust"
+#' @param method Clustering method. Options are "auto", "louvain", and "ward.D". Default is "auto".
 #' @param ... Other parameters passed to `onestep_clust()`
 #'
 #' @return Clustering result is returned as a list with two elements: 
@@ -560,14 +559,15 @@ iter_clust <- function(norm.dat,
                        ...) {
   
   method <- match.arg(method,
-                      choices = c("auto","louvain","hclust"))
+                      choices = c("auto","louvain","ward.D","hclust"))
   
   if(is.null(select.cells)) {
     select.cells <- colnames(norm.dat)
   }
   
   if(!is.null(prefix)) { 
-    print(prefix)
+    cat("\r",prefix,"                    ")
+    flush.console()
   }
   
   if(method == "auto"){
@@ -576,6 +576,11 @@ iter_clust <- function(norm.dat,
     } else {
       method <- "ward.D"
     }
+  }
+  
+  # backwards compatibility with old hclust option.
+  if(method == "hclust") {
+    method <- "ward.D"
   }
   
   if(length(select.cells) <= 3000) {
@@ -588,7 +593,7 @@ iter_clust <- function(norm.dat,
     result <- onestep_clust(norm.dat, 
                             select.cells = select.cells, 
                             prefix = prefix,
-                            method = select.method,
+                            method = method,
                             ...)
     gc()
   }
