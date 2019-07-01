@@ -4,7 +4,8 @@
 \alias{compare_annotate}
 \title{Compare two sets of cluster assignments for the same set of cells}
 \usage{
-compare_annotate(cl, ref.cl, ref.cl.df, reorder = TRUE, rename = TRUE)
+compare_annotate(cl, ref.cl, ref.cl.df = NULL, reorder = TRUE,
+  rename = TRUE)
 }
 \arguments{
 \item{cl}{A cluster factor object to compare to a reference}

@@ -78,7 +78,7 @@ plot_tsne_cl <- function(norm.dat,
                                      shape = cl_label),
                         size = cex) + 
     ggplot2::scale_color_manual(values = ggplot2::alpha(as.vector(cl.col[levels(tsne.df$cl_label)]), alpha.val)) + 
-    ggplot2::scale_shape_manual(values = as.vector(ggplot2::shape[levels(tsne.df$cl_label)]))
+    ggplot2::scale_shape_manual(values = as.vector(shape[levels(tsne.df$cl_label)]))
   
   for(i in 1:nrow(cl.center)) {
     g <- g + 
@@ -103,7 +103,7 @@ plot_tsne_cl <- function(norm.dat,
   
   if(show.legend){
     g <- g +
-      ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(shape = ggplot2::shape[levels(tsne.df$cl_label)])),
+      ggplot2::guides(colour = ggplot2::guide_legend(override.aes = list(shape = shape[levels(tsne.df$cl_label)])),
                       ncol = 5) + 
       ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = legend.size))) +
       ggplot2::theme(legend.position="bottom")
@@ -168,7 +168,7 @@ plot_tsne_gene <- function(tsne.df,
     tsne.df$expr <- norm.dat[g, row.names(tsne.df)]
     
     p <- ggplot2::ggplot(tsne.df, 
-                         aes(x = Lim1, 
+                         ggplot2::aes(x = Lim1, 
                              y = Lim2)) + 
       ggplot2::geom_point(ggplot2::aes(color = expr),
                           size = cex) + 

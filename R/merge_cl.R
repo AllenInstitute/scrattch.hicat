@@ -60,7 +60,11 @@ merge_cl<- function(norm.dat,
   }
   
   if(length(intersect(colnames(norm.dat), colnames(rd.dat.t))) == 0) {
-    rd.dat.t <- t(rd.dat.t)
+    if(class(rd.dat.t) == "matrix") {
+      rd.dat.t <- t(rd.dat.t)
+    } else if(class(rd.dat.t) == "dgCMatrix") {
+      rd.dat.t <- Matrix::t(rd.dat.t)
+    }
   }
   
   merge.type=merge.type[1]
