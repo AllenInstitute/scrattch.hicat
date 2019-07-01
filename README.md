@@ -28,12 +28,14 @@ An overview of the main functions in `scrattch.hicat` is provided in a vignette,
 ## Roadmap
 
 The next few updates to `scrattch.hicat` will be aimed at getting code testing in place for major clustering functions:  
-0.0.23: Current version; Tests in place for main cluster.R functions.  
-0.1.0: Vignette re-integrated; Adding pkgdown page; Update to Master branch.
+0.0.24: Current version; Vignette re-integrated; Adding pkgdown page.
+0.0.25: Tests is place for consensusCluster functions;
+0.1.0: Consensus clustering added to vignette; Update to Master branch.
 
 Previous updates:
 0.0.21: Added TravisCI and `covr` integration.
 0.0.22: Tests in place for de.genes.R functions.  
+0.0.23: Current version; Tests in place for main cluster.R functions.  
 
 ## The `scrattch` suite
 
