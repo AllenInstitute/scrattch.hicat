@@ -421,8 +421,8 @@ jaccard2 <- function(m) {
   return(B)
 }
 
-
-knn_jaccard <- function(knn.index)
+# renaming to prevent collision with main knn_jaccard() in cluster.R
+knn_jaccard2 <- function(knn.index)
   {
     knn.df = data.frame(i = rep(1:nrow(knn.index), ncol(knn.index)), j=as.vector(knn.index))
     knn.mat = sparseMatrix(i = knn.df[[1]], j=knn.df[[2]], x=1)
@@ -597,51 +597,51 @@ merge_knn_result <- function(split.results)
 
 
 
-
-plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, height=8, width=10)
-  {
-    library(ggplot2)
-    library(gridExtra)
-    with(comb.dat,{
-    #cl.df$cluster_color = adjust_color(cl.df$cluster_color, adj.col)
-    tmp = plot_tsne_cl(cl=cl, cl.df=cl.df,  tsne.df = tsne.df, cex=cex, fn.size = fn.size)
-    tsne.df = tmp$tsne.df
-    ggsave(paste("tsne.cl",prefix,"pdf", sep="."), tmp$g, height=height,width=width)
-    
-    tmp.df = meta.df[row.names(tsne.df),]
-    tmp= setNames(as.factor(tmp.df$platform), row.names(tsne.df))
-    meta.col=NULL
-    if(length(levels(tmp))==2){
-      meta.col = setNames(c("blue", "orange"), levels(tmp))
-    }
-    g= plot_tsne_meta(tsne.df, tmp, meta.col=meta.col, cex=cex)
-    ggsave(paste("tsne",prefix, "platform.pdf", sep="."), g, height=height, width=width)
-
-    plots = lapply(names(cl.list),function(x){
-      tmp.cl = cl.list[[x]]
-      tmp.cl = droplevels(tmp.cl[names(tmp.cl) %in% names(cl)])
-      if(length(tmp.cl)==0){
-        return(NULL)
-      }
-      g = plot_tsne_cl(cl=cl.list[[x]], cl.df=cl.df.list[[x]],  tsne.df = tsne.df[names(cl.list[[x]]),], cex=cex, fn.size = fn.size)$g
-      g = g + ggtitle(x)
-    })
-    plots = plots[!sapply(plots, is.null)]
-    ggsave(paste("tsne",prefix, "by.platform.cl.pdf", sep="."), marrangeGrob(grobs=plots, nrow=1, ncol=1), height=height, width=width)
-
-    plots = lapply(names(cl.list),function(x){
-      tmp.cells = names(cl)[meta.df[names(cl),"platform"]==x]
-      if(length(tmp.cells)==0){
-        return(NULL)
-      }
-      g = plot_tsne_cl(cl=droplevels(cl[tmp.cells]), cl.df=cl.df,  tsne.df = tsne.df[names(cl.list[[x]]),], cex=cex, fn.size = fn.size)$g
-      g = g + ggtitle(x)
-    })
-    plots = plots[!sapply(plots, is.null)]
-    ggsave(paste("tsne",prefix, "by.platform.pdf", sep="."), marrangeGrob(grobs=plots, nrow=1, ncol=1), height=height, width=width)
-  })
-    
-  }
+# commenting due to name collision
+# plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, height=8, width=10)
+#   {
+#     library(ggplot2)
+#     library(gridExtra)
+#     with(comb.dat,{
+#     #cl.df$cluster_color = adjust_color(cl.df$cluster_color, adj.col)
+#     tmp = plot_tsne_cl(cl=cl, cl.df=cl.df,  tsne.df = tsne.df, cex=cex, fn.size = fn.size)
+#     tsne.df = tmp$tsne.df
+#     ggsave(paste("tsne.cl",prefix,"pdf", sep="."), tmp$g, height=height,width=width)
+#     
+#     tmp.df = meta.df[row.names(tsne.df),]
+#     tmp= setNames(as.factor(tmp.df$platform), row.names(tsne.df))
+#     meta.col=NULL
+#     if(length(levels(tmp))==2){
+#       meta.col = setNames(c("blue", "orange"), levels(tmp))
+#     }
+#     g= plot_tsne_meta(tsne.df, tmp, meta.col=meta.col, cex=cex)
+#     ggsave(paste("tsne",prefix, "platform.pdf", sep="."), g, height=height, width=width)
+# 
+#     plots = lapply(names(cl.list),function(x){
+#       tmp.cl = cl.list[[x]]
+#       tmp.cl = droplevels(tmp.cl[names(tmp.cl) %in% names(cl)])
+#       if(length(tmp.cl)==0){
+#         return(NULL)
+#       }
+#       g = plot_tsne_cl(cl=cl.list[[x]], cl.df=cl.df.list[[x]],  tsne.df = tsne.df[names(cl.list[[x]]),], cex=cex, fn.size = fn.size)$g
+#       g = g + ggtitle(x)
+#     })
+#     plots = plots[!sapply(plots, is.null)]
+#     ggsave(paste("tsne",prefix, "by.platform.cl.pdf", sep="."), marrangeGrob(grobs=plots, nrow=1, ncol=1), height=height, width=width)
+# 
+#     plots = lapply(names(cl.list),function(x){
+#       tmp.cells = names(cl)[meta.df[names(cl),"platform"]==x]
+#       if(length(tmp.cells)==0){
+#         return(NULL)
+#       }
+#       g = plot_tsne_cl(cl=droplevels(cl[tmp.cells]), cl.df=cl.df,  tsne.df = tsne.df[names(cl.list[[x]]),], cex=cex, fn.size = fn.size)$g
+#       g = g + ggtitle(x)
+#     })
+#     plots = plots[!sapply(plots, is.null)]
+#     ggsave(paste("tsne",prefix, "by.platform.pdf", sep="."), marrangeGrob(grobs=plots, nrow=1, ncol=1), height=height, width=width)
+#   })
+#     
+#   }
 
 
 ##' .. content for \description{} (no empty lines) ..
