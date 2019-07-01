@@ -18,5 +18,10 @@ bioc_packages:
   - limma
   - WGCNA
 
+script: 
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check scrattch.hicat*tar.gz
+
 after_success:
   - Rscript -e 'library(covr); codecov()'
