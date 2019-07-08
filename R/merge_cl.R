@@ -232,3 +232,24 @@ merge_cl<- function(norm.dat,
   return(list(cl=cl, de.genes=de.genes,sc=sc, markers=markers))
 }
 
+
+merge_cl_by_co <- function(cl, co.ratio=NULL, cl.mat=NULL, diff.th=0.25, verbose=0){
+  cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.mat=cl.mat)
+  cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,,drop=F])))
+  co.within= diag(cl.co.ratio)
+  co.df <- as.data.frame(as.table(cl.co.ratio),stringsAsFactors=FALSE)
+  co.df = co.df[co.df[,1]<co.df[,2]& co.df[,3]>0.1,]
+  co.df$within1 = co.within[co.df[,1]]
+  co.df$within2 = co.within[co.df[,2]]
+  co.df$diff = pmax(co.df$within1, co.df$within2) - co.df[,3]
+  co.df = co.df[co.df$diff  < diff.th,]
+  co.df = co.df[order(co.df[,1],decreasing=T),]
+  if(verbose > 0){
+    print(co.df)
+  }
+  for(i in 1:nrow(co.df)){
+    cl[cl==co.df[i,2]]=co.df[i,1]
+  }
+  cl = setNames(as.integer(as.character(cl)), names(cl))
+  return(cl)
+}

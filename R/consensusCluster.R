@@ -1,50 +1,110 @@
+# Function call map
+# function_1()
+#   called_by_function_1() called_function_file.R
+#
+# collect_co_matrix()
+#
+# sample_cl_list()
+#
+# iter_consensus_clust()
+#   get_cell.cl.co.ratio() consensusCluster.R
+#   sample_cl_list() consensusCluster.R
+#   init_cut() consensusCluster.R
+#   pass_louvain() cluster.R
+#   merge_cl_by_co() merge_cl.R
+#   merge_cl() merge_cl.R
+#   iter_consensus_clust() consensusCluster.R [Recursive]
+#
+# collect_subsample_cl_matrix()
+#
+
+
 #' Collect co-clustering matrix from results files
 #'
 #' @param result.files A directory containing results files
 #' @param all.cells The cells to read from results files
 #'
-collect_co_matrix <- function(result.files,all.cells)
-{
-  subsample.cl=list()
-  co.matrix= matrix(0, nrow=length(all.cells),ncol=length(all.cells))
-  pr.matrix = matrix(0, nrow=length(all.cells),ncol=length(all.cells))
-  row.names(co.matrix)=row.names(pr.matrix)=colnames(co.matrix)=colnames(pr.matrix)=all.cells
-  for(f in result.files){
-    tmp=load(f)
-    cl=result$cl
-    cl = cl[intersect(names(cl),all.cells)]
-    pr.matrix[names(cl),names(cl)]=   pr.matrix[names(cl),names(cl)] + 1
-    for(x in unique(cl)){
-      y=names(cl)[cl==x]
-      co.matrix[y,y]= co.matrix[y,y]+1
+#' @return a list with two objects: co.ratio, a matrix of coclustering ratios for each sample; 
+#' cl.list, a list object with the clustering results from each round of consensus clustering.
+#'
+collect_co_matrix <- function(result.files,
+                              all.cells) {
+  subsample.cl <- list()
+  
+  co.matrix <- matrix(0, 
+                      nrow = length(all.cells),
+                      ncol = length(all.cells))
+  rownames(co.matrix) <- all.cells
+  colnames(co.matrix) <- all.cells
+  
+  pr.matrix <- matrix(0, 
+                      nrow = length(all.cells),
+                      ncol = length(all.cells))
+  rownames(pr.matrix) <- all.cells
+  colnames(pr.matrix) <- all.cells
+  
+  for(f in result.files) {
+    load(f)
+    
+    cl <- result$cl
+    cl <- cl[intersect(names(cl), all.cells)]
+    
+    pr.matrix[names(cl),names(cl)] <- pr.matrix[names(cl),names(cl)] + 1
+    
+    for(x in unique(cl)) {
+      y <- names(cl)[cl == x]
+      
+      co.matrix[y,y] <- co.matrix[y,y] + 1
     }
-    subsample.cl[[f]]= cl
+    
+    subsample.cl[[f]] <- cl
   }
-  co.ratio = co.matrix/pr.matrix
-  return(list(co.ratio=co.ratio,cl.list=subsample.cl))
-  }
+  
+  co.ratio <- co.matrix / pr.matrix
+  
+  return(list(co.ratio = co.ratio,
+              cl.list = subsample.cl))
+}
 
-sample_cl_list <- function(cl.list, max.cl.size=500)
-  {
-    select.cells=c()
-    for(cl in cl.list){
-      cl.size=table(cl)
-      more.cl = cl[setdiff(names(cl), select.cells)]
-      more.size = table(more.cl)
-      add.cells= unlist(lapply(names(more.size), function(x){
-        sample(names(more.cl)[more.cl==x], min(more.size[[x]],max.cl.size))
-      }))
-      select.cells= c(select.cells, add.cells)
-    }
-    return(select.cells)
+#' Sample a list of cluster results
+#' 
+#' This samples up to the max.cl.size parameter. If a cluster has fewer cells than max.cl.size, all 
+#' will be returned.
+#' 
+#' @param cl.list a list of cluster results
+#' @param max.cl.size numeric, the max size to sample. Default is 500.
+#' 
+#' @return a character vector of sample names
+sample_cl_list <- function(cl.list, 
+                           max.cl.size = 500) {
+  
+  select.cells <- character(0)
+  
+  for(cl in cl.list){
+    cl.size <- table(cl)
+    more.cl <- cl[setdiff(names(cl), select.cells)]
+    more.size <- table(more.cl)
+    add.cells <- lapply(names(more.size), 
+                        function(x) {
+                          cl.cells <- names(more.cl)[more.cl == x]
+                          sample.n <- min(more.size[[x]], max.cl.size)
+                          sample(cl.cells, sample.n)
+                        })
+    
+    add.cells <- unlist(add.cells)
+    
+    select.cells <- c(select.cells, add.cells)
   }
+  
+  return(select.cells)
+}
 
 
 #' Iterative consensus clustering
-#'
-#' @param co.ratio cell cell co-clustering matrix
-#' @param cl.list  The list of subsampled clustering results. 
+#' 
 #' @param norm.dat The log2 transformed normalzied expression matrix 
+#' @param co.ratio cell cell co-clustering matrix
+#' @param cl.list The list of subsampled clustering results. 
 #' @param select.cells Cells to be clustered
 #' @param de.param Differentiall expressed genes criteria for merging clusters
 #' @param merge.type Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately. 
@@ -57,189 +117,328 @@ sample_cl_list <- function(cl.list, max.cl.size=500)
 #' @return A list with cluster membership, and top pairwise marker genes. 
 #' @export
 #' 
-iter_consensus_clust <- function(cl.list, 
-                                 co.ratio=NULL,  
-                                 cl.mat=NULL, 
-                                 norm.dat, 
-                                 select.cells=names(cl.list[[1]]), 
-                                 diff.th=0.25, 
-                                 prefix=NULL, 
-                                 method=c("auto", "louvain","ward.D"), 
-                                 verbose=FALSE, 
-                                 de.param = de.param, 
+iter_consensus_clust <- function(cl.list,
+                                 norm.dat,
+                                 co.ratio = NULL,  
+                                 cl.mat = NULL, 
+                                 select.cells = NULL, 
+                                 diff.th = 0.25, 
+                                 prefix = NULL, 
+                                 method = "auto", 
+                                 de.param = NULL, 
                                  max.cl.size = 300, 
-                                 result=NULL, 
-                                 split.size = de.param$min.cells*2, 
-                                 merge.type=c("undirectional", "directional"))
-{
-  method=method[1]
-  require(igraph)
+                                 result = NULL, 
+                                 split.size = NULL, 
+                                 merge.type = "undirectional",
+                                 verbose = FALSE) {
+  
+  if(is.null(select.cells)) {
+    select.cells <- names(cl.list[[1]])
+  }
+  
+  method <- match.arg(method,
+                      choices = c("auto","louvain","ward.D"))
+  
+  merge.type <- match.arg(merge.type,
+                          choices = c("undirectional","directional"))
+  
+  if(is.null(de.param)) {
+    de.param <- de_param()
+  }
+  
+  if(is.null(split.size)) {
+    split.size <- de.param$min.cells*2
+  }
+  
   if(verbose){
     print(prefix)
   }
-  if(!is.null(result)){
-    markers=result$markers
-    cl = setNames(as.integer(as.character(result$cl)),names(result$cl))
-    cell.cl.co.ratio= get_cell.cl.co.ratio(cl, co.ratio= co.ratio, cl.mat=cl.mat[,names(cl)])
-  }
-  else{
-    markers=NULL
-    if(length(select.cells)  < split.size){
+  
+  if(!is.null(result)) {
+    markers <- result$markers
+    cl <- setNames(as.integer(as.character(result$cl)),
+                   names(result$cl))
+    cell.cl.co.ratio <- get_cell.cl.co.ratio(cl = cl, 
+                                             co.ratio = co.ratio, 
+                                             cl.mat = cl.mat[,names(cl)])
+  } else {
+    markers <- NULL
+    
+    if(length(select.cells) < split.size) {
+      if(verbose) {
+        warning("Fewer cells selected than split.size. Returning NULL.")
+      }
       return(NULL)
     }
-    co.ratio.sampled = FALSE
-    if(is.null(co.ratio)){
-      cl.size = table(cl.list[[1]][select.cells])
-      graph.size= sum(cl.size^2)
-      if(graph.size > 10^8){
-        co.ratio.sampled=TRUE
-        tmp.cl.list = lapply(cl.list, function(cl)cl[select.cells])
-        sampled.cells = sample_cl_list(tmp.cl.list, max.cl.size=max.cl.size)
+    
+    co.ratio.sampled <- FALSE
+    
+    if(is.null(co.ratio)) {
+      cl.size <- table(cl.list[[1]][select.cells])
+      graph.size <- sum(cl.size ^ 2)
+      
+      if(graph.size > (2^32 - 2)) {
+        co.ratio.sampled <- TRUE
         
-        cl.size = table(cl.list[[1]][sampled.cells])
-        graph.size= sum(cl.size^2)
-        if(graph.size > 10^8){
-          sampled.cells = sample_cells(cl.list[[1]][sampled.cells], max.cl.size)
+        tmp.cl.list <- lapply(cl.list, 
+                              function(cl) {
+                                cl[select.cells]
+                              })
+        
+        sampled.cells <- sample_cl_list(tmp.cl.list, 
+                                        max.cl.size = max.cl.size)
+        
+        cl.size <- table(cl.list[[1]][sampled.cells])
+        graph.size <- sum(cl.size^2)
+        
+        if(graph.size > (2^32 - 2)) {
+          #sampled.cells = sample_cells(cl.list[[1]][sampled.cells], max.cl.size)
+          stop(paste("Graph too large for 32-bit dependencies.",
+                     "Reduce max.cl.size to sample < 65,536 cells",
+                     "(currently", sum(cl.size), ")."))
         }
+      } else {
+        sampled.cells <- select.cells
       }
-      else{
-        sampled.cells=select.cells
-      }
-      co.ratio = Matrix::crossprod(cl.mat[,sampled.cells])
-      co.ratio@x = co.ratio@x/length(cl.list)
+      
+      co.ratio <- Matrix::crossprod(cl.mat[, sampled.cells])
+      co.ratio@x <- co.ratio@x / length(cl.list)
     }
-    if(method=="auto"){
-      if (length(select.cells)> 3000){
-        select.method = "louvain"
-      }
-      else{
-        select.method="ward.D"
-      }
+    
+    if(method == "auto" & length(select.cells) > 3000){
+      method <- "louvain"
+    } else if(method == "auto" & length(select.cells) <= 3000) {
+      method <- "ward.D"
     }
-    else{
-      select.method = method
-    }
-    if(select.method=="ward.D"){
-      if(!is.matrix(co.ratio)){
-        tmp.co.ratio = as.matrix(co.ratio[select.cells, select.cells])
+    
+    if(method == "ward.D"){
+      
+      if(!is.matrix(co.ratio)) {
+        co.ratio <- as.matrix(co.ratio[select.cells, select.cells])
       }
-      else{
-        tmp.co.ratio = co.ratio
-      }
-      tmp.cl = init_cut(tmp.co.ratio, select.cells, cl.list, min.cells= de.param$min.cells, th = diff.th,method=select.method)
-      rm(tmp.co.ratio)
-      if(is.null(tmp.cl)){
+      
+      tmp.cl <- init_cut(co.ratio, 
+                         select.cells, 
+                         cl.list, 
+                         min.cells = de.param$min.cells, 
+                         th = diff.th,
+                         method = method)
+      
+      if(is.null(tmp.cl)) {
         return(NULL)
       }
-    }
-    else{###louvain
-      if(co.ratio.sampled){
-        adj.mat = co.ratio
+      
+    } else if(method == "louvain") {
+      if(co.ratio.sampled) {
+        adj.mat <- co.ratio
+      } else {
+        adj.mat <- co.ratio[select.cells, select.cells]
       }
-      else{
-        adj.mat = co.ratio[select.cells, select.cells]
-      }
-      gr = graph.adjacency(adj.mat, mode="undirected",weighted=TRUE)
-      comm= cluster_louvain(gr)
+      
+      gr <- igraph::graph.adjacency(adj.mat, 
+                                    mode = "undirected",
+                                    weighted = TRUE)
+      comm <- igraph::cluster_louvain(gr)
+      
       rm(gr)
-
-      if(pass_louvain(modularity(comm), adj.mat)){
-        tmp.cl = setNames(comm$membership,colnames(adj.mat))
-        if(length(unique(tmp.cl))==1){
+      
+      louvain_test <- pass_louvain(modularity(comm),
+                                   adj.mat)
+      
+      if(louvain_test) {
+        tmp.cl <- setNames(comm$membership,
+                           colnames(adj.mat))
+        
+        if(length(unique(tmp.cl)) == 1) {
+          if(verbose) {
+            warning("Found only one cluster. Returning NULL.")
+          }
           return(NULL)
         }
-       
-      }
-      else{
+        
+      } else{
+        if(verbose) {
+          warning("Louvain clustering failed modularity test. Returning NULL.")
+        }
         return(NULL)
       }
+      
       rm(adj.mat)
       gc()
     }
+    
     if(verbose){
       print(table(tmp.cl))
     }
-    tmp.cl=merge_cl_by_co(tmp.cl, co.ratio=co.ratio, cl.mat=cl.mat[,names(tmp.cl)],diff.th)
-    cell.cl.co.ratio= get_cell.cl.co.ratio(tmp.cl, co.ratio= co.ratio, cl.mat=cl.mat[,names(tmp.cl)])    
-    tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat.t=t(cell.cl.co.ratio), verbose=verbose,  de.param = de.param, return.markers=TRUE, max.cl.size= max.cl.size, merge.type=merge.type)
     
-    markers=tmp$markers
-    if(is.null(tmp) | !is.list(tmp)) return(NULL)
-    if (length(unique(tmp$cl))==1) return(NULL)
-    tmp.cl= tmp$cl
-    tmp.cl = setNames(as.integer(tmp.cl),names(tmp.cl))
-    if(length(unique(tmp.cl))==1) {
+    tmp.cl <- merge_cl_by_co(tmp.cl, 
+                             co.ratio = co.ratio, 
+                             cl.mat = cl.mat[,names(tmp.cl)],
+                             diff.th)
+    
+    cell.cl.co.ratio <- get_cell.cl.co.ratio(tmp.cl, 
+                                             co.ratio = co.ratio, 
+                                             cl.mat = cl.mat[,names(tmp.cl)])
+    
+    merged.cl <- merge_cl(norm.dat = norm.dat, 
+                          cl = tmp.cl, 
+                          rd.dat.t = t(cell.cl.co.ratio), 
+                          verbose = verbose,
+                          de.param = de.param, 
+                          return.markers = TRUE, 
+                          max.cl.size = max.cl.size, 
+                          merge.type = merge.type)
+    
+    markers <- merged.cl$markers
+    
+    if(is.null(merged.cl) | !is.list(tmp)) {
+      if(verbose) {
+        warning("Merging failed. Returning NULL.")
+      }
       return(NULL)
     }
-    if(co.ratio.sampled){
-      co.ratio = NULL
+    
+    if (length(unique(merged.cl$cl))==1) {
+      if(verbose) {
+        warning("Found only one cluster. Returning NULL.")
+      }
+      return(NULL)
     }
+    
+    tmp.cl <- merged.cl$cl
+    tmp.cl <- setNames(as.integer(tmp.cl), names(tmp.cl))
+    
+    if(length(unique(tmp.cl))==1) {
+      if(verbose) {
+        warning("Found only one cluster. Returning NULL")
+      }
+      return(NULL)
+    }
+    
+    if(co.ratio.sampled){
+      co.ratio <- NULL
+    }
+    
     gc()
-    cell.cl.co.ratio= get_cell.cl.co.ratio(tmp.cl, co.ratio= co.ratio, cl.mat=cl.mat[,select.cells])[select.cells,]
-    cl = setNames(as.integer(colnames(cell.cl.co.ratio)[apply(cell.cl.co.ratio, 1, which.max)]), row.names(cell.cl.co.ratio))    
+    
+    cell.cl.co.ratio <- get_cell.cl.co.ratio(tmp.cl, 
+                                             co.ratio = co.ratio, 
+                                             cl.mat = cl.mat[,select.cells])[select.cells,]
+    
+    cl <- setNames(as.integer(colnames(cell.cl.co.ratio)[apply(cell.cl.co.ratio, 1, which.max)]), row.names(cell.cl.co.ratio))
+    
     if(verbose){
-      cat("Total:", length(cl), "\n")
+      print(paste("Total:", length(cl), "\n"))
       print(table(cl))
     }
   }
-  n.cl=max(cl)
-  new.cl=cl
-  for(i in sort(unique(cl))){
-    tmp.prefix= paste0(prefix, ".", i)
-    tmp.cells=names(cl)[cl==i]
-    uncertain.cells=sum(cell.cl.co.ratio[tmp.cells, as.character(i)] < 1 - diff.th)
+  
+  n.cl <- length(unique(cl))
+  new.cl <- cl
+  
+  for(i in sort(unique(cl))) {
+    tmp.prefix <- paste0(prefix, ".", i)
+    tmp.cells <- names(cl)[cl == i]
+    
+    uncertain.cells <- sum(cell.cl.co.ratio[tmp.cells, as.character(i)] < 1 - diff.th)
+    
     if(uncertain.cells < de.param$min.cells){
-      next
+      next()
     }
-    result= iter_consensus_clust(cl.list=cl.list, co.ratio=co.ratio, cl.mat = cl.mat,  norm.dat=norm.dat, select.cells=tmp.cells, prefix=tmp.prefix,  diff.th =diff.th, method=method, de.param = de.param, verbose=verbose, max.cl.size=max.cl.size, merge.type=merge.type)
-    if(is.null(result)){
-      next
+    
+    result <- iter_consensus_clust(cl.list = cl.list, 
+                                   co.ratio = co.ratio, 
+                                   cl.mat = cl.mat, 
+                                   norm.dat = norm.dat, 
+                                   select.cells = tmp.cells, 
+                                   prefix = tmp.prefix,
+                                   diff.th = diff.th, 
+                                   method = method, 
+                                   de.param = de.param, 
+                                   verbose = verbose, 
+                                   max.cl.size = max.cl.size, 
+                                   merge.type = merge.type)
+    if(is.null(result)) {
+      next()
     }
-    tmp.cl= result$cl
-    new.cl[names(tmp.cl)] = tmp.cl + n.cl
-    n.cl = max(new.cl)
-    markers=union(markers, result$markers)
+    
+    tmp.cl <- result$cl
+    new.cl[names(tmp.cl)] <- tmp.cl + n.cl
+    n.cl <- length(unique(new.cl))
+    markers <- union(markers, result$markers)
   }
-  cl=new.cl
-  cl = setNames(as.integer(as.factor(cl)), names(cl))
-  return(list(cl=cl, markers=markers))
+  
+  cl <- new.cl
+  cl <- setNames(as.integer(as.factor(cl)), names(cl))
+  
+  return(list(cl = cl, 
+              markers = markers))
 }
 
 
 
-collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.size=NULL,mc.cores=1)
-{
-  select.cells=c()
-  run <- function(f){
-    print(f)
-    tmp=load(f)
-    cl= result$cl
-    test.cells = setdiff(all.cells, names(cl))
-    markers=unique(result$markers)
-    map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="mean")$pred.df
-    test.cl = setNames(map.df$pred.cl, row.names(map.df))
-    all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
+collect_subsample_cl_matrix <- function(norm.dat,
+                                        result.files,
+                                        all.cells,
+                                        max.cl.size = NULL,
+                                        mc.cores = 1) {
+  
+  select.cells <- character(0)
+  
+  run <- function(f) {
+    #print(f)
+    load(f)
+    cl <- result$cl
+    test.cells <- setdiff(all.cells, names(cl))
+    markers <- unique(result$markers)
+    map.df <- map_by_cor(norm.dat[markers,names(cl)],cl, 
+                         norm.dat[markers,test.cells],
+                         method = "mean")$pred.df
+    
+    test.cl <- setNames(map.df$pred.cl, 
+                        row.names(map.df))
+    
+    all.cl <- c(setNames(as.character(cl), 
+                         names(cl)), 
+                setNames(as.character(test.cl), 
+                         names(test.cl)))
+    
     return(all.cl[all.cells])
   }
-  if (mc.cores==1){
-    cl.list=sapply(result.files, function(f){run(f)},simplify=F)
+  
+  if (mc.cores == 1) {
+    cl.list <- sapply(result.files, 
+                     run,
+                     simplify = FALSE)
+  } else {
+    platform <- Sys.info()["sysname"]
+    
+    if(platform == "Windows") {
+      cl <- parallel::makePSOCKcluster(mc.cores)
+    } else {
+      cl <- parallel::makeForkCluster(mc.cores)
+    }
+    
+    doParallel::registerDoParallel(cl)
+    
+    cl.list <- foreach::foreach(i = 1:niter, 
+                                .combine = 'c') %dopar% run(f)
+    
+    parallel::stopCluster(cl)
   }
-  else{
-    require(foreach)
-    require(doParallel)
-    cl <- makeForkCluster(mc.cores)
-    registerDoParallel(cl)
-    cl.list= foreach(i=1:niter, .combine='c') %dopar% run(f)
-    stopCluster(cl)
-  }
+  
   if(!is.null(max.cl.size)){
-    select.cells= sample_cl_list(cl.list, max.cl.size=max.cl.size)
+    select.cells <- sample_cl_list(cl.list, 
+                                   max.cl.size = max.cl.size)
+  } else {
+    select.cells <- all.cells
   }
-  else{
-    select.cells= all.cells
-  }
-  cl.mat = compile_cl_mat(cl.list, select.cells)
-  return(list(cl.list=cl.list, cl.mat = cl.mat))
+  
+  cl.mat <- compile_cl_mat(cl.list, 
+                           select.cells)
+  
+  return(list(cl.list = cl.list, 
+              cl.mat = cl.mat))
 }
 
 compile_cl_mat <- function(cl.list, select.cells)
@@ -268,16 +467,16 @@ compile_cl_mat <- function(cl.list, select.cells)
 #' @export
 #' @author Zizhen Yao
 refine_cl <- function(cl, 
-                      co.ratio=NULL, 
-                      cl.mat=NULL, 
-                      confusion.th=0.6,
-                      min.cells=4, 
-                      niter=50, 
-                      tol.th=0.02, 
-                      verbose=0)
-{
+                      co.ratio = NULL, 
+                      cl.mat = NULL, 
+                      confusion.th = 0.6,
+                      min.cells = 4, 
+                      niter = 50, 
+                      tol.th = 0.02, 
+                      verbose = FALSE) {
+  
   ###If cl is factor, turn in to integer vector first. 
-  cl = setNames(as.integer(as.character(cl)), names(cl))
+  cl <- setNames(as.integer(as.character(cl)), names(cl))
   while(TRUE){
     correct = 0
     iter.num = 0
@@ -324,52 +523,42 @@ refine_cl <- function(cl,
   return(list(cl=cl, co.stats=co.stats))
 }
 
-merge_cl_by_co <- function(cl, co.ratio=NULL, cl.mat=NULL, diff.th=0.25, verbose=0){
-  cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio=co.ratio, cl.mat=cl.mat)
-  cl.co.ratio <- do.call("rbind",tapply(names(cl),cl, function(x)colMeans(cell.cl.co.ratio[x,,drop=F])))
-  co.within= diag(cl.co.ratio)
-  co.df <- as.data.frame(as.table(cl.co.ratio),stringsAsFactors=FALSE)
-  co.df = co.df[co.df[,1]<co.df[,2]& co.df[,3]>0.1,]
-  co.df$within1 = co.within[co.df[,1]]
-  co.df$within2 = co.within[co.df[,2]]
-  co.df$diff = pmax(co.df$within1, co.df$within2) - co.df[,3]
-  co.df = co.df[co.df$diff  < diff.th,]
-  co.df = co.df[order(co.df[,1],decreasing=T),]
-  if(verbose > 0){
-    print(co.df)
-  }
-  for(i in 1:nrow(co.df)){
-    cl[cl==co.df[i,2]]=co.df[i,1]
-  }
-  cl = setNames(as.integer(as.character(cl)), names(cl))
-  return(cl)
-}
-
 
 #' Get cell co-clustering ratios
-#'  
+#' 
+#' Requires either co.ratio or cl.mat.
+#' 
 #' @param cl Vector of cluster assignments
 #' @param co.ratio coclustering ratio results
-#' @param cl.mat Cluster membership matrix for all cells and all clusters from all bootstrapping iterations. 
-get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
-{
-  require(Matrix)
-  if(!is.null(co.ratio)){
-    cell.cl.co.ratio=get_cl_means(co.ratio, cl)
-  }
-  else if(!is.null(cl.mat)){
-    tmp1= get_cl_sums(cl.mat[,names(cl)], cl)
-    tmp = Matrix::crossprod(tmp1, cl.mat)
-    cl.size = table(cl)
-    n.times= Matrix::colSums(cl.mat)
-    tmp = tmp/ as.vector(cl.size[row.names(tmp)])
-    cell.cl.co.ratio = as.matrix(Matrix::t(tmp)/ n.times)
-  }
-  else{
+#' @param cl.mat Cluster membership matrix for all cells and all clusters from all bootstrapping iterations.
+#' 
+#' @return a matrix of cell co-clustering ratios
+#' 
+get_cell.cl.co.ratio <- function(cl, 
+                                 co.ratio = NULL, 
+                                 cl.mat = NULL) {
+
+  if(!is.null(co.ratio)) {
+    cell.cl.co.ratio <- get_cl_means(co.ratio, cl)
+  } else if(!is.null(cl.mat)) {
+    cl.sums <- get_cl_sums(cl.mat[,names(cl)], cl)
+    
+    cl.crossprod <- Matrix::crossprod(cl.sums, cl.mat)
+    
+    cl.size <- table(cl)
+    
+    n.times <- Matrix::colSums(cl.mat)
+    
+    tmp <- cl.crossprod / as.vector(cl.size[row.names(cl.crossprod)])
+    
+    cell.cl.co.ratio <- as.matrix(Matrix::t(tmp) / n.times)
+  } else {
     stop("Either co.ratio or cl.mat should not be NULL")
   }
+  
   return(cell.cl.co.ratio)
 }
+
 
 get_cl_co_stats <- function (cl, co.ratio = NULL, cl.mat = NULL) 
 {
