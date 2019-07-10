@@ -572,15 +572,16 @@ iter_clust <- function(norm.dat,
   
   if(method == "auto"){
     if(length(select.cells) > 3000) {
-      method <- "louvain"
+      current.method <- "louvain"
     } else {
-      method <- "ward.D"
+      current.method <- "ward.D"
     }
   }
   
   # backwards compatibility with old hclust option.
   if(method == "hclust") {
     method <- "ward.D"
+    current.method <- "ward.D"
   }
   
   if(length(select.cells) <= 3000) {
@@ -593,7 +594,7 @@ iter_clust <- function(norm.dat,
     result <- onestep_clust(norm.dat, 
                             select.cells = select.cells, 
                             prefix = prefix,
-                            method = method,
+                            method = current.method,
                             ...)
     gc()
   }
