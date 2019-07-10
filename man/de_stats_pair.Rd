@@ -5,7 +5,7 @@
 \title{Compute differential expression summary statistics based on a differential results data.frame and de_param().}
 \usage{
 de_stats_pair(df, de.param = de_param(), cl.size1 = NULL,
-  cl.size2 = NULL)
+  cl.size2 = NULL, select.genes = NULL)
 }
 \arguments{
 \item{df}{A data.frame of pairwise differential expression results (i.e. from \code{score_selected_pairs()}).}

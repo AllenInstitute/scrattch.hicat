@@ -55,8 +55,22 @@ sample_cl_list <- function(cl.list, max.cl.size=500)
 #' @param result Pre-computed clustering results used for further splitting. Default NULL.
 #'
 #' @return A list with cluster membership, and top pairwise marker genes. 
-#'
-iter_consensus_clust <- function(cl.list, co.ratio=NULL,  cl.mat=NULL, norm.dat, select.cells=names(cl.list[[1]]), diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward.D"), verbose=FALSE, de.param = de.param, max.cl.size = 300, result=NULL, split.size = de.param$min.cells*2, merge.type=c("undirectional", "directional"))
+#' @export
+#' 
+iter_consensus_clust <- function(cl.list, 
+                                 co.ratio=NULL,  
+                                 cl.mat=NULL, 
+                                 norm.dat, 
+                                 select.cells=names(cl.list[[1]]), 
+                                 diff.th=0.25, 
+                                 prefix=NULL, 
+                                 method=c("auto", "louvain","ward.D"), 
+                                 verbose=FALSE, 
+                                 de.param = de.param, 
+                                 max.cl.size = 300, 
+                                 result=NULL, 
+                                 split.size = de.param$min.cells*2, 
+                                 merge.type=c("undirectional", "directional"))
 {
   method=method[1]
   require(igraph)
@@ -251,8 +265,16 @@ compile_cl_mat <- function(cl.list, select.cells)
 #' @param tol.th If improvement is smaller than this threshold, terminate refinement step.  
 #' @param verbose If true, print out step-by-step improvement. 
 #' @return 
+#' @export
 #' @author Zizhen Yao
-refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells=4, niter=50, tol.th=0.02, verbose=0)
+refine_cl <- function(cl, 
+                      co.ratio=NULL, 
+                      cl.mat=NULL, 
+                      confusion.th=0.6,
+                      min.cells=4, 
+                      niter=50, 
+                      tol.th=0.02, 
+                      verbose=0)
 {
   ###If cl is factor, turn in to integer vector first. 
   cl = setNames(as.integer(as.character(cl)), names(cl))

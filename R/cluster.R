@@ -476,7 +476,7 @@ onestep_clust <- function(norm.dat,
                                  simplify = FALSE))
       jl_hc <- hclust(dist(t(jl_means)), 
                       method = "average")
-      jl_cut <- cutree(cl_hc, 
+      jl_cut <- cutree(jl_hc, 
                        pmin(max.cl, length(unique(cl))))
       cl <- setNames(jl_cut[as.character(cl)], names(cl))
     }
