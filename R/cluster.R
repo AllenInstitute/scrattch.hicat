@@ -576,12 +576,12 @@ iter_clust <- function(norm.dat,
     } else {
       current.method <- "ward.D"
     }
-  }
-  
-  # backwards compatibility with old hclust option.
-  if(method == "hclust") {
+  } else if(method == "hclust") {
+    # backwards compatibility with old hclust option.
     method <- "ward.D"
     current.method <- "ward.D"
+  } else {
+    current.method <- method
   }
   
   if(length(select.cells) <= 3000) {
