@@ -37,7 +37,7 @@ select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=N
     markers = c()
     for(i in 1:(length(cl.g)-1)){
       for(j in (i+1):length(cl.g)){
-        g = select_markers_pair_group(cl=cl, cl.g[[i]],cl.g[[j]],de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,...)
+        g = select_markers_pair_group(cl=cl, cl.g[[i]],cl.g[[j]],de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,norm.dat=norm.dat,...)
         markers=union(markers, g)          
       }
     }
@@ -55,7 +55,7 @@ select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=N
       if(length(markers)==0){
         next
       }
-      if(is.null(norm.dat)){
+      if(!is.null(norm.dat)){
         select.cells = unlist(tapply(select.cells, droplevels(cl[select.cells]),function(x)sample(x,min(length(x), 50))))
         tmp.cl = setNames(tmp.cl[as.character(cl[select.cells])],select.cells)
         rf = randomForest(t(as.matrix(norm.dat[markers,select.cells])),factor(tmp.cl))
@@ -67,7 +67,7 @@ select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=N
       attr(dend, "markers")=setNames(rep(1,length(markers)),markers)
     }
     for(i in 1:length(dend)){
-      dend[[i]] = select_dend_markers(dend[[i]], cl=cl, de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,...)
+      dend[[i]] = select_dend_markers(dend[[i]], cl=cl, norm.dat=norm.dat, de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,...)
     }
   }
   return(dend)
