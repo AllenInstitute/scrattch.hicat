@@ -9,7 +9,7 @@ get_RD_cl_center <- function(rd.dat, cl)
   }))
 }
 
-plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE)
+plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE, legend.size=2)
   {
     rd.dat$cl = cl[row.names(rd.dat)] 
     rd.dat$cl_label = droplevels(factor(cl.label[as.character(rd.dat$cl)]), levels=cl.label)
@@ -24,6 +24,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
     g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
     if(show.legend){
       g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(rd.dat$cl_label)])),ncol=5)
+      g <- g + guides(color = guide_legend(override.aes = list(size = legend.size)))
       g = g + theme(legend.position="bottom")
     }
     else{

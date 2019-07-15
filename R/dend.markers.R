@@ -37,7 +37,7 @@ select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=N
     markers = c()
     for(i in 1:(length(cl.g)-1)){
       for(j in (i+1):length(cl.g)){
-        g = select_markers_pair_group(cl=cl, cl.g[[i]],cl.g[[j]],de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score, ...)
+        g = select_markers_pair_group(cl=cl, cl.g[[i]],cl.g[[j]],de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,norm.dat=norm.dat,...)
         markers=union(markers, g)          
       }
     }
