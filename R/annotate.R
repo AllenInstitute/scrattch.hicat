@@ -386,22 +386,7 @@ compare_annotate <- function(cl,
   
   common.cells <- intersect(names(cl),names(ref.cl))
   
-  if(length(common.cells) == 0) {
-    stop("No common names in cl and ref.cl for comparison.")
-  }
-  ###Find clusters not present in ref.cl
-  tmp.cl <- droplevels(cl[common.cells])
-  ref.cl <- droplevels(ref.cl[common.cells])
-  absent.cl <- setdiff(levels(cl), levels(tmp.cl))
-  # compare predicted cluster member with the new clustering result 
-  tb <- table(tmp.cl, ref.cl)
-  cl.id.map <- NULL
-  
-  # Reorder clusters by size of overlap if reorder == TRUE
-  if(reorder){
-    tmp <- apply(tb, 1, which.max)
-    cl_names <- names(cl)
-    cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)], absent.cl))
+  if(length(comm(as.character(cl), levels = c(row.names(tb)[order(tmp)], absent.cl))
     cl <- setNames(cl, cl_names)
     if(rename){
       cl.id.map <- data.frame(new = 1:length(levels(cl)),
@@ -455,7 +440,7 @@ compare_annotate <- function(cl,
   #  tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
   #}
   
-  tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels = ref.cl.df$cluster_label)
+  tb.df$ref.cl.label <- ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"]
   
   g <- ggplot2::ggplot(tb.df, 
                        ggplot2::aes(x = cl, 
