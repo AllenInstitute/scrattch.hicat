@@ -86,22 +86,14 @@ plot_confusion <- function(consensus.cl, prefix, comb.dat,...)
 get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, cl, sets=names(dat.list))
   {
     if(is.null(de.param.list)){
-      de.param.list = sapply(names(dat.list), function(x)de_param(), simplify=F)
+      de.param.list = sapply(sets, function(x)de_param(), simplify=F)
     }
-    platform = setNames(rep(names(dat.list),sapply(dat.list, ncol)), unlist(lapply(dat.list, colnames)))
-    cl.platform.size = table(cl, platform[names(cl)])
-    select.platform = setNames(colnames(cl.platform.size)[apply(cl.platform.size, 1, which.max)],row.names(cl.platform.size))
-    cl.means =  sapply(sets, function(x){
+    cl.means.list = list()
+    for(x in sets){
       tmp.cells = intersect(names(cl), colnames(dat.list[[x]]))
       tmp.cl = cl[tmp.cells]
       cl.size = table(tmp.cl)
-      if(!is.null(de.param.list[[x]])){
-        select.cl = names(cl.size)[cl.size >= de.param.list[[x]]$min.cells]
-      }
-      else{
-        select.cl = names(cl.size)[cl.size >= 4]
-      }
-      select.cl = union(select.cl, names(select.platform)[select.platform==x])
+      select.cl = names(cl.size)[cl.size >= de.param.list[[x]]$min.cells]
       if(length(select.cl)==0){
         return(NULL)
       }
@@ -115,8 +107,9 @@ get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, c
       else{
         tmp=get_cl_means(dat.list[[x]], tmp.cl)[select.genes,,drop=F]
       }
-    },simplify=F)
-    return(cl.means)
+      cl.means.list[[x]]= tmp
+    }
+    return(cl.means.list)
   }
 
 

@@ -37,37 +37,24 @@ select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=N
     markers = c()
     for(i in 1:(length(cl.g)-1)){
       for(j in (i+1):length(cl.g)){
-        g = select_markers_pair_group(cl=cl, cl.g[[i]],cl.g[[j]],de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,norm.dat=norm.dat,...)
+        g = select_markers_pair_group(cl=cl, cl.g[[i]],cl.g[[j]],de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,...)
         markers=union(markers, g)          
       }
     }
     tmp.cl = setNames(rep(1:length(cl.g),sapply(cl.g,length)),unlist(cl.g))
     select.cells = names(cl)[cl %in% names(tmp.cl)]
-    if(length(select.cells) > 10){
-      if(length(markers)< 4){
-        pairs = create_pairs(unlist(cl.g))
-        tmp.de.df = sapply(de.genes[row.names(pairs)], function(x){
-          x$de.df
-        },simplify=F)
-        tmp.de.genes = de_score_pair(cl=tmp.cl, pairs=pairs, de.df=tmp.de.df, de.param =de_param(q1=0.3, q.diff.th=0.5))       
-        markers = select_markers(norm.dat, tmp.cl, n.markers=10, de.genes=tmp.de.genes)$markers
-      }
-      if(length(markers)==0){
+    if(length(markers)==0){
         next
-      }
-      if(!is.null(norm.dat)){
+    }
+    if(!is.null(norm.dat)){
         select.cells = unlist(tapply(select.cells, droplevels(cl[select.cells]),function(x)sample(x,min(length(x), 50))))
         tmp.cl = setNames(tmp.cl[as.character(cl[select.cells])],select.cells)
         rf = randomForest(t(as.matrix(norm.dat[markers,select.cells])),factor(tmp.cl))
         w = importance(rf)
         attr(dend, "markers")=w[,1]
-      }
-      else{
-        attr(dend, "markers")=setNames(rep(1,length(markers)),markers)
-      }
     }
     else{
-      attr(dend, "markers")=setNames(rep(1,length(markers)),markers)
+        attr(dend, "markers")=setNames(rep(1,length(markers)),markers)
     }
     for(i in 1:length(dend)){
       dend[[i]] = select_dend_markers(dend[[i]], cl=cl, norm.dat=norm.dat, de.genes=de.genes,up.gene.score=up.gene.score, down.gene.score=down.gene.score,...)
