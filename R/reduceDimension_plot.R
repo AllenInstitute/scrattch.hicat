@@ -122,3 +122,56 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
 
 
+plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRUE)
+{
+  library(rgl)
+  if(init){
+    rgl.open()
+  }
+  rgl.points(df$Lim1,df$Lim2, df$Lim3, col=df[[col]])
+  if(!is.null(label_col)){
+    cl.center = do.call("rbind", tapply(1:nrow(df), df[[label_col]], 
+                                        function(x) {
+                                          x = sample(x, pmin(length(x), 500))
+                                          center = c(median(df$Lim1[x]), median(df$Lim2[x]), median(df$Lim3[x]))
+                                          dist = as.matrix(dist(as.matrix(df[x, c("Lim1","Lim2","Lim3")])))
+                                          tmp = x[which.min(rowSums(dist))]
+                                          df[tmp,c("Lim1","Lim2","Lim3")]
+                                        }))
+    rgl.texts(cl.center$Lim1, cl.center$Lim2, cl.center$Lim3,text = row.names(cl.center),cex=cex, label.cex=label.cex)
+  }
+  
+  
+  #rgl.viewpoint(zoom=0.6)
+  
+}
+
+
+plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7, fn = NULL,win.dim = c(20,40,1200,800), layout = NULL, bg.col="gray60", dir="./")
+{
+  n.win = length(cols)
+  library(rgl)
+  print("start plotting")
+  mfrow3d(1,n.win)
+  next3d()
+  
+  open3d()
+  
+  ###specify dimensions of the plots
+  par3d(windowRect=win.dim)
+  bg3d(bg.col)
+  if(is.null(layout)){
+    layout <- matrix(1:n.win, nrow=1)
+    layout = rbind(layout, layout)
+  }
+  layout3d(layout, sharedMouse = TRUE)
+  
+  for (i in 1:n.win) {
+    next3d()
+    plot_3d_label(df, col=cols[[i]], label_col=label_cols[[i]],init=FALSE, cex=cex, label.cex=label.cex)
+  }
+  if(!is.null(fn)){
+    writeWebGL(dir=dir, filename=fn)
+  }
+}
+

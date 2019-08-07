@@ -199,6 +199,9 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
   run <- function(f){
     print(f)
     tmp=load(f)
+    if(is.null(result)){
+      return(NULL)
+    }
     cl= result$cl
     test.cells = setdiff(all.cells, names(cl))
     markers=unique(result$markers)
@@ -209,6 +212,7 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
   }
   if (mc.cores==1){
     cl.list=sapply(result.files, function(f){run(f)},simplify=F)
+    cl.list = cl.list[!sapply(cl.list,is.null)]
   }
   else{
     require(foreach)
