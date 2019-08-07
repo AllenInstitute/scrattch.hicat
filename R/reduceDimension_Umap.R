@@ -23,8 +23,7 @@ rd_Umap <- function(
                     metric.kwds = NULL,
                     angular.rp.forest = FALSE,
                     reduction.key = 'UMAP_',
-                    verbose = TRUE,
-                    )
+                    verbose = TRUE)
 {
   library(reticulate)
   if (!py_module_available(module = 'umap')) {
@@ -54,8 +53,7 @@ rd_Umap <- function(
                         b = b,
                         metric_kwds = metric.kwds,
                         angular_rp_forest = angular.rp.forest,
-                        verbose = verbose
-                        )
+                        verbose = verbose)
   umap_output= umap$fit_transform(mat)
   colnames(umap_output)=paste0(reduction.key, 1:ncol(x = umap_output))
   rownames(umap_output)=rownames(object)
