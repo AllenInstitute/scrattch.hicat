@@ -39,6 +39,12 @@ sample_cl_list <- function(cl.list, max.cl.size=500)
     return(select.cells)
   }
 
+get_co_ratio <- function(cl.mat, cells, n.times)
+  {
+    co.ratio = Matrix::crossprod(cl.mat[,cells])
+    co.ratio@x = co.ratio@x/n.times
+    return(co.ratio)
+  }
 
 #' Iterative consensus clustering
 #'
@@ -91,8 +97,7 @@ iter_consensus_clust <- function(cl.list, co.ratio=NULL,  cl.mat=NULL, norm.dat,
       else{
         sampled.cells=select.cells
       }
-      co.ratio = Matrix::crossprod(cl.mat[,sampled.cells])
-      co.ratio@x = co.ratio@x/length(cl.list)
+      co.ratio = get_co_ratio(cl.mat, sampled.cells, n.times=length(cl.list))
     }
     if(method=="auto"){
       if (length(select.cells)> 3000){

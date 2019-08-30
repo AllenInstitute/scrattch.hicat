@@ -14,6 +14,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
     rd.dat$cl = cl[row.names(rd.dat)] 
     rd.dat$cl_label = droplevels(factor(cl.label[as.character(rd.dat$cl)]), levels=cl.label)
     cl.center = get_RD_cl_center(rd.dat, cl)
+    row.names(cl.center) = cl.label[row.names(cl.center)]
     shape = setNames(1:length(levels(rd.dat$cl_label)) %% 20 + 1,levels(rd.dat$cl_label))
     g=ggplot(rd.dat, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
     g = g+ scale_color_manual(values=alpha(as.vector(cl.color[levels(rd.dat$cl_label)]),alpha.val))+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl_label)]))
@@ -122,7 +123,7 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
 
 
-plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRUE)
+plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRUE, prefix=NULL,bg.col="gray60")
 {
   library(rgl)
   if(init){
@@ -138,13 +139,53 @@ plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRU
                                           tmp = x[which.min(rowSums(dist))]
                                           df[tmp,c("Lim1","Lim2","Lim3")]
                                         }))
-    rgl.texts(cl.center$Lim1, cl.center$Lim2, cl.center$Lim3,text = row.names(cl.center),cex=cex, label.cex=label.cex)
+    rgl.texts(cl.center$Lim1, cl.center$Lim2, cl.center$Lim3,text = row.names(cl.center), cex=label.cex)
   }
-  
-  
   #rgl.viewpoint(zoom=0.6)
-  
+  if(!is.null(prefix)){
+    mybgplot3d(prefix,bg.col=bg.col)
+  }
+  else{
+    bg3d(col=bg.col)
+  }
 }
+
+mybgplot3d <- function(tt, bg.col=bg.col)
+{
+  viewport <- par3d("viewport")
+  width <- viewport["width"]
+  height <- viewport["height"]
+  value=NULL
+  if (width > 0 && height > 0) {
+    filename <- tempfile(fileext = ".png")
+    png(filename = filename, width = width, height = height)
+    value <- try({
+      plot.new()
+      title(tt)
+    })
+    dev.off()
+  }
+  result <- bg3d(texture = filename, col = bg.col, lit = FALSE)
+  lowlevel(structure(result, value = value))
+}
+
+
+plot_3d_val <- function(df, val, cex=1, max.val=quantile(val, 0.99), init=TRUE, prefix=NULL,bg.col="gray60")
+{
+  library(rgl)
+  if(init){
+    rgl.open()
+  }
+  col = blue.red(100)[cut(val, c(seq(min(val), max.val,length.out=100), max.val+0.001),include.lowest = TRUE)]
+  rgl.points(df$Lim1,df$Lim2, df$Lim3, col=col)
+  if(!is.null(prefix)){
+    mybgplot3d(prefix,bg.col=bg.col)
+  }
+  else{
+    bg3d(col=bg.col)
+  }
+}
+
 
 
 plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7, fn = NULL,win.dim = c(20,40,1200,800), layout = NULL, bg.col="gray60", dir="./")
@@ -159,7 +200,7 @@ plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7,
   
   ###specify dimensions of the plots
   par3d(windowRect=win.dim)
-  bg3d(bg.col)
+  #bg3d(bg.col)
   if(is.null(layout)){
     layout <- matrix(1:n.win, nrow=1)
     layout = rbind(layout, layout)
@@ -168,10 +209,32 @@ plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7,
   
   for (i in 1:n.win) {
     next3d()
-    plot_3d_label(df, col=cols[[i]], label_col=label_cols[[i]],init=FALSE, cex=cex, label.cex=label.cex)
+    col = cols[[i]]
+    if(length(col)==1){
+      col = paste0(col,"_color")
+      if(col %in% colnames(df)){ 
+        plot_3d_label(df, col=col, label_col=label_cols[[i]],init=FALSE, cex=cex, label.cex=label.cex, prefix=names(cols)[i], bg.col=bg.col)
+      }
+      else{
+        plot_3d_val(df, val=df[[col]], init=FALSE,cex=cex,prefix=names(cols)[i], bg.col=bg.col)
+      }
+    }
+    else{
+      plot_3d_val(df, val=col,init=FALSE, cex=cex,prefix=names(cols)[i],bg.col=bg.col)
+    }
   }
   if(!is.null(fn)){
     writeWebGL(dir=dir, filename=fn)
   }
+}
+
+
+remove_cells <- function(rd.dat, k=10, th=6)
+{
+   knn.result = nn2(rd.dat, k=k)
+   knn.dist = knn.result[[2]][,-1]
+   knn.dist.mean = rowMeans(knn.dist)
+   outlier = knn.dist.mean - median(knn.dist.mean) > th * mad(knn.dist.mean)
+   return(list(mean.dist=knn.dist.mean, outlier=outlier))
 }
 

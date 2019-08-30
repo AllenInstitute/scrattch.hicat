@@ -543,8 +543,18 @@ pair_cor <- function(mat1,
   mat2 <- mat2 - rowMeans(mat2)
   sd1 <- rowSds(mat1)
   sd2 <- rowSds(mat2)
-  cors <- rowSums(mat1 * mat2) / ((ncol(mat1) - 1) * sd1 * sd2)
-  
+  cors <- rowSums(mat1 * mat2) / ((ncol(mat1) - 1) * sd1 * sd2)  
   return(cors)
-  
 }
+
+
+filter_by_size <- function(cat, min.size)
+  {
+    cat.size = table(cat)
+    select.cat = names(cat.size)[cat.size >= min.size]
+    cat = cat[cat %in% select.cat]
+    if(is.factor(cat)){
+      cat = droplevels(cat)
+    }
+  }
+

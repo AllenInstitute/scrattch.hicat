@@ -859,10 +859,10 @@ get_de_matrix <- function(de.results,
     
     f <- paste("down", field,sep=".")
     down.de.num <- unlist(sapply(de.genes, function(x) { x[[f]] } ))
-    
-    # head(sort(pmin(up.de.num, down.de.num)))
-    de.num <- pmin(up.de.num, down.de.num)
-    
+
+    pairs = get_pairs(names(down.de.num))
+    names(down.de.num) = paste(pairs[,2],pairs[,1], sep="_")
+    de.num = c(up.de.num, down.de.num)
   } else {
     de.num <- unlist(sapply(de.genes, function(x) { x[[field]] }))
   }

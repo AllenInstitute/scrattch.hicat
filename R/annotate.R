@@ -453,7 +453,7 @@ compare_annotate <- function(cl,
   #  tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
   #}
   
-  tb.df$ref.cl.label <- ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"]
+  tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels=ref.cl.df$cluster_label)
   
   g <- ggplot2::ggplot(tb.df, 
                        ggplot2::aes(x = cl, 
@@ -633,7 +633,10 @@ find_low_quality_cl <- function(cl.df,
   
   diag(de.score.mat) <- max(de.score.mat)
   
-  tmp.mat <- de.score.mat[, cl.good]
+  tmp.mat <- de.score.mat[row.names(cl.df), cl.good]
+  ###Only search the good clusters that have bigger size than the tested cluster
+  not.select = sapply(cl.good, function(x) cl.df[x, "size"] <= cl.df$size)
+  tmp.mat[not.select] = max(tmp.mat)+1
   low.pair <- data.frame(cl.low = row.names(tmp.mat), 
                          cl.good = colnames(tmp.mat)[apply(tmp.mat, 1, which.min)],
                         stringsAsFactors = FALSE)
