@@ -26,7 +26,7 @@ prepare_unify  <- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = NU
     }))
     gene.counts <- do.call("c",lapply(names(dat.list), function(p){
       dat = dat.list[[p]]
-      setNames(colSums(dat > 0), colnames(dat))
+      setNames(Matrix::colSums(dat > 0), colnames(dat))
     }))
     df = data.frame(platform, gene.counts)
     if(!is.null(meta.df)){
@@ -334,8 +334,8 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
 ##' @author Zizhen Yao
 knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, method="cor", self.method = "RANN", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,mc.cores=1,...)
 {
-  #attach(comb.dat)
-  with(comb.dat,{
+  attach(comb.dat)
+  #with(comb.dat,{
   cat("Number of select cells", length(select.cells), "\n")
   cells.list = split(select.cells, meta.df[select.cells, "platform"])[select.sets]
   cells.list =  sample_sets_list(cells.list, cl.list[names(cl.list) %in% select.sets], sample.size=sample.size, cl.sample.size = cl.sample.size)
@@ -374,8 +374,9 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
     print("Bad.cl")
     print(bad.cl)
     tmp.cells = names(cl)[cl %in% bad.cl]
+    ##########FIX BUG
     pred.df = predict_knn(result$knn[tmp.cells,,drop=F], all.cells, cl)$pred.df
-    pred.cl= setNames(pred.df$pred.cl, row.names(pred.df))
+    pred.cl= setNames(as.character(pred.df$pred.cl), row.names(pred.df))
     cl[names(pred.cl)]= pred.cl
   }
   merge.dat.list = comb.dat$dat.list[merge.sets]
@@ -395,7 +396,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   result$select.genes= select.genes
   result$ref.de.param.list = ref.de.param.list
   return(result)
-})
+#})
 }
 
 sim_knn <- function(sim, k=15)

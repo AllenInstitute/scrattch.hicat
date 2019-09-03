@@ -1,4 +1,4 @@
-de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means.list=NULL, cl.present.list=NULL, lfc.conservation.th=0.6, de.genes.list=NULL)
+de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means.list=NULL, cl.present.list=NULL, lfc.conservation.th=0.6, de.genes.list=NULL, max.cl.size=200)
   {
       cl.size = table(cl)
       de.df.list = sapply(names(dat.list), function(x)list())
@@ -19,6 +19,10 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
         tmp.cl = tmp.cl[tmp.cl %in% select.cl]
         if(is.factor(tmp.cl)){
           tmp.cl = droplevels(tmp.cl)
+        }
+        if(!is.null(max.cl.size)){
+          tmp.cells = sample_cells(tmp.cl, max.cl.size)
+          tmp.cl = tmp.cl[tmp.cells]
         }
         tmp.pairs= pairs[pairs[,1] %in% select.cl & pairs[,2] %in% select.cl,]
         if(nrow(tmp.pairs)==0){
@@ -111,6 +115,7 @@ get_cl_sim_multiple <- function(cl.rd.list, FUN =pmax)
 ##' @author Zizhen Yao
 merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbose=TRUE, pairBatch=40, de.genes.list=NULL, lfc.conservation.th=0.7, merge.type="undirectional")
 {
+  print("merge_cl_multiple")
   cl = setNames(as.character(cl),names(cl))
   merge_x_y <- function(x, y, cl, cl.rd.list, cl.sim, cl.means.list=NULL, cl.present.list=NULL)
   {
