@@ -1,3 +1,4 @@
+#' Adapt from Seurat package
 #' @importFrom reticulate py_module_available py_set_seed import
 #'
 #' @rdname RunUMAP

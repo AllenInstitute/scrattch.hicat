@@ -164,7 +164,7 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,top.n=50,max.num=1000,n
     tmp=select_markers_pair(add.genes= add.genes,de.genes= de.genes, gene.score=pmin(tmp.up.gene.score, tmp.down.gene.score), rm.genes=c(up.genes, down.genes),top.n=top.n)
     genes=union(genes, unlist(tmp))
   }
-  return(genes)
+  return(list(up.genes=up.genes, down.genes=down.genes, genes=genes))
 }
 
 

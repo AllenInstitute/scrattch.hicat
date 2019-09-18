@@ -1,3 +1,5 @@
+jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+
 get_RD_cl_center <- function(rd.dat, cl)
 {
   cl.center=do.call("rbind",tapply(1:nrow(rd.dat), cl[row.names(rd.dat)], function(x){
@@ -12,7 +14,7 @@ get_RD_cl_center <- function(rd.dat, cl)
 plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE, legend.size=2)
   {
     rd.dat$cl = cl[row.names(rd.dat)] 
-    rd.dat$cl_label = droplevels(factor(cl.label[as.character(rd.dat$cl)]), levels=cl.label)
+    rd.dat$cl_label = droplevels(factor(cl.label[as.character(rd.dat$cl)], levels=cl.label))
     cl.center = get_RD_cl_center(rd.dat, cl)
     row.names(cl.center) = cl.label[row.names(cl.center)]
     shape = setNames(1:length(levels(rd.dat$cl_label)) %% 20 + 1,levels(rd.dat$cl_label))
@@ -38,7 +40,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
 
  
 ###meta is discretized. 
-plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5)
+plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5,alpha.val=1)
   {
     rd.dat = as.data.frame(rd.dat)
     colnames(rd.dat)[1:2] = c("Lim1","Lim2")
@@ -46,6 +48,7 @@ plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15,
     rd.dat$meta = meta
     p=ggplot(rd.dat, aes(Lim1, Lim2)) + geom_point(aes(color=meta),size=cex)
     if(is.factor(meta)){
+      rd.dat = droplevels(rd.dat)
       if(is.null(meta.col)){
         if(length(levels(meta)) > 2){
           meta.col = setNames(jet.colors(length(levels(meta))), levels(meta))
@@ -53,8 +56,8 @@ plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15,
         else{
           meta.col = setNames(c("blue", "orange"), levels(meta))
         }
-      }
-      p = p+ scale_color_manual(values=as.vector(meta.col[levels(rd.dat$meta)]))
+      }      
+      p = p+ scale_color_manual(values=alpha(as.vector(meta.col[levels(rd.dat$meta)]),alpha.val))
       p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
     }
     else{
@@ -78,7 +81,7 @@ plot_RD_gene <- function(rd.dat, norm.dat, genes, cex=0.15)
       rd.dat$expr = norm.dat[g,row.names(rd.dat)]
       p=ggplot(rd.dat, aes(Lim1, Lim2)) + geom_point(aes(color=expr),size=cex)
       p = p+ scale_color_gradient(low="gray",high="red") + xlab(g)
-      p = p + theme(legend.position="none")
+      p = p + theme(legend.position="none",panel.background=element_blank())
       plots[[g]]= p
     }
     return(plots)
@@ -228,13 +231,36 @@ plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7,
   }
 }
 
-
-remove_cells <- function(rd.dat, k=10, th=6)
+clean_outliers <- function(rd.dat, k=10, th=6)
 {
-   knn.result = nn2(rd.dat, k=k)
-   knn.dist = knn.result[[2]][,-1]
-   knn.dist.mean = rowMeans(knn.dist)
-   outlier = knn.dist.mean - median(knn.dist.mean) > th * mad(knn.dist.mean)
-   return(list(mean.dist=knn.dist.mean, outlier=outlier))
+  knn.result = nn2(rd.dat, k=k)
+  knn.dist = knn.result[[2]][,-1]
+  knn.dist.mean = rowMeans(knn.dist)
+  outlier = knn.dist.mean - median(knn.dist.mean) > th * mad(knn.dist.mean)
+  return(list(mean.dist=knn.dist.mean, outlier=outlier))
 }
 
+plot_2d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", fg.alpha=1, bg.alpha=0.5,cex=0.15)
+{
+  meta = factor(row.names(rd.dat) %in% select.cells)
+  levels(meta) = c("bg","fg")
+  meta.col = meta.col=c(fg=fg.col, bg=bg.col)
+  alpha.val=c(fg=fg.alpha,bg=bg.alpha)
+  plot_RD_meta(rd.dat, meta=meta, meta.col=meta.col, alpha.val = alpha.val, show.legend=FALSE, cex=cex)
+}
+
+plot_3d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", fg.alpha=1, bg.alpha=0.5,cex=0.15, web.fn=NULL, web.dir="./")                           
+  {
+    meta = factor(row.names(rd.dat) %in% select.cells)
+    levels(meta) = c("bg","fg")
+    meta.col = alpha(meta.col=c(fg=fg.col, bg=bg.col), alpha.val=c(fg=fg.alpha,bg=bg.alpha))
+    df = as.data.frame(rd.dat)
+    df$select = meta
+    df$col  = meta.col[meta]
+    rgl.open()
+    rgl.points(df$Lim1,df$Lim2, df$Lim3, col=df$col)
+    if(!is.null(web.fn)){
+      writeWebGL(dir=dir, filename=fn)
+    }
+  }
+  

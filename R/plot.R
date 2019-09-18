@@ -62,7 +62,10 @@ plot_cl_heatmap <- function(norm.dat,
       cells.order=colnames(tmp.dat)[ord]
     }
     else{
-      heatmap.3(tmp.dat,Rowv=as.dendrogram(gene.hc), Colv=as.dendrogram(hc), col=col, trace="none", dendrogram="none", cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors,breaks=breaks,main=main)
+      if(!is.null(hc)){
+        hc = as.dendrogram(hc)
+      }
+      heatmap.3(tmp.dat,Rowv=as.dendrogram(gene.hc), Colv=hc, col=col, trace="none", dendrogram="none", cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors,breaks=breaks,main=main)
       cells.order=colnames(tmp.dat)[hc$order]
     }
     if(!is.null(prefix)){

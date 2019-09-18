@@ -258,11 +258,13 @@ get_cl_sums <- function(mat,
                         cl) {
   
   cl.mat <- get_cl_mat(cl)
-  
-  cl.sums <- Matrix::tcrossprod(mat[,rownames(cl.mat)], Matrix::t(cl.mat))
-  
+  if(all(names(cl) %in% colnames(mat))){
+    cl.sums <- Matrix::tcrossprod(mat[,rownames(cl.mat)], Matrix::t(cl.mat))
+  }
+  else{
+    cl.sums <- Matrix::crossprod(mat[rownames(cl.mat),], cl.mat)
+  }
   cl.sums <- as.matrix(cl.sums)
-  
   return(cl.sums)
 }
 

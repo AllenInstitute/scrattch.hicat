@@ -367,7 +367,8 @@ compare_annotate <- function(cl,
                              ref.cl, 
                              ref.cl.df=NULL, 
                              reorder = TRUE,
-                             rename = TRUE) {
+                             rename = TRUE,
+                             do.droplevels=TRUE) {
 
   if(!is.factor(cl)){
     cl <- setNames(factor(cl), names(cl))
@@ -389,9 +390,13 @@ compare_annotate <- function(cl,
     stop("No common names in cl and ref.cl for comparison.")
   }
   ###Find clusters not present in ref.cl
-  tmp.cl <- droplevels(cl[common.cells])
-  ref.cl <- droplevels(ref.cl[common.cells])
-  absent.cl <- setdiff(levels(cl), levels(tmp.cl))
+  tmp.cl <- cl[common.cells]
+  ref.cl <- ref.cl[common.cells]
+  if(do.droplevels){
+    tmp.cl = droplevels(tmp.cl)
+    ref.cl = droplevels(ref.cl)
+  }
+  absent.cl <- setdiff(unique(cl), unique(tmp.cl))
   # compare predicted cluster member with the new clustering result
   tb <- table(tmp.cl, ref.cl)
   cl.id.map <- NULL
@@ -430,7 +435,7 @@ compare_annotate <- function(cl,
   absent.cl <- row.names(tb)[rowSums(tb) == 0]
   cl.df$cluster_label <- cl_label
   row.names(cl.df) <- levels(cl)
-  cl.size <- table(cl)
+  cl.size <- table(cl[common.cells])
   cl.df$size <- cl.size[row.names(cl.df)]
   
   # Plot the mapping
@@ -439,8 +444,7 @@ compare_annotate <- function(cl,
   
   select.cells <- names(cl)
 
-  cl.size <- table(cl)
-  ref.cl.size <- table(ref.cl)
+  ref.cl.size <- table(ref.cl[common.cells])
   
   tb.df$jaccard <- as.vector(tb.df$Freq / (cl.size[as.character(tb.df[,1])] + ref.cl.size[as.character(tb.df[,2])] - tb.df$Freq))
 
@@ -461,7 +465,7 @@ compare_annotate <- function(cl,
     ggplot2::geom_point(ggplot2::aes(size = sqrt(Freq),
                                      color = jaccard)) + 
     ggplot2::theme(axis.text.x = ggplot2::element_text(vjust = 0.1,
-                                                       hjust = 0.2, 
+                                                       hjust = 1, 
                                                        angle = 90,
                                                        size = 7),
                    axis.text.y = ggplot2::element_text(size = 6)) + 

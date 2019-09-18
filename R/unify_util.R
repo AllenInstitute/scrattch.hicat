@@ -347,8 +347,16 @@ plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb
       if(is.null(comb.de.genes)){
         de.genes.list = sapply(sets, function(set){
           dat = dat.list[[set]]
-          dat = dat[,colnames(dat) %in% names(cl)]
-          tmp=display_cl(cl=cl[colnames(dat)], norm.dat=dat, max.cl.size = 200, de.param=comb.dat$de.param.list[[set]], n.markers=n.markers)$de.genes
+          tmp.cells=  intersect(names(cl), colnames(dat))
+          if(length(tmp.cells)==0){
+            return(NULL)
+          }
+          tmp.cl = cl[tmp.cells]
+          if(is.factor(tmp.cl)){
+            tmp.cl = droplevels(tmp.cl)
+          }
+          print(table(tmp.cl))
+          tmp=display_cl(cl=tmp.cl, norm.dat=dat, max.cl.size = 200, de.param=de.param.list[[set]], n.markers=n.markers)$de.genes
         },simplify=F)
         comb.de.genes = comb_de_result(de.genes.list, cl.means.list, common.genes=common.genes)
       }

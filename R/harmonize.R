@@ -4,7 +4,7 @@
 ###meta.df merged meta data for all datasets. 
 ###cl.list clusters for each dataset (optional)
 ###cl.df.list cluster annotations for each dataset (optional) 
-prepare_unify  <- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = NULL, de.param.list=NULL, de.genes.list=NULL, rename=TRUE)
+prepare_harmonize<- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = NULL, de.param.list=NULL, de.genes.list=NULL, rename=TRUE)
   {
     common.genes = row.names(dat.list[[1]])
     for(x in 2:length(dat.list)){
@@ -443,7 +443,7 @@ knn_jaccard_louvain <- function(knn.index)
 
 
 
-unify <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
+harmonize <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
   {
     if(!file.exists(dir)){
       dir.create(dir)
@@ -480,12 +480,12 @@ unify <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
 ##' @param ... 
 ##' @return 
 ##' @author Zizhen Yao
-iter_unify <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=names(comb.dat$dat.list), prefix="", result=NULL, overwrite=TRUE, ...)
+i_harmonize <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=names(comb.dat$dat.list), prefix="", result=NULL, overwrite=TRUE, ...)
   {
     
     #attach(comb.dat)
     if(is.null(result)){
-      result = unify(comb.dat=comb.dat, select.cells=select.cells, ref.sets=ref.sets, prefix=prefix, overwrite=overwrite,...)
+      result = harmonize(comb.dat=comb.dat, select.cells=select.cells, ref.sets=ref.sets, prefix=prefix, overwrite=overwrite,...)
     }
     if(is.null(result)){
       return(NULL)
@@ -504,7 +504,7 @@ iter_unify <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=names
         pass.th = sapply(ref.sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells)
         pass.th2 = sapply(ref.sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells*2)
         if(sum(pass.th) == length(ref.sets) & sum(pass.th2) >= 1){
-          tmp.result = iter_unify(comb.dat, select.cells=select.cells, ref.sets=ref.sets, prefix=tmp.prefix, overwrite=overwrite, ...)
+          tmp.result = i_harmonize(comb.dat, select.cells=select.cells, ref.sets=ref.sets, prefix=tmp.prefix, overwrite=overwrite, ...)
           }
         else{
           tmp.result = NULL
@@ -618,80 +618,8 @@ plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, 
   }
 
 
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param consensus.cl 
-##' @param prefix 
-##' @param comb.dat 
-##' @param ... 
-##' @return 
-##' @author Zizhen Yao
-plot_confusion <- function(consensus.cl, prefix, comb.dat,...)
-{
-  with(comb.dat,{
-    for(x in names(cl.list)){
-      if(sum(names(cl.list[[x]]) %in% names(consensus.cl)) > 0){
-        ggsave(paste(prefix, x, "pdf", sep="."), compare_annotate(consensus.cl, cl.list[[x]], cl.df.list[[x]], rename = FALSE)$g,...)
-      }
-    }
-  })
-}
 
-plot_markers <- function(comb.dat, cl, prefix, sets = names(comb.dat$dat.list),  maxGenes=500, cl.col=NULL, select.genes=NULL, save.matrix=FALSE,...)
-  {
-    with(comb.dat,{
-      jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
-      blue.red <-colorRampPalette(c("blue", "white", "red"))
-      de.result=NULL
-      if(is.null(select.genes)){
-        de.result = lapply(sets, function(set){
-          dat = dat.list[[set]]
-          tmp.cells=  intersect(names(cl), colnames(dat))
-          if(length(tmp.cells)==0){
-            return(NULL)
-          }
-          tmp.cl = droplevels(cl[tmp.cells])
-          print(table(tmp.cl))
-          display_cl(tmp.cl, norm.dat=dat, max.cl.size = 200, de.param=de.param.list[[set]], n.markers=20)
-        })
-        gene.score = table(unlist(lapply(de.result, function(x)x$markers)))
-        select.genes= names(head(sort(gene.score, decreasing=T), maxGenes))
-        if(!is.null(common.genes)){
-          select.genes = intersect(select.genes, common.genes)
-        }
-      }
-      tmp.dat= dat.list[[sets[1]]]
-      tmp.cl.means = get_cl_means(tmp.dat[select.genes,], droplevels(cl[intersect(names(cl), colnames(tmp.dat))]))
-      gene.hc = hclust(dist(tmp.cl.means), method="ward.D")
-      if(is.null(cl.col)){
-        cl.col = jet.colors(length(unique(cl)))
-      }
-      cl.col = cl.col[as.factor(cl)]
-      tmp.col =t(as.matrix(cl.col, ncol=1))
-      colnames(tmp.col)= names(cl)
-      if(save.matrix){
-        dat.matrix = list()
-      }
-      else{
-        dat.matrix=NULL
-      }
-      for(set in sets){
-        dat = dat.list[[set]]
-        tmp.cells=  sample_cells(droplevels(cl[intersect(names(cl), colnames(dat))]), 100)
-        tmp.cl = droplevels(cl[tmp.cells])      
-        cells = plot_cl_heatmap(dat, cl=tmp.cl, markers= select.genes, gene.hc=gene.hc, prefix=paste(prefix, set, "markers.pdf", sep="."),ColSideColors=tmp.col,...)
-        if(save.matrix){
-          dat.matrix[[set]] = dat[gene.hc$labels[gene.hc$order], cells]
-        }
-      }
-      return(list(select.genes=select.genes, dat.matrix = dat.matrix, de.result= de.result))
-    })
-  }
-
-
-plot_markers_cl <- function(select.genes, gene.ordered=FALSE, cl.means.list = NULL, comb.dat=NULL, cl=NULL, cl.col=NULL, prefix="",...)
+plot_markers_cl_means <- function(select.genes, gene.ordered=FALSE, cl.means.list = NULL, comb.dat=NULL, cl=NULL, cl.col=NULL, prefix="",...)
   {
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
     blue.red <-colorRampPalette(c("blue", "white", "red"))
@@ -756,4 +684,13 @@ impute_val_cor <- function(dat, impute.dat)
     gene.cor = pair_cor(dat, impute.dat)
     gene.cor[is.na(gene.cor)] = 0
     return(gene.cor)
+  }
+
+
+build_dend_harmonize <- function(impute.dat.list, cl, cl.df, ncores=1)
+  {
+    cl.means = do.call("rbind",sapply(impute.dat.list, function(x)get_cl_means(x,cl),simplify=F))
+    l.rank = setNames(1:nrow(cl.df), row.names(cl.df))
+    l.color = setNames(as.character(cl.df$cluster_color), row.names(cl.df))
+    dend.result = build_dend(cl.means, l.rank = l.rank, l.color = l.color, nboot=100,ncores=ncores)
   }
