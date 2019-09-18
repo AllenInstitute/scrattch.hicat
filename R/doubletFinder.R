@@ -45,13 +45,12 @@ doubletFinder <- function(data, select.genes, proportion.artificial = 0.20,
   print("Running PCA")
   if(ncol(data) > 10000){
     sampled.cells = sample(1:ncol(data), pmin(ncol(data),10000))
-    rd.dat = rd_PCA(norm.dat, select.genes=select.genes, select.cells= colnames(data_wdoublets), th=0, max.pca=50, sampled.cells= sampled.cells)$rd.dat
+    rd.dat = rd_PCA(norm.dat, select.genes=select.genes, select.cells= colnames(data_wdoublets), th=0, max.pca=50, sampled.cells= sampled.cells)
   }
   else{
-    #sampled.cells = sample(1:ncol(data), ncol(data)*0.6)
-    rd.dat = rd_PCA(norm.dat, select.genes=select.genes, select.cells= colnames(data_wdoublets), th=0, max.pca=50)$rd.dat
+    rd.dat = rd_PCA(norm.dat, select.genes=select.genes, select.cells= colnames(data_wdoublets), th=0, max.pca=50)
   }
-  
+  rd.dat <-rd.dat$rd.dat
   print("Initialize pANN structure") 
   knn.result = RANN::nn2(rd.dat, k=k)
   knn.idx = knn.result[[1]]
