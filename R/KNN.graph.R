@@ -270,6 +270,8 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
     
   }
   
+  if (plot.parts == TRUE) {
+    write.csv(poly.Edges, file=file.path(out.dir,paste0(st,"poly.edges.csv"))) }
   
   ####plot edges
   p.edges <- ggplot(poly.Edges, aes(group=Group))
