@@ -12,7 +12,7 @@ get_cl_medians(mat, cl)
 \item{cl}{A cluster factor object}
 }
 \value{
-a matrix of genes (rows) x clusters (columns) with edians for each cluster
+a matrix of genes (rows) x clusters (columns) with medians for each cluster
 }
 \description{
 Compute cluster medians for each row in a matrix

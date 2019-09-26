@@ -2,9 +2,9 @@
 % Please edit documentation in R/cluster.R
 \name{jaccard_louvain}
 \alias{jaccard_louvain}
-\title{Perform Jaccard/Louvain clustering using Rphenograph}
+\title{Perform Jaccard/Louvain clustering using PhenoGraph clustering}
 \usage{
-jaccard_louvain(dat, k = 10)
+jaccard_louvain(dat, k = 10, Rphenograph = FALSE)
 }
 \arguments{
 \item{dat}{A matrix of features (rows) x samples (columns)}
@@ -15,5 +15,5 @@ jaccard_louvain(dat, k = 10)
 A list object with the cluster factor object and (cl) and Rphenograph results (result)
 }
 \description{
-Perform Jaccard/Louvain clustering using Rphenograph
+Perform Jaccard/Louvain clustering using PhenoGraph clustering
 }

@@ -1,18 +1,38 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
-Version: 0.0.16
+Version: 0.0.23
 Authors@R: c(
   person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
-  person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")))
+  person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
+  person("Jeremy", "Miller", email = "jeremym@alleninstitute.org", role = c("aut")),
+  person("Cindy", "van Velthoven", email = "cindy.vanvelthoven@alleninstitute.org", role = c("aut")))
 Description: Iteractive clustering of single cell RNASeq dataset. 
 Depends: R (>= 3.3.0)
 License: GNU General Public License (Version 3, 29 June 2007)
 Encoding: UTF-8
 LazyData: true
-Imports: limma, WGCNA, matrixStats, Matrix, Rphenograph, dendextend, ggplot2, WGCNA, pvclust, Rtsne, grid, dplyr, data.table, foreach, doParallel
-RoxygenNote: 6.1.0
-Suggests: knitr,
+Requires: Matrix
+Imports: 
+  data.table,
+  dendextend,
+  doParallel,
+  dplyr,
+  foreach,
+  ggplot2,
+  grid,
+  limma,
+  matrixStats,
+  pvclust,
+  qlcMatrix,
+  Rtsne,
+  WGCNA
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
     rmarkdown,
-    testthat
+    testthat,
+    tasic2016data,
+    Rphenograph,
+    covr
 VignetteBuilder: knitr

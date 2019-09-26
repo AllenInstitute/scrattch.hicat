@@ -1,26 +1,36 @@
+CanonCor <- function(mat1, mat2, standardize = TRUE, k = 20) {
+  set.seed(seed = 42)
+  if (standardize) {
+    mat1 <- Standardize(mat = mat1, display_progress = FALSE)
+    mat2 <- Standardize(mat = mat2, display_progress = FALSE)
+  }
+  mat3 <- crossprod(mat1,mat2)
+  cca.svd <- irlba(A = mat3, nv = k)
+  return(list(u = cca.svd$u, v = cca.svd$v, d = cca.svd$d))
+}
+
+
+
 ##Extract from Seurat Package
-CCA <- function(mat1, mat2, k=20)
+CCA <- function(mat1, mat2, k=20, verbose=FALSE)
   {
-    mat3 <- crossprod(m1 = t(x = mat1), m2 = mat2)
-    cca.svd <- irlba(A = mat3, nv = k)
-    u = cca.svd$u
-    v = cca.svd$v
-    nv = cca.svd$d
-    cca.data <- rbind(u, v)
-    colnames(cca.data) <- paste0("CC", 1:k)
-    rownames(cca.data) <- c(colnames(mat1), colnames(mat2))
+    library(irlba)
+    cca.results <- CanonCor(mat1, mat2, standardize = FALSE, k=k)
+    cca.data <- rbind(cca.results$u, cca.results$v)
+    colnames(x = cca.data) <- paste0("CC", 1:num.cc)
+    rownames(cca.data) <- c(colnames(data.use1), colnames(data.use2))
     cca.data <- apply(cca.data, MARGIN = 2, function(x){
       if(sign(x[1]) == -1) {
         x <- x * -1
       }
       return(x)
     })
-    objects = list(u, v)
+
+    
+    object = list(u, v)
     ###alignment
     num.groups=length(objects)
-    objects = sapply(objects, function(x){
-      ScaleData(object = x, display.progress = verbose, ...)
-    },simplify=F)
+    
     for (cc.use in k) {
       for (g in 2:num.groups){
         if (verbose) {

@@ -4,12 +4,16 @@
 \alias{sample_cells}
 \title{Downsample cells from each cluster}
 \usage{
-sample_cells(cl, sample.size, weights = NULL)
+sample_cells(cl, sample.size, weights = NULL, seed = NULL)
 }
 \arguments{
 \item{cl}{A cluster factor object}
 
 \item{sample.size}{A maximum number of cells to take from each cluster, or a named numeric object with the number of cells to be sampled and names matching cluster levels}
+
+\item{weights}{A named numeric vector with weights for each cell, passed to the prob parameter of the sample() function. Default is NULL.}
+
+\item{seed}{A seed value for random sampling. If NULL (default), will be randomized.}
 }
 \value{
 A cluster factor object containing sampled cells

@@ -2,7 +2,7 @@
 % Please edit documentation in R/consensusCluster.R
 \name{refine_cl}
 \alias{refine_cl}
-\title{this refines cluster}
+\title{Refine clusters}
 \usage{
 refine_cl(cl, co.ratio = NULL, cl.mat = NULL, confusion.th = 0.6,
   min.cells = 4, niter = 50, tol.th = 0.02, verbose = 0)
@@ -24,14 +24,8 @@ refine_cl(cl, co.ratio = NULL, cl.mat = NULL, confusion.th = 0.6,
 
 \item{verbose}{If true, print out step-by-step improvement.}
 }
-\value{
-returns a list
-}
 \description{
-.. content for \description{} (no empty lines) ..
-}
-\details{
-.. content for \details{} ..
+Refine clusters
 }
 \author{
 Zizhen Yao

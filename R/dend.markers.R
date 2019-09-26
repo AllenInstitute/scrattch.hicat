@@ -261,11 +261,11 @@ mapDendMarkers <- function(dend.list, map.dat,select.cells,th=0.5)
   return(map.gene.num)
 }
 
-getNodeSpecificMarkers <- function(dend.list, norm.dat, cl,cl.df,...)
-{    
+getNodeSpecificMarkers <- function(dend.list, norm.dat, cl,...)
+{
   do.call("rbind",sapply(names(dend.list), function(x){
     print(x)
-    cl.g = row.names(cl.df)[cl.df$cluster_label %in% labels(dend.list[[x]])]      
+    cl.g = labels(dend.list[[x]])
     df=getGroupSpecificMarkers(cl.g, norm.dat, cl,...)
     if(!is.null(df)){
       df$cl = x
@@ -275,14 +275,13 @@ getNodeSpecificMarkers <- function(dend.list, norm.dat, cl,cl.df,...)
 }
 
 
-getNodeVsSiblingMarkers <- function(dend.list, norm.dat, cl,cl.df,...)
+getNodeVsSiblingMarkers <- function(dend.list, norm.dat, cl, ...)
 {    
   do.call("rbind",sapply(names(dend.list), function(x){
     dend = dend.list[[x]]
-    all.cl =  droplevels(cl[cl %in% row.names(cl.df)[cl.df$cluster_label %in% labels(dend)]])
     if(length(dend)>1){
       do.call("rbind",sapply(1:length(dend),function(i){          
-        cl.g = row.names(cl.df)[cl.df$cluster_label %in% labels(dend[[i]])]
+        cl.g = labels(dend[[i]])
         df=getGroupSpecificMarkers(cl.g, norm.dat, all.cl,...)
         if(!is.null(df)){
           df$cl = attr(dend[[i]],"label")
@@ -298,16 +297,18 @@ getNodeVsSiblingMarkers <- function(dend.list, norm.dat, cl,cl.df,...)
 
 getGroupSpecificMarkers <- function(cl.g, norm.dat, cl,cl.present.counts=NULL,low.th=1,q1.th=0.5, q.diff.th=0.7,n.markers=5)
 {
+  library(Matrix)
+    
   cl= droplevels(cl)
   select.cells = names(cl)[cl %in% cl.g]
   not.select.cells = setdiff(names(cl), select.cells)
   if(is.null(cl.present.counts)){
-    fg = rowSums(norm.dat[,select.cells]> low.th)/length(select.cells)
-    bg = rowSums(norm.dat[,not.select.cells]> low.th)/length(not.select.cells)
+    fg = Matrix::rowSums(norm.dat[,select.cells]> low.th)/length(select.cells)
+    bg = Matrix::rowSums(norm.dat[,not.select.cells]> low.th)/length(not.select.cells)
   }
   else{
-    fg = rowSums(cl.present.counts[,cl.g,drop=F])
-    bg = rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
+    fg = Matrix::rowSums(cl.present.counts[,cl.g,drop=F])
+    bg = Matrix::rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
     bg.freq= bg/length(not.select.cells)
     fg.freq = fg/length(select.cells)
   }

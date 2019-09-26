@@ -1,8 +1,26 @@
-lm_matrix <- function(dat, x)
-{
+# Function call map
+# function_1()
+#   called_by_function_1() called_function_file.R
+#
+# lm_matrix()
+#
+# lm_normalize()
+#   lm_matrix() normalize.R
+# 
+
+#' Perform a linear model fit on a matrix of data
+#'
+#' @param dat a matrix
+#' @param x a vector
+#'
+#' @return a list with fit and residuals
+#' @export
+#'
+lm_matrix <- function(dat, x) {
+  
   coef <- colSums(t(dat) * x) / sum(x^2)
   
-  fit <- matrix(coef, ncol=1) %*% matrix(x, nrow = 1)
+  fit <- matrix(coef, ncol = 1) %*% matrix(x, nrow = 1)
   
   resid <- dat - fit
   
@@ -24,16 +42,28 @@ lm_matrix <- function(dat, x)
   
   fit <- data.frame(coef, R_2, F_stats, p.value, padj)
   
-  return(list(fit = fit, resid = resid))
+  return(list(fit = fit, 
+              resid = resid))
 }
 
-#####Add batch substracted median
+# To do: Add batch substracted median
+
+#' Normalize using a linear model
+#'
+#' @param dat a data matrix
+#' @param x a vector
+#' @param R_2.th R^2 threshold. Default is 0.2.
+#' @param padj.th p-value threshold. Default is 0.01.
+#' @param min.genes Minimum genes. Default is 5.
+#'
+#' @return
+#' @export
+#' 
 lm_normalize <- function(dat, 
                          x, 
                          R_2.th = 0.2, 
                          padj.th = 0.01,
-                         min.genes = 5)
-  {
+                         min.genes = 5) {
     
     m <- rowMedians(dat)
     m <- setNames(m, row.names(dat))
@@ -55,7 +85,7 @@ lm_normalize <- function(dat,
       dat[select.genes,] <- resid[select.genes,]
       dat <- dat + m
       
-      ##Avoid over correction. Keep all values in the original range. 
+      # Avoid over-correction. Keep all values in the original range. 
       dat[dat < 0] <- 0
       dat[select.genes,] <- apply(dat[select.genes,], 
                                   2, 

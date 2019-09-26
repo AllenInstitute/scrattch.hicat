@@ -1,5 +1,6 @@
-require(dendextend)
-require(dplyr)      
+#require(dendextend)
+#require(dplyr)      
+
 pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp", "au"), signif_col_fun = colorRampPalette(c("black", 
     "darkred", "red")), ...) 
 {
@@ -20,15 +21,21 @@ pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp
   dend= dend %>% assign_values_to_branches_edgePar(the_cols, "col") %>% assign_values_to_branches_edgePar(the_lwds, "lwd") %>% assign_values_to_branches_edgePar(pvalue_by_all_nodes, "conf") 
 }
 
-build_dend <- function(cl.dat, l.rank=NULL, l.color=NULL, nboot=100)
+build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100, ncores=1)
   {
     require(dendextend)
     require(dplyr)
-    cl.cor = cor(cl.dat)
+    if(is.null(cl.cor)){
+      cl.cor = cor(cl.dat)
+    }
     pvclust.result=NULL
     if(nboot > 0){
       require(pvclust)
-      pvclust.result <- pvclust::pvclust(cl.dat, method.dist = "cor" ,method.hclust = "average", nboot=nboot)
+      parallel= FALSE
+      if(ncores > 1){
+        parallel = as.integer(ncores)
+      }
+      pvclust.result <- pvclust::pvclust(cl.dat, method.dist = "cor" ,method.hclust = "average", nboot=nboot, parallel=parallel)
       dend = as.dendrogram(pvclust.result$hclust)
       dend = label_dend(dend)$dend
       dend = dend %>% pvclust_show_signif_gradient(pvclust.result, signif_type = "bp", signif_col_fun=colorRampPalette(c("white","gray","darkred","black")))
@@ -142,6 +149,7 @@ reorder_dend <- function(dend, l.rank, top.level=TRUE)
       l = dend[[i]] %>% labels
       mean(l.rank[dend[[i]] %>% labels])
     })
+    print(sc)
     ord = order(sc)
     if(length(dend)>1){
       for(i in 1:length(dend)){
@@ -360,4 +368,27 @@ dend_lca <- function(dend, l1, l2, l=rep(attr(dend,"label"),length(l1)))
 
 
 
+
+
+dend_match <- function(dend.list, cl.group){
+  dend_group=sapply(dend.list, function(d){
+    table(cl.group[labels(d)])
+  })
+  dend_group.df = as.data.frame(as.table(dend_group))
+  colnames(dend_group.df) = c("group","node","intersect")
+  dend_group.df = dend_group.df %>% filter(intersect > 0)
+  group_size=table(cl.group)
+  dend_size = sapply(dend.list, function(x)length(labels(x)))
+  dend_group.df$group_size = group_size[as.character(dend_group.df$group)]
+  dend_group.df$dend_size = dend_size[as.character(dend_group.df$node)]
+  dend_group.df$cl.union = sapply(1:nrow(dend_group.df), function(i){
+    cl1= names(cl.group)[cl.group == dend_group.df[i,"group"]]
+    cl2 = labels(dend.list[[as.character(dend_group.df[i,"node"])]])
+    length(union(cl1, cl2))
+  })
+  dend_group.df$jaccard = dend_group.df$intersect/dend_group.df$cl.union
+  group.match = with(droplevels(dend_group.df), tapply(1:nrow(dend_group.df), group, function(x)x[which.max(jaccard[x])]))
+  group.dend.match = dend_group.df[group.match,]
+  return(group.dend.match)
+}
 

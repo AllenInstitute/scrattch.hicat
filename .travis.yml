@@ -1,0 +1,35 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+
+sudo: false
+warnings_are_errors: FALSE
+
+cache: packages
+
+r_packages:
+  - covr
+  
+r_github_packages:
+  - JinmiaoChenLab/Rphenograph
+  - AllenInstitute/tasic2016data
+
+bioc_packages:
+  - limma
+  - WGCNA
+
+script: 
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check scrattch.hicat*tar.gz
+
+after_success:
+  - |
+    travis_wait 20 -Rscript -e 'library(covr); codecov();'
+
+before_cache: Rscript -e 'remotes::install_cran("pkgdown")'
+
+deploy:
+  provider: script
+  script: Rscript -e 'pkgdown::deploy_site_github()'
+  skip_cleanup: true
