@@ -439,6 +439,7 @@ plot_cl_heatmap4 <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc
   if(is.null(hc) & !sorted & length(select.cells)< 2000){
     hc = hclust(dist(t(tmp.dat)), method="ward.D")
   }
+  blue.red <-colorRampPalette(c("blue2", "white", "red"))
   col = blue.red(150)[51:150]
   if(!is.null(prefix)){
     pdf(paste(prefix,"pdf",sep="."), height=height, width=width)
