@@ -235,7 +235,7 @@ onestep_clust <- function(norm.dat,
                           max.cl.size = 300,
                           k.nn = 15,
                           prefix = NULL, 
-                          verbose = FALSE, regress.x=NULL)
+                          verbose = FALSE, regress.x=NULL) 
                           
   {
     library(matrixStats)
