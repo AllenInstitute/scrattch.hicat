@@ -51,20 +51,29 @@ get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.
 #' @param node.label Label to identify plotted nodes.
 #' @param exxageration exxageration of edge width. Default is 1 (no exxageration)
 #' @param curved Wheter edges should be curved or not. Default is TRUE.
+#' @param plot.parts output of intermediate files. default is FALSE.
+#' @param plot.hull plot convex around cell type neighbourhood. Provide neighbourhood_id's that need to be plotted
+#' @param plot.height/width output height.width in cm
+#' @param node.dodge whether or not nodes are allowed to overlap. Default is false 
 #' 
-#' @example_data 
-#' #' knn.cl.df <- read.csv("data/Constellation_example/knn.cl.df.csv")
+#' @example_data:
+#'  
+#' knn.cl.df <- read.csv("data/Constellation_example/knn.cl.df.csv")
 #' cl.center.df <- read.csv("data/Constellation_example/cl.center.df.csv")
-#' #' 
-#' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot") 
+#' 
+#' 
+#' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2)) 
 
 
-plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=5, curved = TRUE, plot.parts=FALSE) { 
+plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=5, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE) { 
   
   library(gridExtra)
   library(sna)
   library(Hmisc)
   library(reshape2)
+  #library(ggalt)
+  library(ggforce)
+  library(dplyr)
   
   st=format(Sys.time(), "%Y%m%d_%H%M_")
   
@@ -84,30 +93,74 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   ###==== plot nodes
   labels <- cl.center.df[[node.label]] 
   
-  p.nodes <- ggplot() +     geom_point(data=cl.center.df,alpha=0.4, aes(x=x, y=y, size=cluster_size, color=cluster_color)) +     scale_size_area(trans="sqrt",max_size=10,breaks = c(100,1000,10000,100000)) +    scale_color_identity() + geom_point(data=cl.center.df, alpha=0.6,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color, stroke=c(edge.frac.within*3))) + geom_text(data=cl.center.df,aes(x=x, y=y, label=labels),size = 1) #+ theme_void()
+  p.nodes <-   ggplot() +     
+    geom_point(data=cl.center.df,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color,fill=alpha(cluster_color, 0.4),stroke=c(edge.frac.within*3))) +         scale_size_area(trans="sqrt",max_size=10,breaks = c(100,1000,10000,100000)) +     scale_color_identity() +     scale_fill_identity() +      geom_text(data=cl.center.df,aes(x=x, y=y, label=labels),size = 1)
+  
+
+  #+ theme_void()
   #p.nodes
   if (plot.parts == TRUE) {
-    ggsave(file.path(out.dir,paste0(st,"nodes.pdf")), p.nodes, width = 15, height = 15, units="cm") }
+    ggsave(file.path(out.dir,paste0(st,"nodes.pdf")), p.nodes, width = plot.width, height = plot.height, units="cm",useDingbats=FALSE) }
   
   
   ###==== extract node size/stroke width to replot later without scaling
   g <- ggplot_build(p.nodes)
   dots <-g[["data"]][[1]] #dataframe with geom_point size, color, coords
-  dots.stroke <- g[["data"]][[2]]
   
   nodes <- left_join(cl.center.df, dots, by=c("x","y"))
-  nodes <- left_join(nodes, select(dots.stroke, stroke, x,y), by=c("x","y"))
+
+  
+  ###==== if node.dodge==TRUE new xy coords are calculated for overlapping nodes.
+  
+    if (node.dodge==TRUE){
+  
+     ## make update here to convert units by scale. check geom_mark_hull code for oneliner
+      
+  nodes$r<- ((nodes$size+(2*nodes$stroke))/10)/2
+  
+  for (d1 in 1:(nrow(nodes)-1)) {
+    j <- d1+1
+      for (d2 in j:nrow(nodes)) {
+      #print(paste(d1,d2))
+      
+        distSq <- sqrt(((nodes$x[d1]-nodes$x[d2])*(nodes$x[d1]-nodes$x[d2]))+((nodes$y[d1]-nodes$y[d2])*(nodes$y[d1]-nodes$y[d2])))
+      
+        radSumSq <- nodes$r[d1] + nodes$r[d2]
+       
+        if (distSq < radSumSq) {
+          print(paste(d1,d2))
+          
+          subdfk <- nodes[c(d1,d2),]
+          subdfk.mod <- subdfk
+          subdfd1 <- subdfk[1,]
+          subdfd2  <- subdfk[2,]
+          angsk <- seq(0,2*pi,length.out=nrow(subdfd2)+1)
+          subdfd2$x <- subdfd2$x+cos(angsk[-length(angsk)])*(subdfd1$r+subdfd2$r+0.5)#/2
+          subdfd2$y <- subdfd2$y+sin(angsk[-length(angsk)])*(subdfd1$r+subdfd2$r+0.5)#/2
+          subdfk.mod[2,] <- subdfd2
+          nodes[c(d1,d2),] <- subdfk.mod
+        }
+      }
+    }
+  }
+  
+
   
   ## when printing lines to pdf the line width increases slightly. This causes the edge to extend beyond the node. Prevent this by converting from R pixels to points. 
   conv.factor <- ggplot2::.pt*72.27/96
   
   
   ## line width of edge can be scaled to node point size + 2x stroke width
-  nodes$node.width <- nodes$size + ((nodes$stroke.y/conv.factor)*1.9) #times 1.9 to keep edge from extending beyond node when angle is off.
+  nodes$node.width <- nodes$size + ((nodes$stroke/conv.factor)*1.9) #times 1.9 to keep edge from extending beyond node when angle is off.
   
   
-  if (plot.parts == TRUE) {
-    write.csv(nodes, file=file.path(out.dir,paste0(st,"comb.nodes.csv"))) }
+  if (plot.parts == TRUE) { 
+    if (node.dodge == TRUE) {
+    write.csv(nodes, file=file.path(out.dir,paste0(st,"nodes.dodge.csv"))) }
+    else {
+      write.csv(nodes, file=file.path(out.dir,paste0(st,"nodes.csv")))
+    }
+  }
   
   ###==== prepare data for plotting of edges between nodes
   
@@ -141,7 +194,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
       line$frac.to <- r$frac
       knn.cl.bid <- rbind(knn.cl.bid, line)
     }
-    print(i)
+    #print(i)
   }
   
   #unidirectional
@@ -154,7 +207,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
     if (dim(r)[1] == 0) {
       knn.cl.uni <- rbind(knn.cl.uni, line)
     }
-    print(i)
+   #print(i)
   }
   
   
@@ -207,6 +260,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
 
   line.segments <- na.omit(line.segments)
   
+  print("calculating edges")
   
   allEdges <- lapply(1:nrow(line.segments), edgeMaker, len = 500, curved = curved, line.segments=line.segments)
   allEdges <- do.call(rbind, allEdges)  # a fine-grained path with bend
@@ -278,16 +332,25 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   p.edges <- p.edges +geom_polygon(aes(x=x, y=y), alpha=0.2) + theme_void()
   #p.edges
   
+  if (!is.null(plot.hull)) {
   #### plot all layers
-  plot.all <-  ggplot()+geom_polygon(data=poly.Edges, alpha=0.2, aes(x=x, y=y, group=Group))+ 
-    geom_point(data=cl.center.df,alpha=0.4, aes(x=x, y=y, size=cluster_size, color=cluster_color)) +
+    plot.all <-  ggplot()+geom_polygon(data=poly.Edges, alpha=0.2, aes(x=x, y=y, group=Group))+ 
+    geom_point(data=nodes,alpha=0.4, aes(x=x, y=y, size=cluster_size, color=cluster_color)) +
     scale_size_area(trans="sqrt",max_size=10,breaks = c(100,1000,10000,100000)) +
-    scale_color_identity() + geom_point(data=cl.center.df, alpha=0.6,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color, stroke=c(edge.frac.within*3))) + geom_text(data=cl.center.df,aes(x=x, y=y, label=labels),size = 1) + theme_void() +theme(legend.position = "none")
+    scale_color_identity() + geom_point(data=nodes, alpha=0.6,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color, stroke=c(edge.frac.within*3))) + geom_text(data=nodes,aes(x=x, y=y, label=labels),size = 1) + theme_void()+ geom_mark_hull(data=nodes,aes(filter = nodes$hood_id %in% plot.hull,x, y, color=nodes$hood_color),concavity = 8,radius = unit(5,"mm")) +theme(legend.position = "none")
   #plot.all
+    } else {
+    #### plot all layers
+    plot.all <-  ggplot()+geom_polygon(data=poly.Edges, alpha=0.2, aes(x=x, y=y, group=Group))+ 
+      geom_point(data=nodes,alpha=0.4, aes(x=x, y=y, size=cluster_size, color=cluster_color)) +
+      scale_size_area(trans="sqrt",max_size=10,breaks = c(100,1000,10000,100000)) +
+      scale_color_identity() + geom_point(data=nodes, alpha=0.6,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color, stroke=c(edge.frac.within*3))) + geom_text(data=nodes,aes(x=x, y=y, label=labels),size = 1) + theme_void() +theme(legend.position = "none")
+    #plot.all
+  }
   
-
+  
   if (plot.parts == TRUE) {
-    ggsave(file.path(out.dir,paste0(st,"comb.constellation.pdf")), plot.all, width = 25, height = 25, units="cm") }
+    ggsave(file.path(out.dir,paste0(st,"comb.constellation.pdf")), plot.all, width = 25, height = 25, units="cm",useDingbats=FALSE) }
   
   
   ### Plot legends for node size and stroke width
@@ -315,13 +378,13 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   layout_legend <- rbind(c(1,2,2,2,2,2))  
   
   if (plot.parts == TRUE) {
-    ggsave(file.path(out.dir,paste0(st,"comb.LEGEND.pdf")),gridExtra::marrangeGrob(list(dot.size.legend,cl.center.legend),nrow = 1, ncol=6, layout_matrix=layout_legend),height=20,width=20)  }
+    ggsave(file.path(out.dir,paste0(st,"comb.LEGEND.pdf")),gridExtra::marrangeGrob(list(dot.size.legend,cl.center.legend),nrow = 1, ncol=6, layout_matrix=layout_legend),height=20,width=20,useDingbats=FALSE)  }
   
   
   g2 <- gridExtra::arrangeGrob(grobs=list(dot.size.legend,cl.center.legend), layout_matrix=layout_legend)
   
   
-  ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = 25, height = 25, units="cm")
+  ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = 25, height = 25, units="cm",useDingbats=FALSE)
   
   
 }
