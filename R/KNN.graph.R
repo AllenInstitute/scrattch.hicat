@@ -65,7 +65,7 @@ get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.
 #' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2)) 
 
 
-plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=5, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=1) { 
+plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=5, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=2) { 
   
   library(gridExtra)
   library(sna)
@@ -75,7 +75,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   library(ggforce)
   library(dplyr)
   
-  st=format(Sys.time(), "%Y%m%d_%H%M_")
+  st=format(Sys.time(), "%Y%m%d_%H%M%S_")
   
   
   if(!file.exists(out.dir)){
@@ -114,7 +114,8 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   
     if (node.dodge==TRUE){
   
-     ## make update here to convert units by scale. check geom_mark_hull code for oneliner
+  #<><><># make update here to convert units by scale. check geom_mark_hull code for oneliner
+  #<><><># make update to dodge nodes starting at center of plot moving outward
       
   nodes$r<- ((nodes$size+(2*nodes$stroke))/10)/2
   
@@ -337,7 +338,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
     plot.all <-  ggplot()+geom_polygon(data=poly.Edges, alpha=0.2, aes(x=x, y=y, group=Group))+ 
     geom_point(data=nodes,alpha=0.4, aes(x=x, y=y, size=cluster_size, color=cluster_color)) +
     scale_size_area(trans="sqrt",max_size=10,breaks = c(100,1000,10000,100000)) +
-    scale_color_identity() + geom_point(data=nodes, alpha=0.6,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color, stroke=c(edge.frac.within*3))) + geom_text(data=nodes,aes(x=x, y=y, label=labels),size = label.size) + theme_void()+ geom_mark_hull(data=nodes,aes(filter = nodes$hood_id %in% plot.hull,x, y, color=nodes$hood_color),concavity = 8,radius = unit(5,"mm")) +theme(legend.position = "none")
+    scale_color_identity() + geom_point(data=nodes, alpha=0.6,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color, stroke=c(edge.frac.within*3))) + geom_text(data=nodes,aes(x=x, y=y, label=labels),size = label.size) + theme_void()+ geom_mark_hull(data=nodes,aes(filter = nodes$clade_id %in% plot.hull,x, y, color=nodes$clade_color),concavity = 8,radius = unit(5,"mm")) +theme(legend.position = "none")
   #plot.all
     } else {
     #### plot all layers

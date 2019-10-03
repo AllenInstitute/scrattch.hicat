@@ -1,4 +1,4 @@
-,cl,x,y,cluster_id,cluster_color,cluster_label,cluster_size,hood_id,hood_color
+,cl,x,y,cluster_id,cluster_color,cluster_label,cluster_size,clade_id,clade_color
 1,61,13.453155,3.3106952,61,#91910E,Sst Chodl Slc5a7_1,111,1,#ff9e00
 2,62,14.88922,3.5688465,62,#ECD704,Sst Chodl Slc5a7_2_1,1694,1,#ff9e00
 3,63,14.686304,3.424867,63,#B1B10C,Sst Chodl Slc5a7_2_2,268,1,#ff9e00
