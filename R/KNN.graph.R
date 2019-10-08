@@ -327,7 +327,16 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   
   if (plot.parts == TRUE) {
     write.csv(poly.Edges, file=file.path(out.dir,paste0(st,"poly.edges.csv"))) }
+ 
   
+  #############################
+  ##                         ##
+  ##        plotting         ##
+  ##                         ##
+  #############################
+  
+  
+   
   ####plot edges
   p.edges <- ggplot(poly.Edges, aes(group=Group))
   p.edges <- p.edges +geom_polygon(aes(x=x, y=y), alpha=0.2) + theme_void()
@@ -354,41 +363,90 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
     ggsave(file.path(out.dir,paste0(st,"comb.constellation.pdf")), plot.all, width = 25, height = 25, units="cm",useDingbats=FALSE) }
   
   
-  ### Plot legends for node size and stroke width
+  
+  #############################
+  ##                         ##
+  ##      plot legends       ##
+  ##                         ##
+  #############################
+  
+  
+  ### plot node size legend (1)
   plot.dot.legend <-  ggplot()+geom_polygon(data=poly.Edges, alpha=0.2, aes(x=x, y=y, group=Group))+ 
     geom_point(data=cl.center.df,alpha=0.4, aes(x=x, y=y, size=cluster_size, color=cluster_color)) +
     scale_size_area(trans="sqrt",max_size=10,breaks = c(100,1000,10000,100000)) +
     scale_color_identity() + geom_point(data=cl.center.df, alpha=0.6,shape=21, aes(x=x, y=y, size=cluster_size, color=cluster_color, stroke=c(edge.frac.within*3))) + geom_text(data=cl.center.df,aes(x=x, y=y, label=labels),size = label.size) + theme_void()
   dot.size.legend <- cowplot::get_legend(plot.dot.legend)
   
-  #plot(dot.size.legend)
-  
-  cl.center.df$cluster.label <- paste(cl.center.df$cluster_id, cl.center.df$cluster_label)
+  ### plot cluster legend (3)
+  cl.center.df$cluster.label <-  cl.center.df$cluster_label
   cl.center.df$cluster.label <- as.factor(cl.center.df$cluster.label)
   label.col <- setNames(cl.center.df$cluster_color, cl.center.df$cluster.label)
-  
+  cl.center.df$cluster.label <- as.factor(cl.center.df$cluster.label)
   leg.col.nr <- min((ceiling(length(cl.center.df$cluster_id)/20)),5)
   
-  cl.center <- ggplot(cl.center.df, aes(x=cluster_id, y=cluster_size)) + geom_point(aes(color=cl.center.df$cluster.label))+scale_color_manual(values=as.vector(label.col[levels(cl.center.df$cluster.label)]))
-  cl.center = cl.center +  guides(color = guide_legend(override.aes = list(size = 6), ncol=leg.col.nr))
-  
+  cl.center <- ggplot(cl.center.df, aes(x=cluster_id, y=cluster_size)) + geom_point(aes(color=cl.center.df$cluster.label))+scale_color_manual(values=as.vector(label.col[levels(cl.center.df$cluster.label)]))+  guides(color = guide_legend(override.aes = list(size = 8), ncol=leg.col.nr))
   
   cl.center.legend <- cowplot::get_legend(cl.center)  
   #plot(cl.center.legend)
   
-  layout_legend <- rbind(c(1,2,2,2,2,2))  
+  
+  ###plot legend line width (2)
+  width.1 <- max(line.segments$frac.from,line.segments$frac.to) 
+  width.05 <- width.1/2
+  width.025 <- width.1/4
+  
+  
+  edge.width.data <- tibble(node.width = c(1,1,1), x=c(2,2,2), y=c(5,3.5,2), line.width=c(1,0.5,0.25), fraction=c(100, 50, 25),frac.ex=c(width.1, width.05, width.025))
+  edge.width.data$fraction.ex <- round((edge.width.data$frac.ex*100), digits = 0)
+
+  poly.positions <- data.frame(id=rep(c(1,2,3), each = 4), x=c(1,1,2,2,1,1,2,2,1,1,2,2), y=c(4.9,5.1,5.5,4.5,3.4,3.6,3.75,3.25,1.9,2.1,2.125,1.875)) 
+  
+if (exxageration !=1) {
+ edge.width.legend <- ggplot()  +  geom_polygon(data=poly.positions, aes(x=x,y=y, group=id), fill="grey60") +geom_circle(data=edge.width.data, aes(x0=x, y0=y, r=node.width/2), fill="grey80", color="grey80", alpha=0.4)+ 
+    scale_x_continuous(limits=c(0,3)) + theme_void() +coord_fixed() + geom_text(data=edge.width.data, aes(x= 2.7, y=y, label=fraction.ex, hjust=0, vjust=0.5)) + annotate("text", x = 2, y = 6, label = "Fraction of edges \n to node") } else { edge.width.legend <- ggplot()  +  geom_polygon(data=poly.positions, aes(x=x,y=y, group=id), fill="grey60") +geom_circle(data=edge.width.data, aes(x0=x, y0=y, r=node.width/2), fill="grey80", color="grey80", alpha=0.4)+ 
+      scale_x_continuous(limits=c(0,3)) + theme_void() +coord_fixed() + geom_text(data=edge.width.data, aes(x= 2.7, y=y, label=fraction, hjust=0, vjust=0.5)) + annotate("text", x = 2, y = 6, label = "Fraction of edges \n to node")}
+    
+ ### plot stroke width legend (4)
+
+ stroke.width.data <- tibble(node.width = c(1,1,1), x=c(1,1,1), y=c(3,2.5,2), stroke.width=c(3,3/2,3/4), frac=c(100, 50, 25))
+ stroke.width.legend<-ggplot()+geom_point(data=stroke.width.data, aes(x=x, y=y),pch=21, size=8, stroke=stroke.width.data$stroke.width)+scale_x_continuous(limits=c(0,2))+ scale_y_continuous(limits=c(0, 4))+ theme_void() +coord_fixed() + geom_text(data=stroke.width.data, aes(x= 1.3, y=y, label=frac, hjust=0, vjust=0.5)) + annotate("text", x = 1, y = 3.75, label = "Fraction of edges \n within node")
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ #############################
+ ##                         ##
+ ##      save elements      ##
+ ##                         ##
+ #############################
+ 
+ 
+  
+  layout_legend <- rbind(c(1,3,3,3,3,3),c(2,3,3,3,3,3),c(4,3,3,3,3,3))  
   
   if (plot.parts == TRUE) {
-    ggsave(file.path(out.dir,paste0(st,"comb.LEGEND.pdf")),gridExtra::marrangeGrob(list(dot.size.legend,cl.center.legend),nrow = 1, ncol=6, layout_matrix=layout_legend),height=20,width=20,useDingbats=FALSE)  }
+    ggsave(file.path(out.dir,paste0(st,"comb.LEGEND.pdf")),gridExtra::marrangeGrob(list(dot.size.legend,edge.width.legend,cl.center.legend,stroke.width.legend),nrow = 3, ncol=6, layout_matrix=layout_legend),height=20,width=20,useDingbats=FALSE)  }
   
   
-  g2 <- gridExtra::arrangeGrob(grobs=list(dot.size.legend,cl.center.legend), layout_matrix=layout_legend)
+  g2 <- gridExtra::arrangeGrob(grobs=list(dot.size.legend,edge.width.legend,cl.center.legend,stroke.width.legend), layout_matrix=layout_legend)
   
   
   ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = 25, height = 25, units="cm",useDingbats=FALSE)
   
   
 }
+
+
+
+
+
+
 
 
 
