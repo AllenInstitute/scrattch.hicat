@@ -384,7 +384,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   label.col <- setNames(cl.center.df$cluster_color, cl.center.df$cluster.label)
   cl.center.df$cluster.label <- as.factor(cl.center.df$cluster.label)
   leg.col.nr <- min((ceiling(length(cl.center.df$cluster_id)/20)),5)
-  
+   
   cl.center <- ggplot(cl.center.df, aes(x=cluster_id, y=cluster_size)) + geom_point(aes(color=cl.center.df$cluster.label))+scale_color_manual(values=as.vector(label.col[levels(cl.center.df$cluster.label)]))+  guides(color = guide_legend(override.aes = list(size = 8), ncol=leg.col.nr))
   
   cl.center.legend <- cowplot::get_legend(cl.center)  
