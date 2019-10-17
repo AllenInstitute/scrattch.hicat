@@ -115,7 +115,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
     if (node.dodge==TRUE){
   
   #<><><># make update here to convert units by scale. check geom_mark_hull code for oneliner
-  #<><><># make update to dodge nodes starting at center of plot moving outward
+  #<><><># make update to dodge nodes starting at center of plot moving outward (data frame of distance from plot.ctr, sort before loop)
       
   nodes$r<- ((nodes$size+(2*nodes$stroke))/10)/2
   
