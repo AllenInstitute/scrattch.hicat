@@ -100,7 +100,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   #+ theme_void()
   #p.nodes
   if (plot.parts == TRUE) {
-    ggsave(file.path(out.dir,paste0(st,"nodes.pdf")), p.nodes, width = plot.width, height = plot.height, units="cm",useDingbats=FALSE) }
+    ggsave(file.path(out.dir,paste0(st,"nodes.org.pos.pdf")), p.nodes, width = plot.width, height = plot.height, units="cm",useDingbats=FALSE) }
   
   
   ###==== extract node size/stroke width to replot later without scaling
@@ -115,25 +115,27 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
     if (node.dodge==TRUE){
   
   #<><><># make update here to convert units by scale. check geom_mark_hull code for oneliner
-  #<><><># make update to dodge nodes starting at center of plot moving outward (data frame of distance from plot.ctr, sort before loop)
+      
+  # dodge nodes starting at center of plot moving outward 
       
       nodes$r<- ((nodes$size+(2*nodes$stroke))/10)/2
+      
+      
       x.list <- c(mean(nodes$x), nodes$x )
       y.list <- c(mean(nodes$y), nodes$y)
       dist.test <- as.matrix(dist(cbind(x.list, y.list)))
       nodes$distance <- dist.test[2:nrow(dist.test), 1]
-      
       nodes <- nodes[order(nodes$distance),]
        
       
   for (d1 in 1:(nrow(nodes)-1)) {
     j <- d1+1
       for (d2 in j:nrow(nodes)) {
-      #print(paste(d1,d2))
+      print(paste(d1,d2))
       
         distSq <- sqrt(((nodes$x[d1]-nodes$x[d2])*(nodes$x[d1]-nodes$x[d2]))+((nodes$y[d1]-nodes$y[d2])*(nodes$y[d1]-nodes$y[d2])))
       
-        radSumSq <- nodes$r[d1] + nodes$r[d2]
+        radSumSq <- (nodes$r[d1] *1.25)+ (nodes$r[d2]*1.25) # overlapping radius + a little bit extra
        
         if (distSq < radSumSq) {
           print(paste(d1,d2))
@@ -150,9 +152,37 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
         }
       }
     }
+      
+      
+      for (d1 in 1:(nrow(nodes)-1)) {
+        j <- d1+1
+        for (d2 in j:nrow(nodes)) {
+          print(paste(d1,d2))
+          
+          distSq <- sqrt(((nodes$x[d1]-nodes$x[d2])*(nodes$x[d1]-nodes$x[d2]))+((nodes$y[d1]-nodes$y[d2])*(nodes$y[d1]-nodes$y[d2])))
+          
+          radSumSq <- (nodes$r[d1] *1.25)+ (nodes$r[d2]*1.25) # overlapping radius + a little bit extra
+          
+          if (distSq < radSumSq) {
+            print(paste(d1,d2))
+            
+            subdfk <- nodes[c(d1,d2),]
+            subdfk.mod <- subdfk
+            subdfd1 <- subdfk[1,]
+            subdfd2  <- subdfk[2,]
+            angsk <- seq(0,2*pi,length.out=nrow(subdfd2)+1)
+            subdfd2$x <- subdfd2$x+cos(angsk[-length(angsk)])*(subdfd1$r+subdfd2$r+0.5)#/2
+            subdfd2$y <- subdfd2$y+sin(angsk[-length(angsk)])*(subdfd1$r+subdfd2$r+0.5)#/2
+            subdfk.mod[2,] <- subdfd2
+            nodes[c(d1,d2),] <- subdfk.mod
+          }
+        }
+      }
+      
   }
   
   nodes <- nodes[order(nodes$cluster_id),]
+  
   
   
   ## when printing lines to pdf the line width increases slightly. This causes the edge to extend beyond the node. Prevent this by converting from R pixels to points. 
@@ -343,6 +373,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   ##                         ##
   #############################
   
+  labels <- nodes[[node.label]] 
   
    
   ####plot edges

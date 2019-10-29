@@ -1,21 +1,20 @@
 heatmap.4 <- function (x, Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE, 
                        distfun = dist, hclustfun = hclust, dendrogram = c("both", 
-                                                                          "row", "column", "none"), symm = FALSE, scale = c("none", 
-                                                                                                                            "row", "column"), na.rm = TRUE, revC = identical(Colv, 
-                                                                                                                                                                             "Rowv"), add.expr, breaks, symbreaks = min(x < 0, na.rm = TRUE) || 
+                        "row", "column", "none"), symm = FALSE, scale = c("none", 
+                           "row", "column"), na.rm = TRUE, revC = identical(Colv, 
+                           "Rowv"), add.expr, breaks, symbreaks = min(x < 0, na.rm = TRUE) || 
                          scale != "none", col = "heat.colors", colsep, rowsep, 
                        sepcolor = "white", sepwidth = c(0.05, 0.05), cellnote, notecex = 1, 
                        notecol = "cyan", na.color = par("bg"), trace = c("column", 
-                                                                         "row", "both", "none"), tracecol = "cyan", hline = median(breaks), 
+                         "row", "both", "none"), tracecol = "cyan", hline = median(breaks), 
                        vline = median(breaks), linecol = tracecol, margins = c(5, 
-                                                                               5), ColSideColors, RowSideColors, cexRow = 0.2 + 1/log10(nr), 
+                         5), ColSideColors, RowSideColors, cexRow = 0.2 + 1/log10(nr), 
                        cexCol = 0.2 + 1/log10(nc), labRow = NULL, labCol = NULL, 
                        key = TRUE, keysize = 1, density.info=c("histogram", 
-                                                               "density", "none"), denscol = tracecol, symkey = min(x < 
-                                                                                                                      0, na.rm = TRUE) || symbreaks, densadj = 0.25, main = NULL, 
+                        "density", "none"), denscol = tracecol, symkey = min(x < 
+                          0, na.rm = TRUE) || symbreaks, densadj = 0.25, main = NULL, 
                        xlab = NULL, ylab = NULL, lmat = NULL, lhei = 0.01, lwid = NULL, 
                        ...) 
-
 {
   scale01 <- function(x, low = min(x), high = max(x)) {
     x <- (x - low)/(high - low)
@@ -466,7 +465,11 @@ plot_cl_heatmap4 <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc
     cells.order=colnames(tmp.dat)[hc$order]
   }
   
-  
+  jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+ cl.col = jet.colors(length(unique(cl)))[as.factor(cl)]
+ leg.clms = ceiling(length(unique(cl))/8)
+
+ 
   legend(x=0,y=0.67, 
          legend=c("Female", "Male"), 
          fill=c("hotpink1", "dodgerblue3"), 
