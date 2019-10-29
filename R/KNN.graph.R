@@ -59,7 +59,7 @@ get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.
 #' @example_data:
 #'  
 #' knn.cl.df <- read.csv("data/Constellation_example/knn.cl.df.csv")
-#' cl.center.df <- read.csv("data/Constellation_example/cl.center.df.csv")
+#' cl.center.df <- read.csv("data/Constellation_example/cl.center.df.csv", row.names=1)
 #' 
 #' 
 #' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2)) 
@@ -117,8 +117,15 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   #<><><># make update here to convert units by scale. check geom_mark_hull code for oneliner
   #<><><># make update to dodge nodes starting at center of plot moving outward (data frame of distance from plot.ctr, sort before loop)
       
-  nodes$r<- ((nodes$size+(2*nodes$stroke))/10)/2
-  
+      nodes$r<- ((nodes$size+(2*nodes$stroke))/10)/2
+      x.list <- c(mean(nodes$x), nodes$x )
+      y.list <- c(mean(nodes$y), nodes$y)
+      dist.test <- as.matrix(dist(cbind(x.list, y.list)))
+      nodes$distance <- dist.test[2:nrow(dist.test), 1]
+      
+      nodes <- nodes[order(nodes$distance),]
+       
+      
   for (d1 in 1:(nrow(nodes)-1)) {
     j <- d1+1
       for (d2 in j:nrow(nodes)) {
@@ -145,7 +152,8 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
     }
   }
   
-
+  nodes <- nodes[order(nodes$cluster_id),]
+  
   
   ## when printing lines to pdf the line width increases slightly. This causes the edge to extend beyond the node. Prevent this by converting from R pixels to points. 
   conv.factor <- ggplot2::.pt*72.27/96

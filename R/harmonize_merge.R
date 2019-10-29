@@ -113,7 +113,7 @@ get_cl_sim_multiple <- function(cl.rd.list, FUN =pmax)
 ##' @param lfc.conservation.th 
 ##' @return 
 ##' @author Zizhen Yao
-merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbose=TRUE, pairBatch=40, de.genes.list=NULL, lfc.conservation.th=0.7, merge.type="undirectional")
+data.frame(cl=_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbose=TRUE, pairBatch=40, de.genes.list=NULL, lfc.conservation.th=0.7, merge.type="undirectional")
 {
   print("merge_cl_multiple")
   cl = setNames(as.character(cl),names(cl))
