@@ -501,8 +501,11 @@ i_harmonize <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=name
         platform.size = table(meta.df[select.cells, "platform"])
         
         print(platform.size)
-        pass.th = sapply(ref.sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells)
-        pass.th2 = sapply(ref.sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells*2)
+        
+        sets = names(platform.size)
+        
+        pass.th = sapply(sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells)
+        pass.th2 = sapply(sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells*2)
         if(sum(pass.th) == length(ref.sets) & sum(pass.th2) >= 1){
           tmp.result = i_harmonize(comb.dat, select.cells=select.cells, ref.sets=ref.sets, prefix=tmp.prefix, overwrite=overwrite, ...)
           }

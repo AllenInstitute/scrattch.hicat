@@ -63,10 +63,11 @@ doubletFinder <- function(data, select.genes, proportion.artificial = 0.20,
   dist.th = mean(as.vector(knn.dist1)) + 1.64 * sd(as.vector(knn.dist1))
   
   doublet.freq = knn.idx  > ncol(data) & knn.dist < dist.th
-  doublet.score =  doublet.freq[1:ncol(data),]
-  row.names(doublet.score) = colnames(data)
   doublet.score = pmax(rowMeans(doublet.freq),rowMeans(doublet.freq[,1:ceiling(k/2)]))
-  
+  names(doublet.score) = row.names(rd.dat)
+  artificial.doublet.score=doublet.score[colnames(doublets)]
+  doublet.score=doublet.score[colnames(data)]
+    
   if (plot == TRUE) {
     print("plotting")
     ds = pmax(rowMeans(doublet.freq),rowMeans(doublet.freq[,1:ceiling(k/2)])) 
@@ -83,9 +84,9 @@ doubletFinder <- function(data, select.genes, proportion.artificial = 0.20,
     
     p=ggplot2::ggplot(ds, aes(x = doublet.score, fill=group, color=group)) +geom_density(alpha=0.4)+scale_color_manual(values=c("#F9627D","#2F3061"))+scale_fill_manual(values=c("#F9627D","#2F3061")) +labs(title=plot.title)
     
-    return(list(doublet.score, p))
+    return(list(doublet.score,artifical.doublet.score, p))
     
-  } else {  return(doublet.score) }
+  } else {  return(list(doublet.score,artificial.doublet.score)) }
   
 }
 
