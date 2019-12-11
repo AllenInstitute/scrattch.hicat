@@ -13,7 +13,7 @@ plot_cl_heatmap <- function(norm.dat,
                             min.sep = 4,
                             main = "", 
                             height = 13, 
-                            width = 9)
+                            width = 9, key=FALSE)
   {
     library(matrixStats)
     blue.red <-colorRampPalette(c("blue", "white", "red"))
@@ -58,7 +58,7 @@ plot_cl_heatmap <- function(norm.dat,
       sep = cl[ord]
       sep=which(sep[-1]!=sep[-length(sep)])
       sep = c(sep[1], sep[which(sep[-1] - sep[-length(sep)] >=min.sep)+1])
-      heatmap.3(tmp.dat[,ord],Rowv=as.dendrogram(gene.hc), Colv=NULL, col=col, trace="none", dendrogram="none", cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors[,ord],breaks=breaks,colsep=sep, sepcolor="black",main=main)
+      heatmap.3(tmp.dat[,ord],Rowv=as.dendrogram(gene.hc), Colv=NULL, col=col, trace="none", dendrogram="none", cexCol=cexCol,cexRow=cexRow,ColSideColors=ColSideColors[,ord],breaks=breaks,colsep=sep, sepcolor="black",main=main,key=key, density.info="none")
       cells.order=colnames(tmp.dat)[ord]
     }
     else{

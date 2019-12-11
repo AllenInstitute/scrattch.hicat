@@ -829,7 +829,7 @@ de_stats_all_pairs <- function(norm.dat,
 
 #' Generate a matrix of pairwise DE results
 #'
-#' @param de.results Output from \code{de_score_selected_pairs} or \code{de_score_all_pairs}.
+#' @param de.genes Output from \code{de_score} or \code{de_stats_all_pairs}.
 #' @param directed Logical indicating whether to select results based on all DE genes (Default, FALSE) or up/down regulated genes (see Details).
 #' @param field The result to retrieve from de.results. Either "score" or "num". Default is "num".
 #'
@@ -839,17 +839,13 @@ de_stats_all_pairs <- function(norm.dat,
 #' @return a matrix with clusters as rows and columns, and pairwise DE results as values.
 #' @export
 #'
-get_de_matrix <- function(de.results, 
+get_de_matrix <- function(de.genes, 
                           directed = FALSE, 
                           field = "num") {
   
   field <- match.arg(field,
                      choices = c("num","score"))
-  
-  if(sum(names(de.results) %in% c("de.df","de.genes")) == 2) {
-    de.genes <- de.results$de.genes
-  }
-  
+    
   pairs <- get_pairs(names(de.genes))
   
   if(directed){

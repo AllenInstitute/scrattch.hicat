@@ -140,7 +140,7 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,top.n=50,max.num=1000,n
   down.pairs = row.names(pairs)[pairs[,1] %in% g2 & pairs[,2] %in% g1]
   select.pairs = c(up.pairs, down.pairs)
   if(is.null(up.gene.score)){
-    tmp=get_gene_score(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
+    tmp=get_gene_score(de.genes[select.pairs],top.n=top.n, max.num=max.num,bin.th=4)
     up.gene.score=tmp$up.gene.score
     down.gene.score=tmp$down.gene.score
   }

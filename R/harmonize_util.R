@@ -73,13 +73,16 @@ plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, 
 ##' @author Zizhen Yao
 plot_confusion <- function(consensus.cl, prefix, comb.dat,...)
 {
-  with(comb.dat,{
-    for(x in names(cl.list)){
-      if(sum(names(cl.list[[x]]) %in% names(consensus.cl)) > 0){
-        ggsave(paste(prefix, x, "pdf", sep="."), compare_annotate(consensus.cl, cl.list[[x]], cl.df.list[[x]], rename = FALSE)$g,...)
-      }
+  g.list=list()
+  for(x in names(comb.dat$cl.list)){
+    if(sum(names(comb.dat$cl.list[[x]]) %in% names(consensus.cl)) > 0){
+      g = compare_annotate(consensus.cl, comb.dat$cl.list[[x]], comb.dat$cl.df.list[[x]], rename = FALSE)$g
+      g = g + xlab("consensus cluster") + ylab(x)
+      g.list[[x]] <- g
+      ggsave(paste(prefix, x, "pdf", sep="."), g,...)
     }
-  })
+  }
+  return(g.list)
 }
 
 
@@ -392,6 +395,6 @@ plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb
         dat.matrix[[set]] = dat[gene.hc$labels[gene.hc$order], cells]
       }
     }
-    return(list(select.genes=select.genes, dat.matrix = dat.matrix, comb.de.genes= comb.de.genes))
+    return(list(select.genes=select.genes, dat.matrix = dat.matrix, comb.de.genes= comb.de.genes,gene.hc=gene.hc))
   }
 

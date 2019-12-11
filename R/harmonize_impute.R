@@ -48,7 +48,7 @@ impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w, ...)
         w = get_knn_weight(knn.dist,...)
       }
       else{
-        w = matrix(1, nrow=nrow(knn.idx),ncol=ncol(dat))
+        w = matrix(1, nrow=nrow(knn.idx),ncol=ncol(knn.idx))
       }
     }
     total.w = rep(0, nrow(knn.idx))

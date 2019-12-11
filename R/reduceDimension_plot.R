@@ -11,20 +11,33 @@ get_RD_cl_center <- function(rd.dat, cl)
   }))
 }
 
-plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE, legend.size=2)
+plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE, legend.size=2, label.center=TRUE, bg="blank",fn.color="black")
   {
+    rd.dat=as.data.frame(rd.dat)
+    colnames(rd.dat) = paste0("Dim", 1:ncol(rd.dat))
     rd.dat$cl = cl[row.names(rd.dat)] 
     rd.dat$cl_label = droplevels(factor(cl.label[as.character(rd.dat$cl)], levels=cl.label))
-    cl.center = get_RD_cl_center(rd.dat, cl)
-    row.names(cl.center) = cl.label[row.names(cl.center)]
-    shape = setNames(1:length(levels(rd.dat$cl_label)) %% 20 + 1,levels(rd.dat$cl_label))
-    g=ggplot(rd.dat, aes(Lim1, Lim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
-    g = g+ scale_color_manual(values=alpha(as.vector(cl.color[levels(rd.dat$cl_label)]),alpha.val))+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl_label)]))
-    for(i in 1:nrow(cl.center)){
-      g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color="black")
+    if(label.center){
+      cl.center = get_RD_cl_center(rd.dat, cl)
+      row.names(cl.center) = cl.label[row.names(cl.center)]
     }
-    g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y), size=cex*1.5)
-    g = g + theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
+    shape = setNames(1:length(levels(rd.dat$cl_label)) %% 20 + 1,levels(rd.dat$cl_label))
+    g=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
+    g = g+ scale_color_manual(values=alpha(as.vector(cl.color[levels(rd.dat$cl_label)]),alpha.val))+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl_label)]))
+    if(label.center){
+      for(i in 1:nrow(cl.center)){
+        g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color=fn.color)
+      }
+      g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y), size=cex*1.5)
+    }
+    if(bg=="blank"){
+      g = g + theme_void()
+      #g = g + theme(panel.background=element_blank())
+      #g = g + theme(axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
+    }
+    else{
+      g = g + theme(panel.background= element_rect(fill=bg, color=NA), panel.border = element_blank(),panel.grid.major = element_blank(), panel.grid.minor= element_blank())
+    }
     if(show.legend){
       g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(rd.dat$cl_label)])),ncol=5)
       g <- g + guides(color = guide_legend(override.aes = list(size = legend.size)))
@@ -33,6 +46,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
     else{
       g = g + theme(legend.position="none")
     }
+    g = g + coord_fixed(ratio=1)
     return(g)
   }
 
@@ -43,10 +57,10 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
 plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5,alpha.val=1)
   {
     rd.dat = as.data.frame(rd.dat)
-    colnames(rd.dat)[1:2] = c("Lim1","Lim2")
+    colnames(rd.dat)[1:2] = c("Dim1","Dim2")
     library(ggplot2)
     rd.dat$meta = meta
-    p=ggplot(rd.dat, aes(Lim1, Lim2)) + geom_point(aes(color=meta),size=cex)
+    p=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=meta),size=cex)
     if(is.factor(meta)){
       rd.dat = droplevels(rd.dat)
       if(is.null(meta.col)){
@@ -67,8 +81,11 @@ plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15,
       p = p + theme(legend.position="none") 
     }
     else{
-      p = p + guides(colour = guide_legend(override.aes = list(size=legend.size)))
+      if(is.factor(meta)){
+        p = p + guides(colour = guide_legend(override.aes = list(size=legend.size)))
+      }
     }
+    p = p + coord_fixed(ratio=1)
     return(p)
   }
 
@@ -77,11 +94,15 @@ plot_RD_gene <- function(rd.dat, norm.dat, genes, cex=0.15)
   {
     library(ggplot2)
     plots=list()
+    rd.dat = as.data.frame(rd.dat)
+    colnames(rd.dat)[1:2] = c("Dim1","Dim2")
     for(g in genes){
       rd.dat$expr = norm.dat[g,row.names(rd.dat)]
-      p=ggplot(rd.dat, aes(Lim1, Lim2)) + geom_point(aes(color=expr),size=cex)
-      p = p+ scale_color_gradient(low="gray",high="red") + xlab(g)
-      p = p + theme(legend.position="none",panel.background=element_blank())
+      p=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=expr),size=cex)
+      p = p+ scale_color_gradient(low="gray80",high="red") 
+      p = p + theme_void() + theme(legend.position="none")
+      p = p + coord_fixed(ratio=1)
+      p = p + ggtitle(g)
       plots[[g]]= p
     }
     return(plots)
@@ -132,17 +153,17 @@ plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRU
   if(init){
     rgl.open()
   }
-  rgl.points(df$Lim1,df$Lim2, df$Lim3, col=df[[col]])
+  rgl.points(df$Dim1,df$Dim2, df$Dim3, col=df[[col]])
   if(!is.null(label_col)){
     cl.center = do.call("rbind", tapply(1:nrow(df), df[[label_col]], 
                                         function(x) {
                                           x = sample(x, pmin(length(x), 500))
-                                          center = c(median(df$Lim1[x]), median(df$Lim2[x]), median(df$Lim3[x]))
-                                          dist = as.matrix(dist(as.matrix(df[x, c("Lim1","Lim2","Lim3")])))
+                                          center = c(median(df$Dim1[x]), median(df$Dim2[x]), median(df$Dim3[x]))
+                                          dist = as.matrix(dist(as.matrix(df[x, c("Dim1","Dim2","Dim3")])))
                                           tmp = x[which.min(rowSums(dist))]
-                                          df[tmp,c("Lim1","Lim2","Lim3")]
+                                          df[tmp,c("Dim1","Dim2","Dim3")]
                                         }))
-    rgl.texts(cl.center$Lim1, cl.center$Lim2, cl.center$Lim3,text = row.names(cl.center), cex=label.cex)
+    rgl.texts(cl.center$Dim1, cl.center$Dim2, cl.center$Dim3,text = row.names(cl.center), cex=label.cex)
   }
   #rgl.viewpoint(zoom=0.6)
   if(!is.null(prefix)){
@@ -180,7 +201,7 @@ plot_3d_val <- function(df, val, cex=1, max.val=quantile(val, 0.99), init=TRUE, 
     rgl.open()
   }
   col = blue.red(100)[cut(val, c(seq(min(val), max.val,length.out=100), max.val+0.001),include.lowest = TRUE)]
-  rgl.points(df$Lim1,df$Lim2, df$Lim3, col=col)
+  rgl.points(df$Dim1,df$Dim2, df$Dim3, col=col)
   if(!is.null(prefix)){
     mybgplot3d(prefix,bg.col=bg.col)
   }
@@ -214,9 +235,9 @@ plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7,
     next3d()
     col = cols[[i]]
     if(length(col)==1){
-      col = paste0(col,"_color")
-      if(col %in% colnames(df)){ 
-        plot_3d_label(df, col=col, label_col=label_cols[[i]],init=FALSE, cex=cex, label.cex=label.cex, prefix=names(cols)[i], bg.col=bg.col)
+      tmp.col = paste0(col,"_color")
+      if(tmp.col %in% colnames(df)){ 
+        plot_3d_label(df, col=tmp.col, label_col=label_cols[[i]],init=FALSE, cex=cex, label.cex=label.cex, prefix=names(cols)[i], bg.col=bg.col)
       }
       else{
         plot_3d_val(df, val=df[[col]], init=FALSE,cex=cex,prefix=names(cols)[i], bg.col=bg.col)
@@ -258,7 +279,7 @@ plot_3d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", 
     df$select = meta
     df$col  = meta.col[meta]
     rgl.open()
-    rgl.points(df$Lim1,df$Lim2, df$Lim3, col=df$col)
+    rgl.points(df$Dim1,df$Dim2, df$Dim3, col=df$col)
     if(!is.null(web.fn)){
       writeWebGL(dir=dir, filename=fn)
     }

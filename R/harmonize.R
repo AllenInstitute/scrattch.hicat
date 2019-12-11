@@ -614,7 +614,6 @@ plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, 
     plots = plots[!sapply(plots, is.null)]
     ggsave(paste("tsne",prefix, "by.platform.pdf", sep="."), marrangeGrob(grobs=plots, nrow=1, ncol=1), height=height, width=width)
   })
-    
   }
 
 
