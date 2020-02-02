@@ -1,6 +1,6 @@
-get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.5)
+get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac.th=0.5)
 {
-  knn.result = nn2(rd.dat,k=k)
+  knn.result = RANN::nn2(rd.dat,k=k)
   row.names(knn.result[[1]]) = row.names(knn.result[[2]])=row.names(rd.dat)
   knn  = knn.result[[1]]
   knn.dist = knn.result[[2]]
