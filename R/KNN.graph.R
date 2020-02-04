@@ -399,7 +399,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
   
   
   if (plot.parts == TRUE) {
-    ggsave(file.path(out.dir,paste0(st,"comb.constellation.pdf")), plot.all, width = 25, height = 25, units="cm",useDingbats=FALSE) }
+    ggsave(file.path(out.dir,paste0(st,"comb.constellation.pdf")), plot.all, width = plot.width, height = plot.height, units="cm",useDingbats=FALSE) }
   
   
   
@@ -476,7 +476,7 @@ if (exxageration !=1) {
   g2 <- gridExtra::arrangeGrob(grobs=list(dot.size.legend,edge.width.legend,cl.center.legend,stroke.width.legend), layout_matrix=layout_legend)
   
   
-  ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = 25, height = 25, units="cm",useDingbats=FALSE)
+  ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = plot.width, height = plot.height, units="cm",useDingbats=FALSE)
   
   
 }
