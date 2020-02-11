@@ -447,7 +447,8 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
                         y=y, 
                         label=labels),
                     size = label.size) + 
-          theme_void() 
+          theme_void() +
+          theme(legend.position="none") 
     #plot.all
   }
   
