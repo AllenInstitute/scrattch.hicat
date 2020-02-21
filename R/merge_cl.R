@@ -30,6 +30,7 @@ test_merge <- function(de.pair, de.param, merge.type="undirectional")
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)
 #' @param cl A vector of cluster membership with cell index as names, and cluster id as values. 
 #' @param rd.dat Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first. 
+#' @param rd.dat.t Transpose of rd.dat
 #' @param de.param The DE gene criteria. See de_param for details. 
 #' @param merge.type Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately. 
 #' @param max.cl.size Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.   
@@ -45,7 +46,8 @@ test_merge <- function(de.pair, de.param, merge.type="undirectional")
 #'
 merge_cl<- function(norm.dat,
                     cl, 
-                    rd.dat.t, 
+                    rd.dat = NULL,
+                    rd.dat.t = NULL, 
                     de.param = de_param(), 
                     merge.type = c("undirectional","directional"), 
                     max.cl.size = 300,
@@ -55,6 +57,9 @@ merge_cl<- function(norm.dat,
                     pairBatch =40,
                     verbose = 0)
   {
+    if (is.null(rd.dat.t)){
+      rd.dat.t = Matrix::t(rd.dat)
+    }
     if(!is.integer(cl)){
       cl = setNames(as.integer(as.character(cl)), names(cl))
     }
