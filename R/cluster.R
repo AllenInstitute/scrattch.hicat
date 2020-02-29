@@ -52,8 +52,9 @@ jaccard_louvain.RANN <- function(dat,
     library(RANN)  
   
     knn.matrix = nn2(dat, k = k)[[1]]
-    
     jaccard.adj  <- knn_jaccard(knn.matrix)
+    
+    
     leiden.result = leiden(jaccard.adj)
     
     jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
@@ -144,6 +145,57 @@ filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
 
 
 
+#' Perform Jaccard/Leiden clustering 
+#' 
+#'
+#' @param dat A matrix of samples (rows) x features (columns)
+#' @param k K nearest neighbors to use
+#' 
+#' @return A list object with the cluster factor object and (cl) and Jaccard/Leiden results (result)
+#' @param num_iter If n_iter < 0 the optimiser continues iterating until it encounters an iteration that did not improve the partition.
+#' 
+#' 
+#load("data/Leiden_test/L4_5_6_IT.rd.dat.rda")
+#
+
+jaccard_leiden <- function(dat, k = 10, weight = NULL,
+                           num_iter = 2,
+                           resolution_parameter = 0.0001,
+                           random_seed = NULL,
+                           verbose = FALSE, ...) {
+  
+    library(igraph)
+    library(matrixStats)
+    library(RANN)  
+    library(Matrix)
+
+    knn.matrix = RANN::nn2(dat, k = k)[[1]]
+  
+    jaccard.adj  <- knn_jaccard(knn.matrix)
+    jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
+                                          mode = "undirected", 
+                                          weighted = TRUE)
+    
+    partition_type <- 'CPMVertexPartition'
+    
+    #write line to determine optimal resolutoin↔
+  
+    cluster_result <- leidenbase::leiden_find_partition(jaccard.gr,
+                                                        partition_type = partition_type,
+                                                        num_iter=10,
+                                                        resolution_parameter=0.01,
+                                                        verbose = FALSE )
+    
+    cl <- setNames(cluster_result$membership, row.names(dat))
+    
+
+  return(list(cl = cl, result = cluster_result))
+}
+
+
+
+
+
 #' One round of clustering in the iteractive clustering pipeline 
 #'
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).
@@ -170,7 +222,7 @@ filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
 onestep_clust <- function(norm.dat, 
                           select.cells = colnames(norm.dat), 
                           counts = NULL, 
-                          method = c("louvain","ward.D", "kmeans"), 
+                          method = c("louvain","leiden","ward.D", "kmeans"), 
                           vg.padj.th = 0.5, 
                           dim.method = c("pca","WGCNA"), 
                           max.dim = 20, 
@@ -184,7 +236,7 @@ onestep_clust <- function(norm.dat,
                           k.nn = 15,
                           prefix = NULL, 
                           verbose = FALSE, regress.x=NULL)
-                          
+                    
   {
     library(matrixStats)
     method=method[1]
@@ -273,6 +325,25 @@ onestep_clust <- function(norm.dat,
         cl = setNames(tmp.cl[as.character(cl)], names(cl))
       }
     }
+    
+    
+    else if(method=="leiden"){
+      k = pmin(k.nn, round(nrow(rd.dat)/2))
+      tmp = jaccard_leiden(rd.dat, k)
+      if(is.null(tmp)){
+        return(NULL)
+      }
+      cl = tmp$cl
+      if(length(unique(cl))>max.cl){
+        tmp.means =do.call("cbind",tapply(names(cl),cl, function(x){
+          colMeans(rd.dat[x,,drop=F])
+        },simplify=F))
+        tmp.hc = hclust(dist(t(tmp.means)), method="average")
+        tmp.cl= cutree(tmp.hc, pmin(max.cl, length(unique(cl))))
+        cl = setNames(tmp.cl[as.character(cl)], names(cl))
+      }
+    }  
+    
     else if(method=="ward.D"){
       hc = hclust(dist(rd.dat),method="ward.D")
       #print("Cluster cells")
