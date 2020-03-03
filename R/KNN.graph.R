@@ -65,7 +65,7 @@ get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac
 #' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2)) 
 
 
-plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=5, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=2) { 
+plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=2, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=2, max_size=10) { 
   
   library(gridExtra)
   library(sna)
@@ -101,7 +101,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
                                  size=cluster_size, 
                                  color=alpha(cluster_color, 0.8))) +
                   scale_size_area(trans="sqrt",
-                                  max_size=10,
+                                  max_size=max_size,
                                   breaks = c(100,1000,10000,100000)) +
                   scale_color_identity() +  
                   geom_text(data=cl.center.df,
@@ -409,7 +409,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
                          size=cluster_size, 
                          color=cluster_color)) +
           scale_size_area(trans="sqrt",
-                          max_size=10,
+                          max_size=max_size,
                           breaks = c(100,1000,10000,100000)) +
           scale_color_identity() + 
           geom_text(data=nodes,
@@ -439,7 +439,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
                          size=cluster_size, 
                          color=cluster_color)) +
           scale_size_area(trans="sqrt",
-                          max_size=10,
+                          max_size=max_size,
                           breaks = c(100,1000,10000,100000)) +
           scale_color_identity() + 
           geom_text(data=nodes,
@@ -478,7 +478,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
                              size=cluster_size, 
                              color=cluster_color)) +
               scale_size_area(trans="sqrt",
-                              max_size=10,
+                              max_size=max_size,
                               breaks = c(100,1000,10000,100000)) +
               scale_color_identity() + 
               geom_text(data=nodes,

@@ -460,6 +460,7 @@ compare_annotate <- function(cl,
   
   tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels=ref.cl.df$cluster_label)
   
+  print(length(levels(tb.df$ref.cl.label)))
   g <- ggplot2::ggplot(tb.df, 
                        ggplot2::aes(x = cl, 
                                     y = ref.cl.label)) + 
@@ -473,7 +474,9 @@ compare_annotate <- function(cl,
     ggplot2::scale_color_gradient(low = "yellow", 
                                   high = "darkblue") + 
     ggplot2::scale_size(range = c(0, 3))
-  
+  if(!do.droplevels){
+    g = g + scale_y_discrete(drop=FALSE)  + scale_x_discrete(drop=FALSE)
+  }
   out_list <- list(cl = cl,
                    cl.df = cl.df,
                    g = g,

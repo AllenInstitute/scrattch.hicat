@@ -25,10 +25,10 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
     g=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
     g = g+ scale_color_manual(values=alpha(as.vector(cl.color[levels(rd.dat$cl_label)]),alpha.val))+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl_label)]))
     if(label.center){
+      g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y), size=cex*1.5)
       for(i in 1:nrow(cl.center)){
         g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color=fn.color)
       }
-      g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y), size=cex*1.5)
     }
     if(bg=="blank"){
       g = g + theme_void()
