@@ -71,13 +71,19 @@ plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, 
 ##' @param ... 
 ##' @return 
 ##' @author Zizhen Yao
-plot_confusion <- function(consensus.cl, prefix, comb.dat,...)
+plot_confusion <- function(consensus.cl, prefix, comb.dat,consensus.cl.df = NULL, do.droplevels = FALSE,...)
 {
   g.list=list()
   for(x in names(comb.dat$cl.list)){
     if(sum(names(comb.dat$cl.list[[x]]) %in% names(consensus.cl)) > 0){
-      g = compare_annotate(consensus.cl, comb.dat$cl.list[[x]], comb.dat$cl.df.list[[x]], rename = FALSE)$g
-      g = g + xlab("consensus cluster") + ylab(x)
+      if(is.null(cl.df)){
+        g = compare_annotate(consensus.cl, comb.dat$cl.list[[x]], comb.dat$cl.df.list[[x]], rename = FALSE, do.droplevels=do.droplevels)$g
+        g = g + xlab("consensus cluster") + ylab(x)
+      }
+      else{
+        g = compare_annotate(comb.dat$cl.list[[x]], consensus.cl, consensus.cl.df, rename = FALSE, do.droplevels=do.droplevels)$g
+        g = g + ylab("consensus cluster") + xlab(x)
+      }
       g.list[[x]] <- g
       ggsave(paste(prefix, x, "pdf", sep="."), g,...)
     }
