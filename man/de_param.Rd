@@ -2,26 +2,121 @@
 % Please edit documentation in R/de.genes.R
 \name{de_param}
 \alias{de_param}
-\title{Set differential expression (DE) threshold for genes and clusters.}
+\title{Set differential expression (DE) parameters for genes and clusters.}
 \usage{
 de_param(low.th = 1, padj.th = 0.01, lfc.th = 1, q1.th = 0.5,
-  q2.th = NULL, q.diff.th = 0.7, de.score.th = 100, min.cells = 4)
+  q2.th = NULL, q.diff.th = 0.7, de.score.th = 150, min.cells = 4,
+  min.genes = 5)
 }
 \arguments{
-\item{low.th}{Threshold on normalized gene expression to determiend whether a gene is detected in a cell. Default value 1. Users can specifiy different thresholds for different genes if necessary by using a vector with genes as names.}
+\item{low.th}{Lower boundary for normalized gene expression. Default = 1. See details.}
 
-\item{padj.th}{Threshold on adjusted Pvalue for limma. Default vaue is 0.01.}
+\item{padj.th}{Upper boundary threshold for adjusted p-values for differential expression tests. Default = 0.01. See details.}
 
-\item{lfc.th}{Threshold on log2 fold change for limma. Default value is 1.}
+\item{lfc.th}{Lower boundary threshold for log2(fold change) for differential expression tests. Default = 1 (i.e. 2-fold). See details}
 
-\item{q1.th}{For every pair of clusters (one as foreground, and the other as background), we define q1, and q2 as the proportion of cells detecting the gene in the foregound and background cluster respectively. Up reguated genes should have q1 greater than q1.th}
+\item{q1.th}{Lower boundary threshold for foreground detection in proportional comparisons. Default = 0.5. See details.}
 
-\item{q2.th}{Up regualted genes should have q2 smaller than q2.th. q2.th is NULL by default.}
+\item{q2.th}{Upper boundary threshold for background detection in proportional comparisons. Default = NULL. See details.}
 
-\item{q.diff.th}{Threshold on scaled proportion difference, defined as abs(q1 - q2)/max(q1, q2). DE genes should have differences greater than q.diff.th. Default 0.7}
+\item{q.diff.th}{Threshold for scaled difference in proportions. Default = 0.7. See details.}
 
-\item{de.score.th}{To determine whether two clusters are seperable based on DE genes, we define de.score as the sum of -log10(adjusted Pvalub) for all DE genes. Each gene contributes at most 20 towards the sum. All clusters should have pairwise de.score greater than de.score.th.}
+\item{de.score.th}{Lower boundary of total differential expression scores for cluster comparisons. Default = 150. See details.}
+
+\item{min.cells}{The minimum number of cells allowed in each cluster. Default = 4. See details.}
+
+\item{min.genes}{The minimum number of differentially expressed genes required to separate clusters. Default = 5. See details.}
+}
+\value{
+returns a list of parameters for reuse
 }
 \description{
-Set differential expression (DE) threshold for genes and clusters.
+This function provides a convenient way to manage settings for differential expression tests in scrattch.hicat.
+}
+\details{
+Calling \code{de.param()} without additional parameters provides reasonable defaults for high depth (e.g. SMART-seq) datasets.
+
+
+\strong{Gene detection threshold:}
+
+\code{low.th} sets a lower bound for normalized gene expression to determine whether or not a gene is considered to be detected.
+This is used to filter genes that are too low in expression to be reliably detected.\cr
+This parameter can be set globally by providing a single value, or per-gene by providing a named vector.
+
+\strong{Differential expression test thresholds:}
+
+\code{scrattch.hicat} utilizes \code{limma}'s \link[limma]{eBayes} or Chi-Square tests for differential gene expression. These parameters are used to 
+determine which genes are considered differentially expressed:\cr
+\code{padj.th} is the threshold for adjusted p-values. Adjusted p-values must be below this threshold to be considered significant.\cr 
+\code{lfc.th} is the threshold for abs(log2(Fold Change)).
+
+\strong{Cluster proportion thresholds:}
+
+We use \code{q1.th}, \code{q2.th} and \code{q.diff.th} for additional tests based on the proportion of cells in each cluster that express each gene.
+For every pair of clusters, we define \emph{q1} and \emph{q2} as the proportion of cells with expression greater than \code{low.th} 
+(above) in the foregound and background cluster, respectively. 
+We use \code{q1.th} to select genes in a high proportion of foreground clusters, and \code{q2.th} to select genes in a low proportion of background clusters. 
+Finally, we use \code{q.diff.th} to test for the difference between the foreground and background proportions.
+
+\code{q1.th}: The minimum proportion of cells in the foreground cluster with expression greater than \code{low.th}.\cr
+\code{q2.th}: The maximum proportion of cells in the background cluster with expression greater than \code{low.th}.\cr
+\code{q.diff.th}: The scaled proportional difference between \emph{q1} and \emph{q2}, defined as \eqn{abs(q1 - q2) / max(q1, q2)} .
+
+\strong{Cluster-wise p-value threshold:}
+
+After performing differential expression tests between a pair of clusters, we use \emph{de.score} as a way to determine if enough overall 
+differential expression is observed to consider the two clusters distinct from each other.
+
+We define \emph{de.score} for each gene as \eqn{min(-log10(p.adj), 20)}. This sets a cap on the contribution of each gene to the cluster-wise \emph{de.score} value at 20.\cr
+The \emph{de.score} for a pair of clusters is the sum of the gene-wise \emph{de.score} values. 
+
+Only genes passing the \code{padj.th} and \code{lfc.th} thresholds (above) contribute to the \emph{de.score}.
+
+\code{de.score.th} is used as a minimum value for the cluster-wise \emph{de.score} in a pairwise comparison between clusters.
+
+\strong{Cell and gene count thresholds:}
+
+\code{min.cells} is the minimum size allowed for a cluster. If a cluster size is below \code{min.cells}, it will be merged with the nearest cluster.\cr
+
+\code{min.genes} is the minimum number of differentially expressed genes (passing the \code{padj.th} and \code{lfc.th} thresholds, above) 
+required to consider two clusters separate.
+}
+\examples{
+
+# Recommended initial parameters for SMART-Seq (> 8,000 genes per sample):
+
+sm_param <- de_param(low.th = 1,
+                     padj.th = 0.01,
+                     lfc.th = 1,
+                     q1.th = 0.5,
+                     q2.th = NULL,
+                     q.diff.th = 0.7,
+                     de.score.th = 150,
+                     min.cells = 4,
+                     min.genes = 5)
+
+# Recommended initial parameters for 10x Cells (> 3,000 genes per sample):
+
+tx_param <- de_param(low.th = 1,
+                     padj.th = 0.01,
+                     lfc.th = 1,
+                     q1.th = 0.4, # Reduced due to dropout
+                     q2.th = NULL,
+                     q.diff.th = 0.7,
+                     de.score.th = 150,
+                     min.cells = 10, # Increased due to higher number of cells
+                     min.genes = 5)
+
+# Recommended initial parameters for 10x Nuclei (> 1,000 genes per sample):
+
+tx_param <- de_param(low.th = 1,
+                     padj.th = 0.01,
+                     lfc.th = 1,
+                     q1.th = 0.3, # Reduced due to dropout
+                     q2.th = NULL,
+                     q.diff.th = 0.7,
+                     de.score.th = 100, # Reduced due to decreased detection
+                     min.cells = 10, # Increased due to higher number of cells
+                     min.genes = 5) 
+
 }

@@ -2,16 +2,19 @@
 % Please edit documentation in R/util.R
 \name{cpm}
 \alias{cpm}
-\title{Convert a matrix of count values to CPM (Counts per Million)}
+\title{Convert a matrix of raw counts to a matrix of Counts per Million values}
 \usage{
 cpm(counts)
 }
 \arguments{
-\item{counts}{a standard or sparse matrix}
+\item{counts}{a matrix, dgCMatrix, or dgTMatrix of count values.}
 }
 \value{
-a matrix object of the same type as counts with normalized values
+a matrix, dgCMatrix, or dgTMatrix of CPM values (matching input)
 }
 \description{
-Convert a matrix of count values to CPM (Counts per Million)
+The input can be a base R matrix or a sparse matrix from the Matrix package.
+}
+\details{
+This function expects that columns correspond to samples, and rows to genes.
 }

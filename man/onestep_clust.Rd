@@ -4,12 +4,13 @@
 \alias{onestep_clust}
 \title{One round of clustering in the iteractive clustering pipeline}
 \usage{
-onestep_clust(norm.dat, select.cells = colnames(norm.dat), counts = NULL,
-  method = c("louvain", "ward.D", "kmeans"), vg.padj.th = 0.5,
-  dim.method = c("pca", "WGCNA"), max.dim = 20, rm.eigen = NULL,
-  rm.th = 0.7, de.param = de_param(), min.genes = 5,
-  type = c("undirectional", "directional"), maxGenes = 3000,
-  sampleSize = 4000, max.cl.size = 300, prefix = NULL, verbose = FALSE)
+onestep_clust(norm.dat, select.cells = colnames(norm.dat),
+  counts = NULL, method = c("louvain", "ward.D", "kmeans"),
+  vg.padj.th = 0.5, dim.method = c("pca", "WGCNA"), max.dim = 20,
+  rm.eigen = NULL, rm.th = 0.7, de.param = de_param(),
+  merge.type = c("undirectional", "directional"), maxGenes = 3000,
+  sampleSize = 4000, max.cl.size = 300, k.nn = 15, prefix = NULL,
+  verbose = FALSE, regress.x = NULL)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).}
@@ -32,10 +33,6 @@ onestep_clust(norm.dat, select.cells = colnames(norm.dat), counts = NULL,
 
 \item{de.param}{The differential gene expression threshold. See de_param() function for details.}
 
-\item{min.genes}{The minimal number of high variance and differentially expressed genes genes. Default 5.}
-
-\item{type}{Can either be "undirectional" or "directional". If "undirectional", the differential gene threshold de.param is applied to combined up-regulated and down-regulated genes, if "directional", then the differential gene threshold is applied to both up-regulated and down-regulated genes.}
-
 \item{maxGenes}{Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules.}
 
 \item{sampleSize}{The number of sampled cells to compute reduced dimensions.}
@@ -45,6 +42,8 @@ onestep_clust(norm.dat, select.cells = colnames(norm.dat), counts = NULL,
 \item{prefix}{Used to keep track of intermediate results in "verbose" mode. Default NULL.}
 
 \item{verbose}{Default FALSE}
+
+\item{type}{Can either be "undirectional" or "directional". If "undirectional", the differential gene threshold de.param is applied to combined up-regulated and down-regulated genes, if "directional", then the differential gene threshold is applied to both up-regulated and down-regulated genes.}
 }
 \value{
 Clustering result is returned as a list with two elements: 
