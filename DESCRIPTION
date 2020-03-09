@@ -27,7 +27,6 @@ Imports:
   ggplot2,
   grid,
   limma,
-  Matrix,
   matrixStats,
   pvclust,
   qlcMatrix,
