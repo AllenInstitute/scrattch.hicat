@@ -37,7 +37,6 @@ Suggests:
     knitr,
     rmarkdown,
     testthat,
-    tasic2016data,
     Rphenograph,
     covr
 VignetteBuilder: knitr
