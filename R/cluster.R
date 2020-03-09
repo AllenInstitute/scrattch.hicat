@@ -4,29 +4,24 @@
 #' 
 #' @return a sparse matrix of Jaccard distances.
 #' 
-jaccard <- function(m) {
+jaccard <-  function(m) {
   library(Matrix)
-  
-  ## common values:
-  A <-  m %*% t(m)
-  
-  ## indexes for non-zero common values
-  im <- Matrix::which(A > 0, arr.ind=TRUE)
-  
-  ## counts for each row
-  b <- Matrix::rowSums(m)  
-  
-  ## only non-zero values of common
-  Aim <- A[im]
-  
-  ## Jacard formula: #common / (#i + #j - #common)
-  J <- sparseMatrix(
-    i = im[,1],
-    j = im[,2],
-    x = Aim / (b[im[,1]] + b[im[,2]] - Aim),
-    dims = dim(A)
-    )  
-  return(J)
+  ## common values:                                                                                                                                              
+  A <-  Matrix::tcrossprod(m)
+  A <- as(A, "dgTMatrix")
+  ## counts for each row                                                                                                                                         
+  b <- Matrix::rowSums(m)
+  ## Jacard formula: #common / (#i + #j - #common)                                                                                                               
+  x = A@x / (b[A@i+1] + b[A@j+1] - A@x)
+  A@x = x
+  return(A)
+}  
+
+knn_jaccard <- function(knn)
+{
+  knn.df = data.frame(i = rep(1:nrow(knn), ncol(knn)), j=as.vector(knn))
+  knn.mat = sparseMatrix(i = knn.df[[1]], j=knn.df[[2]], x=1, giveCsparse=FALSE)
+  jaccard(knn.mat)
 }
 
 
@@ -42,44 +37,30 @@ pass_louvain <- function(mod.sc, adj.mat)
   return(mod.sc > rand.mod.max)
 }
 
-#' Perform Jaccard/Louvain clustering based on K-nearest neighbors
+#' Perform Jaccard/Louvain clustering based on RANN
 #'
 #' @param dat A matrix of features (rows) x samples (columns)
 #' @param k K nearest neighbors to use
-#' @param knn.matrix A K-nearest neighbors matrix. If NULL will be computed using FNN::get.knn()
 #' 
 #' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
 #' 
-jaccard_louvain.FNN <- function(dat, 
-                                k = 10, 
-                                knn.matrix = NULL)
+jaccard_louvain.RANN <- function(dat, 
+                                k = 10)
   {
     library(igraph)
     library(matrixStats)
-    library(FNN)  
+    library(RANN)  
+  
+    knn.matrix = nn2(dat, k = k)[[1]]
+    jaccard.adj  <- knn_jaccard(knn.matrix)
     
-    if(is.null(knn.matrix)){
-        knn.result <- FNN::get.knn(dat, k)
-        knn.matrix <- knn.result[[1]]
-    }
     
-    p <- as.vector(t(knn.matrix))
+    leiden.result = leiden(jaccard.adj)
     
-    edge <- cbind(rep(1:nrow(knn.matrix), rep(k, nrow(knn.matrix))), p)
-    
-    edge.unique <- cbind(rowMins(edge), rowMaxs(edge))
-    edge.unique <- unique(edge.unique)
-    
-    knn.gr <- igraph::graph(t(edge))
-    knn.matrix <- igraph::get.adjacency(knn.gr)
-    
-    jaccard.adj  <- jaccard(knn.matrix)
     jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
                                           mode = "undirected", 
                                           weighted = TRUE)
-    
     louvain.result <- igraph::cluster_louvain(jaccard.gr)
-    
     mod.sc <- igraph::modularity(louvain.result)
     
     if(pass_louvain(mod.sc, jaccard.adj)) {
@@ -89,11 +70,44 @@ jaccard_louvain.FNN <- function(dat,
       return(list(cl = cl, result = louvain.result))
     
     } else{
-      
       return(NULL)
-      
     }
   }
+
+#' Perform Jaccard/Louvain clustering based on RANN
+#'
+#' @param dat A matrix of features (rows) x samples (columns)
+#' @param k K nearest neighbors to use
+#' 
+#' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
+#' 
+jaccard_leiden.RANN <- function(dat, 
+                                k = 10)
+  {
+    library(igraph)
+    library(matrixStats)
+    library(RANN)  
+    library(leiden)
+    
+    knn.matrix = nn2(dat, k = k)[[1]]
+    
+    jaccard.adj  <- knn_jaccard(knn.matrix)
+
+    
+    leiden.result <- igraph::cluster_louvain(jaccard.gr)
+    mod.sc <- igraph::modularity(louvain.result)
+    
+    if(pass_louvain(mod.sc, jaccard.adj)) {
+      
+      cl <- setNames(louvain.result$membership, row.names(dat))
+      
+      return(list(cl = cl, result = louvain.result))
+    
+    } else{
+      return(NULL)
+    }
+  }
+
 
 #' Perform Jaccard/Louvain clustering using Rphenograph
 #' 
@@ -113,6 +127,75 @@ jaccard_louvain <- function(dat, k = 10)
   return(list(cl = cl, result = rpheno))
 }
 
+filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
+  {
+    rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
+    rm.cor[is.na(rm.cor)]=0
+    rm.score = rowMaxs(abs(rm.cor))
+    select = colSums(t(abs(rm.cor)) >= rm.th) ==0
+    if(sum(!select)>0 & verbose){
+      print("Remove dimension:")
+      print(rm.score[!select])
+    }
+    if(sum(select)==0){
+      return(NULL)
+    }
+    rd.dat = rd.dat[,select,drop=F]
+  }
+
+
+
+#' Perform Jaccard/Leiden clustering 
+#' 
+#'
+#' @param dat A matrix of samples (rows) x features (columns)
+#' @param k K nearest neighbors to use
+#' 
+#' @return A list object with the cluster factor object and (cl) and Jaccard/Leiden results (result)
+#' @param num_iter If n_iter < 0 the optimiser continues iterating until it encounters an iteration that did not improve the partition.
+#' 
+#' 
+#load("data/Leiden_test/L4_5_6_IT.rd.dat.rda")
+#
+
+jaccard_leiden <- function(dat, k = 10, weight = NULL,
+                           num_iter = 2,
+                           resolution_parameter = 0.0001,
+                           random_seed = NULL,
+                           verbose = FALSE, ...) {
+  
+    library(igraph)
+    library(matrixStats)
+    library(RANN)  
+    library(Matrix)
+
+    knn.matrix = RANN::nn2(dat, k = k)[[1]]
+  
+    jaccard.adj  <- knn_jaccard(knn.matrix)
+    jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
+                                          mode = "undirected", 
+                                          weighted = TRUE)
+    
+    partition_type <- 'CPMVertexPartition'
+    
+    #write line to determine optimal resolutoin↔
+  
+    cluster_result <- leidenbase::leiden_find_partition(jaccard.gr,
+                                                        partition_type = partition_type,
+                                                        num_iter=10,
+                                                        resolution_parameter=0.01,
+                                                        verbose = FALSE )
+    
+    cl <- setNames(cluster_result$membership, row.names(dat))
+    
+
+  return(list(cl = cl, result = cluster_result))
+}
+
+
+
+
+
 #' One round of clustering in the iteractive clustering pipeline 
 #'
 #' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).
@@ -125,7 +208,6 @@ jaccard_louvain <- function(dat, k = 10)
 #' @param rm.eigen The reduced dimensions that need to be masked and removed. Default NULL.  
 #' @param rm.th The cutoff for correlation between reduced dimensions and rm.eigen. Reduced dimensions with correlatin with any rm.eigen vectors are not used for clustering. Default 0.7
 #' @param de.param The differential gene expression threshold. See de_param() function for details. 
-#' @param min.genes The minimal number of high variance and differentially expressed genes genes. Default 5. 
 #' @param type Can either be "undirectional" or "directional". If "undirectional", the differential gene threshold de.param is applied to combined up-regulated and down-regulated genes, if "directional", then the differential gene threshold is applied to both up-regulated and down-regulated genes. 
 #' @param maxGenes Only used when dim.method=="WGCNA". The maximum number of genes to calculate gene modules. 
 #' @param sampleSize The number of sampled cells to compute reduced dimensions.
@@ -140,27 +222,31 @@ jaccard_louvain <- function(dat, k = 10)
 onestep_clust <- function(norm.dat, 
                           select.cells = colnames(norm.dat), 
                           counts = NULL, 
-                          method = c("louvain","ward.D", "kmeans"), 
+                          method = c("louvain","leiden","ward.D", "kmeans"), 
                           vg.padj.th = 0.5, 
                           dim.method = c("pca","WGCNA"), 
                           max.dim = 20, 
                           rm.eigen = NULL, 
                           rm.th = 0.7, 
                           de.param = de_param(),
-                          min.genes = 5, 
-                          type = c("undirectional", "directional"), 
+                          merge.type = c("undirectional", "directional"), 
                           maxGenes = 3000,
                           sampleSize = 4000,
-                          max.cl.size = 300, 
+                          max.cl.size = 300,
+                          k.nn = 15,
                           prefix = NULL, 
-                          verbose = FALSE)
-                          
+                          verbose = FALSE, regress.x=NULL)
+                    
   {
     library(matrixStats)
     method=method[1]
     dim.method=dim.method[1]
-    type=type[1]
-    
+    merge.type=merge.type[1]
+    if(!is.null(regress.x)){
+      print("regression")
+      tmp =  lm_normalize(as.matrix(norm.dat[,select.cells]), regress.x[select.cells], R_2.th=0.1)
+      norm.dat = tmp[[1]]
+    }
     if(length(select.cells)>sampleSize){
       sampled.cells = sample(select.cells, pmin(length(select.cells),sampleSize))
     }
@@ -168,21 +254,22 @@ onestep_clust <- function(norm.dat,
       sampled.cells = select.cells
     }
     ###Find high variance genes
-    if(is.matrix(norm.dat)){
-      select.genes = row.names(norm.dat)[which(rowSums(norm.dat[,select.cells] > de.param$low.th) >= de.param$min.cells)]
-    }
-    else{
-      select.genes = row.names(norm.dat)[which(Matrix::rowSums(norm.dat[,select.cells] > de.param$low.th) >= de.param$min.cells)]
-    }
+    select.genes = row.names(norm.dat)[which(Matrix::rowSums(norm.dat[,select.cells] > de.param$low.th) >= de.param$min.cells)]
     ###Find high variance genes.
     if(is.null(counts)){
-      counts = 2^(norm.dat[select.genes, sampled.cells])-1
+      if(is.matrix(norm.dat)){
+        counts = 2^(norm.dat[,sampled.cells])-1
+      }
+      else{
+        counts = norm.dat[,sampled.cells]
+        counts@x = 2^(norm.dat@x) - 1
+      }
     }
-    plot.fig=NULL
+    plot_file=NULL
     if(verbose & !is.null(prefix)){
-      plot.fig=paste0(prefix,".vg.pdf")
+      plot_file=paste0(prefix,".vg.pdf")
     }
-    vg = findVG(as.matrix(counts[select.genes,sampled.cells]),plot.fig=plot.fig)
+    vg = find_vg(as.matrix(counts[select.genes,sampled.cells]),plot_file=plot_file)
     if(dim.method=="auto"){
       if(length(select.cells)> 1000){
         dim.method="pca"
@@ -193,45 +280,38 @@ onestep_clust <- function(norm.dat,
     }
     if(dim.method=="WGCNA"){
       ###Ignore vg.padj.th for WGCNA, choose top "maxGgenes" for analysis
-      select.genes = row.names(vg)[which(vg$loess.padj < 1)]
-      select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
-      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=sampled.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)
+      select.genes = as.character(vg[which(vg$loess.padj < 1),"gene"])
+      select.genes = head(select.genes[order(vg[select.genes, "loess.padj"],-vg[select.genes, "z"])],maxGenes)
+      rd.dat = rd_WGCNA(norm.dat, select.genes=select.genes, select.cells=select.cells, sampled.cells=sampled.cells, de.param=de.param, max.mod=max.dim, max.cl.size=max.cl.size)$rd.dat
     }
     else{
        ###If most genes are differentially expressed, then use absolute dispersion value
-      select.genes = row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)]
-      select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
+      select.genes = as.character(vg[which(vg$loess.padj < vg.padj.th | vg$dispersion >3),"gene"])
+      select.genes = head(select.genes[order(vg[select.genes, "loess.padj"],-vg[select.genes, "z"])],maxGenes)
       if(verbose){
         cat("Num high variance genes:",length(select.genes),"\n")
       }
-      if(length(select.genes)< min.genes){
+      if(length(select.genes)< de.param$min.genes){
         return(NULL)
       }
-      rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)
+      rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)$rd.dat
     }
     if(is.null(rd.dat)||ncol(rd.dat)==0){
       return(NULL)
     }
     if(!is.null(rm.eigen)){
-      rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
-      rm.cor[is.na(rm.cor)]=0
-      rm.score = rowMaxs(abs(rm.cor))
-      select = rm.score < rm.th
-      if(sum(!select)>0 & verbose){
-        print("Remove dimension:")
-        print(rm.score[!select])
-      }
-      if(sum(select)==0){
-        return(NULL)
-      }
-      rd.dat = rd.dat[,select,drop=F]
+      rd.dat <- filter_RD(rd.dat, rm.eigen, rm.th, verbose=verbose)
+    }
+    if(is.null(rd.dat)||ncol(rd.dat)==0){
+      return(NULL)
     }
     if(verbose){
       print(method)
     }
     max.cl = ncol(rd.dat)*2 + 1
     if(method=="louvain"){
-      tmp = jaccard_louvain(rd.dat, 15)
+      k = pmin(k.nn, round(nrow(rd.dat)/2))
+      tmp = jaccard_louvain(rd.dat, k)
       if(is.null(tmp)){
         return(NULL)
       }
@@ -245,6 +325,25 @@ onestep_clust <- function(norm.dat,
         cl = setNames(tmp.cl[as.character(cl)], names(cl))
       }
     }
+    
+    
+    else if(method=="leiden"){
+      k = pmin(k.nn, round(nrow(rd.dat)/2))
+      tmp = jaccard_leiden(rd.dat, k)
+      if(is.null(tmp)){
+        return(NULL)
+      }
+      cl = tmp$cl
+      if(length(unique(cl))>max.cl){
+        tmp.means =do.call("cbind",tapply(names(cl),cl, function(x){
+          colMeans(rd.dat[x,,drop=F])
+        },simplify=F))
+        tmp.hc = hclust(dist(t(tmp.means)), method="average")
+        tmp.cl= cutree(tmp.hc, pmin(max.cl, length(unique(cl))))
+        cl = setNames(tmp.cl[as.character(cl)], names(cl))
+      }
+    }  
+    
     else if(method=="ward.D"){
       hc = hclust(dist(rd.dat),method="ward.D")
       #print("Cluster cells")
@@ -257,7 +356,8 @@ onestep_clust <- function(norm.dat,
       stop(paste("Unknown clustering method", method))
     }
     #print(table(cl))
-    merge.result=merge_cl(norm.dat, cl=cl, rd.dat=rd.dat, type=type, de.param=de.param, max.cl.size=max.cl.size)
+    rd.dat.t = t(rd.dat)
+    merge.result=merge_cl(norm.dat, cl=cl, rd.dat.t=rd.dat.t, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size,verbose=verbose)
     gc()
     if(is.null(merge.result))return(NULL)
     sc = merge.result$sc
@@ -276,7 +376,7 @@ onestep_clust <- function(norm.dat,
       cl.hc = hclust(dist(t(cl.dat)),method="average")
       cl = setNames(factor(as.character(cl), levels= colnames(cl.dat)[cl.hc$order]), names(cl))
       if(verbose & !is.null(prefix)){
-        display_cl(norm.dat, cl, prefix=prefix, markers=markers, max.cl.size=max.cl.size)
+        tmp=display_cl(cl, norm.dat, prefix=prefix, markers=markers, max.cl.size=max.cl.size)
       }
       levels(cl) = 1:length(levels(cl))
       result=list(cl=cl, markers=markers)
@@ -300,8 +400,6 @@ onestep_clust <- function(norm.dat,
 #'         cl: cluster membership for each cell
 #'         markers: top markers that seperate clusters     
 #'         
-#' @examples clust.result <- iter_clust(norm.dat)
-#'           clust.result <- iter_clust(norm.dat, de.param = de_param(q1.th = 0.5, de.score.th = 100))
 iter_clust <- function(norm.dat, 
                        select.cells = colnames(norm.dat),
                        prefix = NULL, 
@@ -382,194 +480,26 @@ iter_clust <- function(norm.dat,
 #' @return Reorder cluster membership vector. The cluster id start from 1 to the number of clusters.
 #' @export 
 #'
-#' @examples 
 reorder_cl <- function(cl, dat)
 {
   cl.means = get_cl_means(dat,cl)
-  cl.hc = hclust(as.dist(1- cor(cl.means)),method="average")
-  cl = setNames(factor(as.character(cl), levels=cl.hc$labels[cl.hc$order]),names(cl))
+  cl.hc = hclust(as.dist(1 - cor(cl.means)),method = "average")
+  cl = setNames(factor(as.character(cl), levels = cl.hc$labels[cl.hc$order]),names(cl))
   cl = setNames(as.integer(cl),names(cl))
 }
 
-#' Merge clusters based on pairwise differential expressed genes. 
-#'
-#' @param norm.dat normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)
-#' @param cl A vector of cluster membership with cells as names, and cluster id as values. 
-#' @param rd.dat Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first. 
-#' @param de.param The DE gene criteria. See de_param for details. 
-#' @param type Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately. 
-#' @param max.cl.size Sampled cluster size. This is to speed up limma DE gene calculation. Instead of using all cells, we randomly sampled max.cl.size number of cells for testing DE genes.   
-#' @param de.method Use limma by default. We are still testing "chisq" mode. 
-#' @return A list with cl (cluster membership), de.genes (differentially expressed genes), sc (cluster pairwise de.score), markers (top cluster pairwise markers)
-#' @export
-#'
-#' @examples
-merge_cl<- function(norm.dat, 
-                    cl, 
-                    rd.dat, 
-                    de.param = de_param(), 
-                    type = c("undirectional","directional"), 
-                    max.cl.size = 300,
-                    de.method = "limma",
-                    de.genes = NULL, 
-                    return.markers = TRUE, 
-                    verbose = 0)
+
+
+combine_finer_split <- function(cl, finer.cl)
   {
-    type=type[1]
-    cl = setNames(as.integer(as.character(cl)), names(cl))
-    de.df=list()
-    select.cells = names(cl)
-    pairs=NULL
-    if(!is.null(de.genes)){
-      pairs=do.call("rbind",strsplit(names(de.genes), "_"))
-      row.names(pairs)=names(de.genes)
+    if(is.factor(cl)){
+      cl = setNames(as.integer(cl), names(cl))
     }
-    if(is.matrix(norm.dat)){
-      cell.gene.counts= colSums(norm.dat[,select.cells]>0)
+    if(is.factor(finer.cl)){
+      finer.cl = setNames(as.integer(finer.cl), names(finer.cl))
     }
-    else{
-      cell.gene.counts= Matrix::colSums(norm.dat[,select.cells]>0)
-    }
-    cell.weights = cell.gene.counts - min(cell.gene.counts)+200
-    while(length(unique(cl)) > 1){
-      cl.size = table(cl)
-      ##Down sample cells for efficiency   
-      tmp.cells = sample_cells(cl,  max.cl.size,weights=cell.weights)
-      tmp.dat = as.matrix(norm.dat[,tmp.cells])
-      ###Merge small clusters with the closest neighbors first.
-      cl.rd = Matrix::t(get_cl_means(Matrix::t(rd.dat),cl))
-      while(TRUE){
-        cl.size = table(cl)
-        ##Compute cluster similary on reduced dimension
-        if(ncol(cl.rd)>2){
-          cl.sim = cor(t(cl.rd))
-        }
-        else{
-          cl.diff=as.matrix(dist(cl.rd/as.vector(cl.size[row.names(cl.rd)])))
-          cl.sim = 1 - cl.diff/max(cl.diff)
-        }
-        cl.small = names(cl.size)[cl.size < de.param$min.cells]
-        ###Merge small clusters with its closest neighbors.
-        if(length(cl.small)>0){
-          tmp=as.data.frame(as.table(cl.sim[cl.small,,drop=F]))
-          tmp[,1]=as.integer(as.character(tmp[,1]))
-          tmp[,2]=as.integer(as.character(tmp[,2]))
-          tmp = tmp[tmp[,1]!=tmp[,2],,drop=F]
-          closest.pair = which.max(tmp$Freq)
-          x = tmp[closest.pair,1]
-          y=  tmp[closest.pair,2]
-          if(verbose > 0){
-            cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
-          }
-          cl[cl==x]= y
-          cl.rd[as.character(y),]= cl.rd[as.character(y),] + cl.rd[as.character(x),]
-          cl.rd = cl.rd[row.names(cl.rd)!=x,,drop=F]
-        }		
-        else{
-          break
-        }	
-      }
-      if(length(cl.size)==1){
-        return(NULL)
-      }
-      
-      ####if the number of clusters is fewer than 10, compute all pairs. If no clusters are significant, quit
-      if(length(cl.size) < 10 & length(de.genes)==0){
-        de.genes = de_score(tmp.dat, cl=cl[tmp.cells], de.param= de.param, method=de.method, de.genes=de.genes)
-        sc = sapply(de.genes, function(x){
-          if(length(x)>0){x$score}
-          else{0}
-        })
-        merge.pairs=do.call("rbind",strsplit(names(de.genes), "_"))
-        row.names(merge.pairs)=names(de.genes)
-        pairs = merge.pairs
-      }
-      else{
-        ####Choose top 2 nearest neighbor based on correlation matrix.
-        if(nrow(cl.rd)>2){
-          k = 3
-          knn.matrix=t(sapply(1:nrow(cl.sim), function(i){colnames(cl.sim)[-i][head(order(cl.sim[i,-i],decreasing=T), k)]}))
-          row.names(knn.matrix)=row.names(cl.sim)
-          merge.pairs = do.call("rbind",apply(knn.matrix, 2,function(x)data.frame(c1=row.names(knn.matrix),c2=x)))
-          merge.pairs[,1] = as.integer(as.character(merge.pairs[,1]))
-          merge.pairs[,2] = as.integer(as.character(merge.pairs[,2]))
-          tmp1 =pmin(merge.pairs[,1],merge.pairs[,2])
-          tmp2 =pmax(merge.pairs[,1],merge.pairs[,2])
-          merge.pairs = cbind(tmp1,tmp2)        
-        }
-        else{
-          merge.pairs = matrix(as.integer(row.names(cl.rd)), nrow=1)
-        }
-        
-        row.names(merge.pairs) = paste(merge.pairs[,1],merge.pairs[,2],sep="_")
-        merge.pairs= merge.pairs[!duplicated(row.names(merge.pairs)),,drop=F]
-        ###Determine the de score for these pairs
-        if(nrow(merge.pairs)==0){
-          break
-        }
-        #####Check pairs already known but not yet merged yet.
-        new.pairs = setdiff(row.names(merge.pairs),names(de.genes))
-        pairs = rbind(pairs, merge.pairs[new.pairs,,drop=F])
-        tmp.de.genes =de_score_pairs(tmp.dat, cl=cl[tmp.cells], pairs=merge.pairs[new.pairs,,drop=F], de.param= de.param, method=de.method)$de.genes
-        de.genes[names(tmp.de.genes)] = tmp.de.genes
-        sc = sapply(de.genes[row.names(merge.pairs)], function(x){
-          if(length(x)>0){x$score}
-          else{0}
-        })
-      }
-      sc = sort(sc)
-      #print(head(sc,10))      
-      to.merge = sapply(names(sc), function(p){
-        x = de.genes[[p]]
-        if(length(x)==0){
-          to.merge = TRUE
-        }
-        else if(type=="undirectional"){
-          to.merge=x$score < de.param$de.score.th    
-        }
-        else{
-          to.merge=x$up.score < de.param$de.score.th | x$down.score < de.param$de.score.th 
-        }
-        to.merge
-      })
-      if(sum(to.merge)==0){
-        break
-      }
-      sc = sc[to.merge]
-      to.merge= merge.pairs[names(sc),,drop=FALSE]
-      merged =c()
-      ###The first pair in to.merge always merge. For the remaining pairs, if both clusters have already enough cells,
-      ###or independent of previus merging, then they can be directly merged as well, without re-assessing DE genes. 
-      for(i in 1:nrow(to.merge)){
-        p = to.merge[i,]
-        if(i == 1 | sc[i] < de.param$de.score.th /2  & length(intersect(p, merged))==0){
-          if(verbose > 0){
-            cat("Merge ",p[1], p[2], sc[i],"\n")
-          }
-          cl[cl==p[2]] = p[1]
-          rm.pairs = row.names(pairs)[pairs[,1]%in% p | pairs[,2]%in% p]
-          de.genes = de.genes[setdiff(names(de.genes),rm.pairs)]
-        }
-        merged = c(merged, p)
-      }
-      pairs = pairs[names(de.genes),,drop=F]
-    }
-    if(length(unique(cl))<2){
-      return(NULL)
-    }
-    if(verbose > 0){
-      print(table(cl))
-    }
-    markers = NULL
-    if(return.markers){
-      de.genes = de_score(as.matrix(norm.dat[,tmp.cells]), cl[tmp.cells], de.genes=de.genes, de.param=de.param)
-      markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=50)$markers
-    }
-    sc = sapply(de.genes, function(x){
-      if(length(x)>0){x$score}
-      else{0}
-    })
-    return(list(cl=cl, de.genes=de.genes,sc=sc, markers=markers))
+    max.cl = max(cl)
+    finer.cl = finer.cl + max.cl
+    cl[names(finer.cl)] = finer.cl
+    return(cl)
   }
-
-

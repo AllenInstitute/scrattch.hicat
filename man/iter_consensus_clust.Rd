@@ -4,21 +4,21 @@
 \alias{iter_consensus_clust}
 \title{Iterative consensus clustering}
 \usage{
-iter_consensus_clust(co.ratio, cl.list, norm.dat,
-  select.cells = colnames(co.ratio), all.col = NULL, diff.th = 0.25,
-  prefix = NULL, method = c("auto", "louvain", "ward.D"), verbose = FALSE,
-  de.param = de.param, result = NULL, rd.dat = NULL)
+iter_consensus_clust(cl.list, co.ratio = NULL, cl.mat = NULL, norm.dat,
+  select.cells = names(cl.list[[1]]), diff.th = 0.25, prefix = NULL,
+  method = c("auto", "louvain", "ward.D"), verbose = FALSE,
+  de.param = de.param, max.cl.size = 300, result = NULL,
+  split.size = de.param$min.cells * 2, merge.type = c("undirectional",
+  "directional"))
 }
 \arguments{
-\item{co.ratio}{cell cell co-clustering matrix}
-
 \item{cl.list}{The list of subsampled clustering results.}
+
+\item{co.ratio}{cell cell co-clustering matrix}
 
 \item{norm.dat}{The log2 transformed normalzied expression matrix}
 
 \item{select.cells}{Cells to be clustered}
-
-\item{all.col}{Color bars for plotting heatmap. Default NULL}
 
 \item{diff.th}{The difference of co-clustering probablities for splitting a cluster.}
 
@@ -28,11 +28,11 @@ iter_consensus_clust(co.ratio, cl.list, norm.dat,
 
 \item{verbose}{Default FALSE}
 
+\item{de.param}{Differentiall expressed genes criteria for merging clusters}
+
 \item{result}{Pre-computed clustering results used for further splitting. Default NULL.}
 
-\item{min.cells}{Minimal number of cells in a cluster. Default 4}
-
-\item{...}{Other parameters passed to merge_cl}
+\item{merge.type}{Determine if the DE gene score threshold should be applied to combined de.score, or de.score for up and down directions separately.}
 }
 \value{
 A list with cluster membership, and top pairwise marker genes.
