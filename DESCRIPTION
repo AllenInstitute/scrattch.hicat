@@ -30,14 +30,14 @@ Imports:
   matrixStats,
   pvclust,
   qlcMatrix,
-  Rphenograph,
-  Rtsne
+  Rtsne,
+  WGCNA
 RoxygenNote: 6.1.1
 Suggests: 
-    WGCNA,
     knitr,
     rmarkdown,
     testthat,
-    #tasic2016data,
+    tasic2016data,
+    Rphenograph,
     covr
 VignetteBuilder: knitr
