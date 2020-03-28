@@ -51,6 +51,7 @@ Consensus clustering was introduced to ensure robustness of clustering:
 For this vignette, we use a subset of the dataset published in [Tasic, et al. (2016) Nature Neuroscience](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4985242/), which is available in the [tasic2016data package](https://github.com/AllenInstitute/tasic2016data):  
 
 ```{r tasic2016data}
+library(devtools)
 if(!"tasic2016data" %in% rownames(installed.packages())) {
   devtools::install_github("AllenInstitute/tasic2016data")
 }

@@ -22,6 +22,7 @@ Requires: Matrix
 Imports: 
   data.table,
   dendextend,
+  devtools,
   doParallel,
   dplyr,
   foreach,

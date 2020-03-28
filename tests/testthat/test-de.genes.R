@@ -1,8 +1,10 @@
 context("test-de.genes")
 library(scrattch.hicat)
+library(devtools)
 library(Matrix)
 
 # Load glial test data
+devtools::install_github("AllenInstitute/tasic2016data")
 library(tasic2016data)
 
 glial_classes <- c("Astrocyte", "Endothelial Cell", "Microglia", 
