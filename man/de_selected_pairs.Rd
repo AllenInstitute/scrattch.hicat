@@ -4,8 +4,19 @@
 \alias{de_selected_pairs}
 \title{Perform pairwise differential gene expression tests between main pairs of clusters in parallel}
 \usage{
-de_selected_pairs(norm.dat, cl, pairs, method = "limma", low.th = 1,
-  cl.present = NULL, use.voom = FALSE, counts = NULL, mc.cores = 1)
+de_selected_pairs(
+  norm.dat,
+  cl,
+  pairs,
+  method = "limma",
+  low.th = 1,
+  min.cells = 4,
+  cl.means = NULL,
+  cl.present = NULL,
+  use.voom = FALSE,
+  counts = NULL,
+  mc.cores = 1
+)
 }
 \arguments{
 \item{norm.dat}{a normalized data matrix for data.}
@@ -25,6 +36,9 @@ de_selected_pairs(norm.dat, cl, pairs, method = "limma", low.th = 1,
 \item{counts}{A matrix of raw count data for each cell. Required if \code{use.voom} is TRUE. Default is NULL.}
 
 \item{mc.cores}{A number indicating how many processor cores to use for parallelization.}
+}
+\value{
+
 }
 \description{
 Perform pairwise differential gene expression tests between main pairs of clusters in parallel

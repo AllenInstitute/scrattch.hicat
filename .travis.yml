@@ -13,6 +13,7 @@ r_packages:
 r_github_packages:
   - JinmiaoChenLab/Rphenograph
   - AllenInstitute/tasic2016data
+  - cole-trapnell-lab/leidenbase
 
 bioc_packages:
   - limma

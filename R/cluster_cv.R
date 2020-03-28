@@ -1,3 +1,17 @@
+#' Get core intermediate
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param select.markers 
+#' @param n.bin 
+#' @param n.iter 
+#' @param mc.cores 
+#' @param method 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_core_intermediate <- function(norm.dat, cl, select.markers, n.bin=5, n.iter=100, mc.cores=10, method="median")
   {
     require(parallel)

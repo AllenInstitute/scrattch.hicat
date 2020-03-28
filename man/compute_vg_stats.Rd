@@ -4,7 +4,7 @@
 \alias{compute_vg_stats}
 \title{Compute gene expression variance statistics}
 \usage{
-compute_vg_stats(dat, verbose = FALSE)
+compute_vg_stats(dat, rescaled = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{dat}{A matrix or dgCMatrix with samples as columns and genes as rows}

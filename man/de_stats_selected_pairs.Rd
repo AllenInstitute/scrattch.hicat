@@ -4,8 +4,18 @@
 \alias{de_stats_selected_pairs}
 \title{Compute differential expression summary statistics for selected pairs of clusters based on de_param().}
 \usage{
-de_stats_selected_pairs(norm.dat, cl, pairs, de.df = NULL,
-  de.param = de_param(), method = "limma", mc.cores = 1)
+de_stats_selected_pairs(
+  norm.dat,
+  cl,
+  pairs,
+  de.df = NULL,
+  de.param = de_param(),
+  method = "limma",
+  select.genes = NULL,
+  mc.cores = 1,
+  cl.means = NULL,
+  cl.present = NULL
+)
 }
 \arguments{
 \item{norm.dat}{a normalized data matrix for data.}

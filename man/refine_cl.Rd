@@ -4,8 +4,16 @@
 \alias{refine_cl}
 \title{Refine clusters}
 \usage{
-refine_cl(cl, co.ratio = NULL, cl.mat = NULL, confusion.th = 0.6,
-  min.cells = 4, niter = 50, tol.th = 0.02, verbose = 0)
+refine_cl(
+  cl,
+  co.ratio = NULL,
+  cl.mat = NULL,
+  confusion.th = 0.6,
+  min.cells = 4,
+  niter = 50,
+  tol.th = 0.02,
+  verbose = 0
+)
 }
 \arguments{
 \item{cl}{Cluster membership cluster}
@@ -23,6 +31,9 @@ refine_cl(cl, co.ratio = NULL, cl.mat = NULL, confusion.th = 0.6,
 \item{tol.th}{If improvement is smaller than this threshold, terminate refinement step.}
 
 \item{verbose}{If true, print out step-by-step improvement.}
+}
+\value{
+
 }
 \description{
 Refine clusters

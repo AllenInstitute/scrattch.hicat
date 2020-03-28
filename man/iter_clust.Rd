@@ -4,8 +4,15 @@
 \alias{iter_clust}
 \title{Iterative clustering algorithm for single cell RNAseq dataset}
 \usage{
-iter_clust(norm.dat, select.cells = colnames(norm.dat), prefix = NULL,
-  split.size = 10, result = NULL, method = "auto", ...)
+iter_clust(
+  norm.dat,
+  select.cells = colnames(norm.dat),
+  prefix = NULL,
+  split.size = 10,
+  result = NULL,
+  method = "auto",
+  ...
+)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)}

@@ -1,3 +1,19 @@
+#' Title
+#'
+#' @param dat.list 
+#' @param de.param.list 
+#' @param cl 
+#' @param pairs 
+#' @param cl.means.list 
+#' @param cl.present.list 
+#' @param lfc.conservation.th 
+#' @param de.genes.list 
+#' @param max.cl.size 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means.list=NULL, cl.present.list=NULL, lfc.conservation.th=0.6, de.genes.list=NULL, max.cl.size=200)
   {
       cl.size = table(cl)
@@ -65,6 +81,14 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
 
 
 
+#' Title
+#'
+#' @param cl.rd 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_cl_sim <- function(cl.rd)
 {
   if(ncol(cl.rd)>2 & nrow(cl.rd) > 2){
@@ -77,6 +101,15 @@ get_cl_sim <- function(cl.rd)
   return(sim)
 }
 
+#' Title
+#'
+#' @param cl.rd.list 
+#' @param FUN 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_cl_sim_multiple <- function(cl.rd.list, FUN =pmax)
   {
     all.cl = unique(unlist(lapply(cl.rd.list, colnames)))
@@ -99,21 +132,23 @@ get_cl_sim_multiple <- function(cl.rd.list, FUN =pmax)
 
 
 ####Change criteria. If one of the platform shows significant DE genes, and the other platform show consistent fold change, keep the clusters seperate. 
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param comb.dat 
-##' @param merge.dat.list 
-##' @param cl 
-##' @param anchor.genes 
-##' @param verbose 
-##' @param pairBatch 
-##' @param de.genes.list 
-##' @param lfc.conservation.th 
-##' @return 
-##' @author Zizhen Yao
-##' 
+
+#' Title
+#'
+#' @param comb.dat 
+#' @param merge.dat.list 
+#' @param cl 
+#' @param anchor.genes 
+#' @param verbose 
+#' @param pairBatch 
+#' @param de.genes.list 
+#' @param lfc.conservation.th 
+#' @param merge.type 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbose=TRUE, pairBatch=40, de.genes.list=NULL, lfc.conservation.th=0.7, merge.type="undirectional")
 {
   print("merge_cl_multiple")

@@ -1,9 +1,21 @@
 ---
-title: "Overview of scrattch.hicat"
-author: Zizhen Yao, Cindy van Velthoven, Adriana Sedeno-Cortes, Changkyu Lee, Lawrence
-  Huang
-date: '2020-02-20'
+title: "Overview of scrattch hicat"
+author: Zizhen Yao, Cindy van Velthoven, Adriana Sedeno-Cortes, Changkyu Lee, Lawrence Huang
+date: "2020-03-27"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Overview of scrattch hicat}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 
 `scrattch.hicat` offers functions to perform iterative clustering for single cell RNAseq datasets. 
 
@@ -35,7 +47,9 @@ Consensus clustering was introduced to ensure robustness of clustering:
 * [Bootstrapping of the iterative clustering process](#boot)    
 * [Breakdown of consensus clustering](#breakdown)  
 
+
 For this vignette, we use a subset of the dataset published in [Tasic, et al. (2016) Nature Neuroscience](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4985242/), which is available in the [tasic2016data package](https://github.com/AllenInstitute/tasic2016data):  
+
 ```{r tasic2016data}
 if(!"tasic2016data" %in% rownames(installed.packages())) {
   devtools::install_github("AllenInstitute/tasic2016data")

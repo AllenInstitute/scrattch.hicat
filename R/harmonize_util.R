@@ -1,3 +1,11 @@
+#' Title
+#'
+#' @param all.results 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 combine_cl <- function(all.results)
   {
     cl = all.results[[1]]$cl
@@ -15,6 +23,22 @@ combine_cl <- function(all.results)
     return(cl)
   }
 
+#' Title
+#'
+#' @param cl 
+#' @param cl.df 
+#' @param comb.dat 
+#' @param prefix 
+#' @param tsne.df 
+#' @param cex 
+#' @param fn.size 
+#' @param height 
+#' @param width 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, height=8, width=10)
   {
     library(ggplot2)
@@ -61,16 +85,19 @@ plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, 
 
 
 
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param consensus.cl 
-##' @param prefix 
-##' @param comb.dat 
-##' @param ... 
-##' @return 
-##' @author Zizhen Yao
+#' Title
+#'
+#' @param consensus.cl 
+#' @param prefix 
+#' @param comb.dat 
+#' @param consensus.cl.df 
+#' @param do.droplevels 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_confusion <- function(consensus.cl, prefix, comb.dat,consensus.cl.df = NULL, do.droplevels = FALSE,...)
 {
   g.list=list()
@@ -92,6 +119,18 @@ plot_confusion <- function(consensus.cl, prefix, comb.dat,consensus.cl.df = NULL
 }
 
 
+#' Title
+#'
+#' @param dat.list 
+#' @param de.param.list 
+#' @param select.genes 
+#' @param cl 
+#' @param sets 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, cl, sets=names(dat.list))
   {
     if(is.null(de.param.list)){
@@ -123,6 +162,18 @@ get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, c
 
 
 
+#' Title
+#'
+#' @param dat.list 
+#' @param de.param.list 
+#' @param select.genes 
+#' @param cl 
+#' @param sets 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_cl_present_list <- function(dat.list, de.param.list, select.genes=NULL, cl, sets=names(dat.list))
   {
     cl.present =  sapply(sets, function(x){
@@ -154,6 +205,14 @@ get_cl_present_list <- function(dat.list, de.param.list, select.genes=NULL, cl, 
 
 
 
+#' Title
+#'
+#' @param cl.means.list 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_gene_cl_correlation <- function(cl.means.list)
   {
     sets=names(cl.means.list)
@@ -170,6 +229,14 @@ get_gene_cl_correlation <- function(cl.means.list)
     return(gene.cl.cor)
   }
 
+#' Title
+#'
+#' @param cl.means.list 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_lfc_list <- function(cl.means.list)
   {
     sets=names(cl.means.list)
@@ -191,6 +258,18 @@ get_de_lfc_list <- function(cl.means.list)
 
 
 
+#' Title
+#'
+#' @param dat.list 
+#' @param de.param.list 
+#' @param cl 
+#' @param select.sets 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_result  <- function(dat.list, de.param.list,  cl, select.sets=names(de.param.list), ...)
   {
     de.result <- sapply(select.sets, function(x){
@@ -210,6 +289,19 @@ get_de_result  <- function(dat.list, de.param.list,  cl, select.sets=names(de.pa
     return(list(marker.counts=marker.counts, de.genes.list=de.genes.list))
   }
 
+#' Title
+#'
+#' @param de.genes.list 
+#' @param cl.means.list 
+#' @param common.genes 
+#' @param max.num 
+#' @param pairs 
+#' @param frac.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.num=10000, pairs=NULL, frac.th=0.7)
 {
   sets = names(cl.means.list)
@@ -279,6 +371,17 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
 }
 
 
+#' Title
+#'
+#' @param comb.dat 
+#' @param cl 
+#' @param de.genes.list 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_joint_markers <- function(comb.dat, cl, de.genes.list,...)
   {
     tmp <- sapply(names(de.genes.list), function(x){
@@ -295,6 +398,14 @@ select_joint_markers <- function(comb.dat, cl, de.genes.list,...)
   }
 
 
+#' Title
+#'
+#' @param cl.means.list 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 build_dend_with_means <- function(cl.means.list)
 {
   levels = unique(unlist(lapply(cl.means.list, colnames)))
@@ -310,6 +421,15 @@ build_dend_with_means <- function(cl.means.list)
   hclust(as.dist(1-tmp.cor))
 }
 
+#' Title
+#'
+#' @param dat 
+#' @param impute.dat 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 impute_val_cor <- function(dat, impute.dat)
   {
     gene.cor = pair_cor(dat, impute.dat)
@@ -318,6 +438,17 @@ impute_val_cor <- function(dat, impute.dat)
   }
 
 
+#' Title
+#'
+#' @param dat.list 
+#' @param select.genes 
+#' @param select.cells 
+#' @param pairs 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 gene_gene_cor_conservation <- function(dat.list, select.genes, select.cells,pairs=NULL)
   {
     sets = names(dat.list)
@@ -344,6 +475,26 @@ gene_gene_cor_conservation <- function(dat.list, select.genes, select.cells,pair
 
 
 
+#' Title
+#'
+#' @param dat.list 
+#' @param cl 
+#' @param de.param.list 
+#' @param prefix 
+#' @param common.genes 
+#' @param comb.de.genes 
+#' @param cl.means.list 
+#' @param col.list 
+#' @param cl.col 
+#' @param select.genes 
+#' @param save.matrix 
+#' @param n.markers 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb.de.genes=NULL, cl.means.list=NULL, col.list=NULL, cl.col=NULL, select.genes=NULL, save.matrix=FALSE,n.markers = 20,...)
   {
     sets=names(dat.list)

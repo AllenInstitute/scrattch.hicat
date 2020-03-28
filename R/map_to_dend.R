@@ -1,3 +1,18 @@
+#' Title
+#'
+#' @param cl.g 
+#' @param cl.med 
+#' @param markers 
+#' @param dat 
+#' @param map.dat 
+#' @param select.cells 
+#' @param p 
+#' @param low.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 resolve_cl <-
   function(cl.g,
            cl.med,
@@ -87,6 +102,22 @@ resolve_cl <-
   }
 
 
+#' Title
+#'
+#' @param dend 
+#' @param cl 
+#' @param cl.med 
+#' @param dat 
+#' @param map.dat 
+#' @param select.cells 
+#' @param p 
+#' @param low.th 
+#' @param default.markers 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 map_dend <-
   function(dend,
            cl,
@@ -148,6 +179,15 @@ map_dend <-
     
   }
 
+#' Title
+#'
+#' @param markers.cl.list 
+#' @param map.dat 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get.markers.num <- function(markers.cl.list, map.dat)
 {
   all.markers = unique(unlist(markers.cl.list))
@@ -156,6 +196,20 @@ get.markers.num <- function(markers.cl.list, map.dat)
   })
 }
 
+#' Title
+#'
+#' @param dend 
+#' @param memb 
+#' @param map.dat 
+#' @param exp.th 
+#' @param conf.th 
+#' @param min.genes.ratio 
+#' @param min.genes 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 summarize_cl <-
   function(dend,
            memb,
@@ -251,6 +305,22 @@ summarize_cl <-
     return(memb.df)
   }
 
+#' Title
+#'
+#' @param dend 
+#' @param cl 
+#' @param cl.med 
+#' @param dat 
+#' @param map.dat 
+#' @param map.cells 
+#' @param mc.cores 
+#' @param bs.num 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 map_dend_membership <-
   function(dend,
            cl,
@@ -294,6 +364,26 @@ map_dend_membership <-
     return(memb)
   }
 
+#' Title
+#'
+#' @param dend 
+#' @param cl.df 
+#' @param cl 
+#' @param norm.dat 
+#' @param query.dat 
+#' @param bp.collapse.th 
+#' @param mc.cores 
+#' @param bs.num 
+#' @param p 
+#' @param low.th 
+#' @param conf.th 
+#' @param min.genes 
+#' @param min.genes.ratio 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 mapping <-
   function(dend,
            cl.df,

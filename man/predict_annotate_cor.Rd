@@ -4,8 +4,16 @@
 \alias{predict_annotate_cor}
 \title{Predict annotations by cluster correlation}
 \usage{
-predict_annotate_cor(cl, norm.dat, ref.markers, ref.cl, ref.cl.df,
-  ref.norm.dat, method = "median", reorder = TRUE)
+predict_annotate_cor(
+  cl,
+  norm.dat,
+  ref.markers,
+  ref.cl,
+  ref.cl.df,
+  ref.norm.dat,
+  method = "median",
+  reorder = TRUE
+)
 }
 \arguments{
 \item{cl}{a cluster factor object for data to map to the reference}

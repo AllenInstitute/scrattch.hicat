@@ -4,8 +4,16 @@
 \alias{map_sampling}
 \title{Perform bootstrapped mapping using a fraction of provided marker genes.}
 \usage{
-map_sampling(train.dat, train.cl, test.dat, markers, markers.perc = 0.8,
-  iter = 100, method = "median", verbose = TRUE)
+map_sampling(
+  train.dat,
+  train.cl,
+  test.dat,
+  markers,
+  markers.perc = 0.8,
+  iter = 100,
+  method = "median",
+  verbose = TRUE
+)
 }
 \arguments{
 \item{train.dat}{Training data matrix, usually log-transformed CPM}

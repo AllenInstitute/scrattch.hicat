@@ -4,17 +4,32 @@
 \alias{renameAndOrderClusters}
 \title{Rename clusters using genes and metadata}
 \usage{
-renameAndOrderClusters(sampleInfo,
-  classNameColumn = "cluster_type_label", classGenes = c("GAD1",
-  "SLC17A7", "SLC1A3"), classLevels = c("inh", "exc", "glia"),
-  layerNameColumn = "layer_label", regionNameColumn = "Region_label",
+renameAndOrderClusters(
+  sampleInfo,
+  classNameColumn = "cluster_type_label",
+  classGenes = c("GAD1", "SLC17A7", "SLC1A3"),
+  classLevels = c("inh", "exc", "glia"),
+  layerNameColumn = "layer_label",
+  regionNameColumn = "Region_label",
   matchNameColumn = "cellmap_label",
-  newColorNameColumn = "cellmap_color", otherColumns = NULL,
-  propLayer = 0.3, dend = NULL, orderbyColumns = c("layer", "region",
-  "topMatch"), includeClusterCounts = FALSE, includeBroadGenes = FALSE,
-  broadGenes = NULL, includeSpecificGenes = FALSE, propExpr = NULL,
-  medianExpr = NULL, propDiff = 0, propMin = 0.5, medianFC = 1,
-  excludeGenes = NULL, sortByMedian = TRUE, sep = "_")
+  newColorNameColumn = "cellmap_color",
+  otherColumns = NULL,
+  propLayer = 0.3,
+  dend = NULL,
+  orderbyColumns = c("layer", "region", "topMatch"),
+  includeClusterCounts = FALSE,
+  includeBroadGenes = FALSE,
+  broadGenes = NULL,
+  includeSpecificGenes = FALSE,
+  propExpr = NULL,
+  medianExpr = NULL,
+  propDiff = 0,
+  propMin = 0.5,
+  medianFC = 1,
+  excludeGenes = NULL,
+  sortByMedian = TRUE,
+  sep = "_"
+)
 }
 \arguments{
 \item{sampleInfo}{Sample information with rows as samples and columns for annotations.

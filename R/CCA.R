@@ -1,3 +1,14 @@
+#' Canon cor
+#'
+#' @param mat1 
+#' @param mat2 
+#' @param standardize 
+#' @param k 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 CanonCor <- function(mat1, mat2, standardize = TRUE, k = 20) {
   set.seed(seed = 42)
   if (standardize) {
@@ -12,6 +23,17 @@ CanonCor <- function(mat1, mat2, standardize = TRUE, k = 20) {
 
 
 ##Extract from Seurat Package
+#' CCA
+#'
+#' @param mat1 
+#' @param mat2 
+#' @param k 
+#' @param verbose 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 CCA <- function(mat1, mat2, k=20, verbose=FALSE)
   {
     library(irlba)

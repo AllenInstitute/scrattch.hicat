@@ -1,8 +1,9 @@
 #' Doublet detection in single-cell RNA sequencing data
 #'
-#' Adopted from https://www.cell.com/cell-systems/fulltext/S2405-4712(19)30073-0 (https://github.com/chris-mcginnis-ucsf/DoubletFinder) 
+#' Adopted from https://www.cell.com/cell-systems/fulltext/S2405-4712(19)30073-0 
+#' (https://github.com/chris-mcginnis-ucsf/DoubletFinder) 
 #'
-#' This function generaetes artificial nearest neighbors from existing single-cell RNA
+#' This function generates artificial nearest neighbors from existing single-cell RNA
 #' sequencing data. First, real and artificial data are merged. Second, dimension reduction
 #' is performed on the merged real-artificial dataset using PCA. Third, the proportion of
 #' artificial nearest neighbors is defined for each real cell. Finally, real cells are rank-
@@ -19,13 +20,19 @@
 #' each cell's neighborhood in PC space. Value is the minimum of 1% of cells sampled or 100.
 #'
 #'  
+#' @param plot 
 #' 
 #' @return An list of doublet.scores per samples and plots depicting the doublet scores for cells and artificial doublets.
-
-
-
+#' 
 doubletFinder <- function(data, select.genes, proportion.artificial = 0.20,
-                          k = round(pmin(100, ncol(data) * 0.01)), plot=FALSE) {
+                          k = NULL, plot=FALSE) {
+  
+    if(is.null(k)) {
+      k <- round(pmin(100, ncol(data) * 0.01))
+      k <- round(pmax(10, k))
+    }
+      
+  
   library(RANN)
   
   ## Step 1: Generate artificial doublets from Seurat object input

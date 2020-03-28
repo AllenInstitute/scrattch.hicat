@@ -4,12 +4,22 @@
 \alias{iter_consensus_clust}
 \title{Iterative consensus clustering}
 \usage{
-iter_consensus_clust(cl.list, co.ratio = NULL, cl.mat = NULL, norm.dat,
-  select.cells = names(cl.list[[1]]), diff.th = 0.25, prefix = NULL,
-  method = c("auto", "louvain", "ward.D"), verbose = FALSE,
-  de.param = de.param, max.cl.size = 300, result = NULL,
-  split.size = de.param$min.cells * 2, merge.type = c("undirectional",
-  "directional"))
+iter_consensus_clust(
+  cl.list,
+  co.ratio = NULL,
+  cl.mat = NULL,
+  norm.dat,
+  select.cells = names(cl.list[[1]]),
+  diff.th = 0.25,
+  prefix = NULL,
+  method = c("auto", "louvain", "ward.D"),
+  verbose = FALSE,
+  de.param = de.param,
+  max.cl.size = 300,
+  result = NULL,
+  split.size = de.param$min.cells * 2,
+  merge.type = c("undirectional", "directional")
+)
 }
 \arguments{
 \item{cl.list}{The list of subsampled clustering results.}

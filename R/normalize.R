@@ -1,3 +1,12 @@
+#' Title
+#'
+#' @param dat 
+#' @param x 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 lm_matrix <- function(dat, x)
 {
   coef <- colSums(t(dat) * x) / sum(x^2)
@@ -28,6 +37,18 @@ lm_matrix <- function(dat, x)
 }
 
 #####Add batch substracted median
+#' add batch substracted median
+#'
+#' @param dat 
+#' @param x 
+#' @param R_2.th 
+#' @param padj.th 
+#' @param min.genes 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 lm_normalize <- function(dat, 
                          x, 
                          R_2.th = 0.2, 

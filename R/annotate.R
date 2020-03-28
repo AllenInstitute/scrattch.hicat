@@ -28,6 +28,9 @@
 #   get_de_matrix() de.genes.R
 #   get_pair_matrix() util.R
 
+
+
+
 #' Map samples to a training dataset by correlation
 #' 
 #' @param train.dat Training data matrix, usually log-transformed CPM
@@ -101,6 +104,8 @@ map_by_cor <- function(train.dat,
   return(out_list)    
 }
 
+
+
 #' Map a dataset to a reference, and compare existing cluster calls to the reference comparison
 #' 
 #' @param ref.dat Training data matrix, usually log-transformed CPM
@@ -162,6 +167,8 @@ map_cl_summary <- function(ref.dat,
 }
 
 
+
+
 #' Predict annotations by cluster correlation
 #' 
 #' This function performs map_by_cor(), then compare_annotate().
@@ -207,6 +214,8 @@ predict_annotate_cor <- function(cl,
   
   return(map_results)
 }
+
+
 
 #' Perform bootstrapped mapping using a fraction of provided marker genes.
 #' 
@@ -278,6 +287,7 @@ map_sampling <- function(train.dat,
   
   return(out_list)
 }
+
 
 #' Run a single round of cross-validation of cluster mapping using a subset of marker genes
 #' 

@@ -11,10 +11,13 @@ Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role 
   person("Lawrence","Huang", email="lawrenceh@alleninstitute.org", role = c("aut")),
   person("Saroja","Somasundaram", email="sarojas@alleninstitute.org", role = c("aut")))
 Description: Iteractive clustering of single cell RNASeq dataset. 
+BugReports: https://github.com/AllenInstitute/scrattch.hicat/issues
 Depends: R (>= 3.3.0)
-License: GNU General Public License (Version 3, 29 June 2007)
+License: GPL-3
 Encoding: UTF-8
-LazyData: true
+LazyData: TRUE
+VignetteBuilder: knitr
+RoxygenNote: 7.0.2
 Requires: Matrix
 Imports: 
   data.table,
@@ -30,11 +33,9 @@ Imports:
   qlcMatrix,
   Rtsne,
   WGCNA
-RoxygenNote: 6.1.1
 Suggests: 
     knitr,
     rmarkdown,
     testthat,
     Rphenograph,
     covr
-VignetteBuilder: knitr

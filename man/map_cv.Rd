@@ -4,8 +4,15 @@
 \alias{map_cv}
 \title{Run a single round of cross-validation of cluster mapping using a subset of marker genes}
 \usage{
-map_cv(norm.dat, cl, markers, n.bin = 5, g.perc = 1,
-  method = "median", verbose = TRUE)
+map_cv(
+  norm.dat,
+  cl,
+  markers,
+  n.bin = 5,
+  g.perc = 1,
+  method = "median",
+  verbose = TRUE
+)
 }
 \arguments{
 \item{norm.dat}{a normalized data matrix for clustered cells}
