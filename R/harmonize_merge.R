@@ -247,7 +247,8 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
   if(length(cl.big)==0){
     return(NULL)
   }
-  cl.rd.list = get_cl_means_list(merge.dat.list, merge.de.param.list, select.genes=anchor.genes, cl=cl)
+  #cl.rd.list = get_cl_means_list(merge.dat.list, merge.de.param.list, select.genes=anchor.genes, cl=cl)
+  cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, select.genes=anchor.genes)
   
   pairs=NULL
   ###Merge small clusters first

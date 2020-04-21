@@ -92,17 +92,22 @@ plot_confusion <- function(consensus.cl, prefix, comb.dat,consensus.cl.df = NULL
 }
 
 
-get_cl_means_list <- function(dat.list, de.param.list=NULL, select.genes=NULL, cl, sets=names(dat.list))
+get_cl_means_list <- function(dat.list, cl, de.param.list=NULL, min.cells=NULL, select.genes=NULL, sets=names(dat.list))
   {
-    if(is.null(de.param.list)){
-      de.param.list = sapply(sets, function(x)de_param(), simplify=F)
+    if(is.null(min.cells)){
+      if(!is.null(de.param.list)){
+        min.cells = sapply(de.param.list, function(x)de.param.list[[x]]$min.cells)
+      }
+      else{
+        min.cells = setNames(rep(1, length(dat.list)), names(dat.list))
+      }
     }
     cl.means.list = list()
     for(x in sets){
       tmp.cells = intersect(names(cl), colnames(dat.list[[x]]))
       tmp.cl = cl[tmp.cells]
       cl.size = table(tmp.cl)
-      select.cl = names(cl.size)[cl.size >= de.param.list[[x]]$min.cells]
+      select.cl = names(cl.size)[cl.size >= min.cells[[x]]]
       if(length(select.cl)==0){
         return(NULL)
       }
