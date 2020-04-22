@@ -138,7 +138,7 @@ get_cl_means_list <- function(dat.list, cl, de.param.list=NULL, min.cells=NULL, 
   {
     if(is.null(min.cells)){
       if(!is.null(de.param.list)){
-        min.cells = sapply(de.param.list, function(x)de.param.list[[x]]$min.cells)
+        min.cells = lapply(de.param.list,"[[", "min.cells")
       }
       else{
         min.cells = setNames(rep(1, length(dat.list)), names(dat.list))
