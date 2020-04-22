@@ -1,3 +1,13 @@
+#' Get de score
+#'
+#' @param de.df 
+#' @param top.genes 
+#' @param upper 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_score <- function(de.df, top.genes, upper=20)
   {
     gene.score = -log10(de.df[top.genes,"padj"])
@@ -6,6 +16,14 @@ get_de_score <- function(de.df, top.genes, upper=20)
     return(gene.score)
   }
 
+#' Get de genes sym
+#'
+#' @param de.genes 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_genes_sym <- function(de.genes)
   {
     de.genes.sym = de.genes
@@ -22,6 +40,16 @@ get_de_genes_sym <- function(de.genes)
   }
 
 
+#' Get de pair
+#'
+#' @param de.genes 
+#' @param cl1 
+#' @param cl2 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_pair<- function(de.genes, cl1, cl2)
   {
     pair = paste0(cl1, "_", cl2)
@@ -39,6 +67,17 @@ get_de_pair<- function(de.genes, cl1, cl2)
   }
 
 
+#' Find doublet
+#'
+#' @param cl.df 
+#' @param cl.sim 
+#' @param cl.good 
+#' @param de.genes 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
   {    
     diag(cl.sim)=0
@@ -101,8 +140,19 @@ find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
   }
 
 
-
-plot_doublet <- function(norm.dat, cl, doublets.df, de.genes, all.col)
+#' Plot doublet
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param doublet.df 
+#' @param de.genes 
+#' @param all.col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_doublet <- function(norm.dat, cl, doublet.df, de.genes, all.col)
   {
     for(i in 1:nrow(doublets.df)){                                  
       x = as.character(doublets.df[i, "cl"])
@@ -115,6 +165,18 @@ plot_doublet <- function(norm.dat, cl, doublets.df, de.genes, all.col)
   }
 
 
+#' Plot cl low
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param low.df 
+#' @param de.genes 
+#' @param all.col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_cl_low <- function(norm.dat, cl, low.df, de.genes, all.col)
   {
     for(i in 1:nrow(low.df)){

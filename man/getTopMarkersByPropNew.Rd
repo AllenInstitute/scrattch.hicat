@@ -4,9 +4,15 @@
 \alias{getTopMarkersByPropNew}
 \title{Find specific marker gene for each cluster}
 \usage{
-getTopMarkersByPropNew(propExpr, medianExpr, propDiff = 0,
-  propMin = 0.5, medianFC = 1, excludeGenes = NULL,
-  sortByMedian = TRUE)
+getTopMarkersByPropNew(
+  propExpr,
+  medianExpr,
+  propDiff = 0,
+  propMin = 0.5,
+  medianFC = 1,
+  excludeGenes = NULL,
+  sortByMedian = TRUE
+)
 }
 \arguments{
 \item{propExpr}{matrix of proportions of cells expressing a gene in each cluster

@@ -1,3 +1,57 @@
+#' Title
+#'
+#' @param x 
+#' @param Rowv 
+#' @param Colv 
+#' @param distfun 
+#' @param hclustfun 
+#' @param dendrogram 
+#' @param symm 
+#' @param scale 
+#' @param na.rm 
+#' @param revC 
+#' @param add.expr 
+#' @param breaks 
+#' @param symbreaks 
+#' @param col 
+#' @param colsep 
+#' @param rowsep 
+#' @param sepcolor 
+#' @param sepwidth 
+#' @param cellnote 
+#' @param notecex 
+#' @param notecol 
+#' @param na.color 
+#' @param trace 
+#' @param tracecol 
+#' @param hline 
+#' @param vline 
+#' @param linecol 
+#' @param margins 
+#' @param ColSideColors 
+#' @param RowSideColors 
+#' @param cexRow 
+#' @param cexCol 
+#' @param labRow 
+#' @param labCol 
+#' @param key 
+#' @param keysize 
+#' @param density.info 
+#' @param denscol 
+#' @param symkey 
+#' @param densadj 
+#' @param main 
+#' @param xlab 
+#' @param ylab 
+#' @param lmat 
+#' @param lhei 
+#' @param lwid 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 heatmap.4 <- function (x, Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE, 
                        distfun = dist, hclustfun = hclust, dendrogram = c("both", 
                         "row", "column", "none"), symm = FALSE, scale = c("none", 
@@ -414,6 +468,30 @@ heatmap.4 <- function (x, Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE,
 
 
 
+#' Title
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param markers 
+#' @param prefix 
+#' @param hc 
+#' @param gene.hc 
+#' @param centered 
+#' @param labels 
+#' @param sorted 
+#' @param by.cl 
+#' @param ColSideColors 
+#' @param maxValue 
+#' @param min.sep 
+#' @param main 
+#' @param height 
+#' @param width 
+#' @param legend.dat 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_cl_heatmap4 <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc=NULL,centered=FALSE,labels=names(cl),sorted=FALSE,by.cl=TRUE,ColSideColors=NULL,maxValue=5,min.sep=4,main="", height=13, width=9, legend.dat=NULL)
 {
   select.cells=names(cl)
@@ -515,6 +593,27 @@ plot_cl_heatmap4 <- function(norm.dat, cl, markers, prefix=NULL,hc=NULL, gene.hc
 
 
 
+#' Title
+#'
+#' @param cl 
+#' @param norm.dat 
+#' @param prefix 
+#' @param plot 
+#' @param col 
+#' @param max.cl.size 
+#' @param markers 
+#' @param de.genes 
+#' @param main 
+#' @param height 
+#' @param width 
+#' @param min.sep 
+#' @param legend.dat 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 display_cl4 <- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9, min.sep=10, legend.dat=NULL, ...)
 {
   select.cells=names(cl)        

@@ -4,8 +4,7 @@
 \alias{gene_loess_fit}
 \title{Compute dispersion-mean Loess-fit for each gene in a gene x sample matrix}
 \usage{
-gene_loess_fit(dat, dispersions = NULL, means = NULL,
-  rescale = FALSE)
+gene_loess_fit(dat, dispersions = NULL, means = NULL, rescale = FALSE)
 }
 \arguments{
 \item{dat}{a matrix or dg[CT]Matrix of expression values with genes as rows and samples as columns.}

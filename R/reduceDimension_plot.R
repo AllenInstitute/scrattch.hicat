@@ -1,5 +1,14 @@
 jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
 
+#' Title
+#'
+#' @param rd.dat 
+#' @param cl 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_RD_cl_center <- function(rd.dat, cl)
 {
   cl.center=do.call("rbind",tapply(1:nrow(rd.dat), cl[row.names(rd.dat)], function(x){
@@ -11,6 +20,25 @@ get_RD_cl_center <- function(rd.dat, cl)
   }))
 }
 
+#' Title
+#'
+#' @param rd.dat 
+#' @param cl 
+#' @param cl.color 
+#' @param cl.label 
+#' @param cex 
+#' @param fn.size 
+#' @param alpha.val 
+#' @param show.legend 
+#' @param legend.size 
+#' @param label.center 
+#' @param bg 
+#' @param fn.color 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE, legend.size=2, label.center=TRUE, bg="blank",fn.color="black")
   {
     rd.dat=as.data.frame(rd.dat)
@@ -54,6 +82,20 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
 
  
 ###meta is discretized. 
+#' Title
+#'
+#' @param rd.dat 
+#' @param meta 
+#' @param meta.col 
+#' @param show.legend 
+#' @param cex 
+#' @param legend.size 
+#' @param alpha.val 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5,alpha.val=1)
   {
     rd.dat = as.data.frame(rd.dat)
@@ -90,6 +132,17 @@ plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15,
   }
 
 
+#' Title
+#'
+#' @param rd.dat 
+#' @param norm.dat 
+#' @param genes 
+#' @param cex 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_RD_gene <- function(rd.dat, norm.dat, genes, cex=0.15)
   {
     library(ggplot2)
@@ -110,6 +163,18 @@ plot_RD_gene <- function(rd.dat, norm.dat, genes, cex=0.15)
 
 
 ###copy from R cookbook: http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_(ggplot2)/
+#' Title
+#'
+#' @param ... 
+#' @param plotlist 
+#' @param file 
+#' @param cols 
+#' @param layout 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     library(grid)
                                         # Make a list from the ... arguments and plotlist
@@ -147,6 +212,21 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
 
 
+#' Title
+#'
+#' @param df 
+#' @param col 
+#' @param label_col 
+#' @param cex 
+#' @param label.cex 
+#' @param init 
+#' @param prefix 
+#' @param bg.col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRUE, prefix=NULL,bg.col="gray60")
 {
   library(rgl)
@@ -174,6 +254,15 @@ plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRU
   }
 }
 
+#' Title
+#'
+#' @param tt 
+#' @param bg.col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 mybgplot3d <- function(tt, bg.col=bg.col)
 {
   viewport <- par3d("viewport")
@@ -194,6 +283,20 @@ mybgplot3d <- function(tt, bg.col=bg.col)
 }
 
 
+#' Title
+#'
+#' @param df 
+#' @param val 
+#' @param cex 
+#' @param max.val 
+#' @param init 
+#' @param prefix 
+#' @param bg.col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_3d_val <- function(df, val, cex=1, max.val=quantile(val, 0.99), init=TRUE, prefix=NULL,bg.col="gray60")
 {
   library(rgl)
@@ -212,6 +315,23 @@ plot_3d_val <- function(df, val, cex=1, max.val=quantile(val, 0.99), init=TRUE, 
 
 
 
+#' Title
+#'
+#' @param df 
+#' @param cols 
+#' @param label_cols 
+#' @param cex 
+#' @param label.cex 
+#' @param fn 
+#' @param win.dim 
+#' @param layout 
+#' @param bg.col 
+#' @param dir 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7, fn = NULL,win.dim = c(20,40,1200,800), layout = NULL, bg.col="gray60", dir="./")
 {
   n.win = length(cols)
@@ -252,6 +372,16 @@ plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7,
   }
 }
 
+#' Title
+#'
+#' @param rd.dat 
+#' @param k 
+#' @param th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 clean_outliers <- function(rd.dat, k=10, th=6)
 {
   knn.result = nn2(rd.dat, k=k)
@@ -261,6 +391,20 @@ clean_outliers <- function(rd.dat, k=10, th=6)
   return(list(mean.dist=knn.dist.mean, outlier=outlier))
 }
 
+#' Title
+#'
+#' @param rd.dat 
+#' @param select.cells 
+#' @param fg.col 
+#' @param bg.col 
+#' @param fg.alpha 
+#' @param bg.alpha 
+#' @param cex 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_2d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", fg.alpha=1, bg.alpha=0.5,cex=0.15)
 {
   meta = factor(row.names(rd.dat) %in% select.cells)
@@ -270,6 +414,22 @@ plot_2d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", 
   plot_RD_meta(rd.dat, meta=meta, meta.col=meta.col, alpha.val = alpha.val, show.legend=FALSE, cex=cex)
 }
 
+#' Title
+#'
+#' @param rd.dat 
+#' @param select.cells 
+#' @param fg.col 
+#' @param bg.col 
+#' @param fg.alpha 
+#' @param bg.alpha 
+#' @param cex 
+#' @param web.fn 
+#' @param web.dir 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_3d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", fg.alpha=1, bg.alpha=0.5,cex=0.15, web.fn=NULL, web.dir="./")                           
   {
     meta = factor(row.names(rd.dat) %in% select.cells)

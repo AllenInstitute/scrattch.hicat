@@ -1,3 +1,27 @@
+#' Title
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param markers 
+#' @param prefix 
+#' @param hc 
+#' @param gene.hc 
+#' @param centered 
+#' @param labels 
+#' @param sorted 
+#' @param by.cl 
+#' @param ColSideColors 
+#' @param maxValue 
+#' @param min.sep 
+#' @param main 
+#' @param height 
+#' @param width 
+#' @param key 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_cl_heatmap <- function(norm.dat, 
                             cl, 
                             markers, 
@@ -75,6 +99,25 @@ plot_cl_heatmap <- function(norm.dat,
   }
 
 
+#' Title
+#'
+#' @param select.cl 
+#' @param cl 
+#' @param norm.dat 
+#' @param de.genes 
+#' @param plot 
+#' @param col 
+#' @param max.cl.size 
+#' @param main 
+#' @param height 
+#' @param width 
+#' @param min.sep 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 display_cl_one_vs_others <- function(select.cl, 
                                      cl, 
                                      norm.dat, 
@@ -167,6 +210,22 @@ display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL,
   }
 
 
+#' Title
+#'
+#' @param select.cl 
+#' @param cl 
+#' @param norm.dat 
+#' @param co.ratio 
+#' @param prefix 
+#' @param all.col 
+#' @param max.cl.size 
+#' @param markers 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 display_cl_markers_co.ratio <- function(select.cl, cl, norm.dat, co.ratio, prefix,  all.col, max.cl.size=100, markers=NULL,...)
 {
   cells = names(cl)[cl %in% select.cl]
@@ -193,6 +252,17 @@ display_cl_markers_co.ratio <- function(select.cl, cl, norm.dat, co.ratio, prefi
   return(markers)
 }
 
+#' Title
+#'
+#' @param cluster 
+#' @param meta 
+#' @param col 
+#' @param drop 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_cl_meta_barplot <- function(cluster, meta, col=NULL, drop=FALSE)
 {
   library(ggplot2)
@@ -212,6 +282,14 @@ plot_cl_meta_barplot <- function(cluster, meta, col=NULL, drop=FALSE)
   return(g)
 }
 
+#' Title
+#'
+#' @param anno 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_cl_cells <- function(anno)
   {
     max.mag=ceiling(max(log10(table(anno$cluster_id))))

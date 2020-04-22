@@ -1,3 +1,19 @@
+#' Select node specific markers
+#'
+#' @param dend 
+#' @param norm.dat 
+#' @param cl 
+#' @param n.markers 
+#' @param de.genes 
+#' @param up.gene.score 
+#' @param down.gene.score 
+#' @param top.n 
+#' @param max.num 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_node_specific_markers <- function(dend, norm.dat, cl, n.markers=10,de.genes=NULL,up.gene.score=NULL, down.gene.score=NULL,top.n=50,max.num=2000)
 {
   m=list()
@@ -27,6 +43,20 @@ select_node_specific_markers <- function(dend, norm.dat, cl, n.markers=10,de.gen
   return(m)
 }
 
+#' Select dend markers
+#'
+#' @param dend 
+#' @param cl 
+#' @param de.genes 
+#' @param norm.dat 
+#' @param up.gene.score 
+#' @param down.gene.score 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=NULL, down.gene.score=NULL,...)
 {
   require(dendextend)
@@ -63,6 +93,16 @@ select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=N
   return(dend)
 }
 
+#' Select pos dend markers
+#'
+#' @param dend 
+#' @param cl 
+#' @param norm.dat 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_pos_dend_markers <- function(dend,cl, norm.dat)
 {
   library(matrixStats)
@@ -87,6 +127,17 @@ select_pos_dend_markers <- function(dend,cl, norm.dat)
 }
 
 
+#' Map dend markers
+#'
+#' @param dend.list 
+#' @param map.dat 
+#' @param select.cells 
+#' @param th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 map_dend_markers <- function(dend.list, map.dat,select.cells,th=0.5)
 {
   map.gene.num <- matrix(0, nrow=ncol(map.dat), ncol= length(dend.list))
@@ -108,6 +159,17 @@ map_dend_markers <- function(dend.list, map.dat,select.cells,th=0.5)
 
 
 
+#' Node vs sibling markers
+#'
+#' @param dend.list 
+#' @param norm.dat 
+#' @param cl 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 node_vs_sibling_markers <- function(dend.list, norm.dat, cl,...)
   {    
     do.call("rbind",sapply(names(dend.list), function(x){
@@ -132,6 +194,17 @@ node_vs_sibling_markers <- function(dend.list, norm.dat, cl,...)
   }
 
 
+#' Node specific markers
+#'
+#' @param dend.list 
+#' @param norm.dat 
+#' @param cl 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 node_specific_markers <- function(dend.list, norm.dat, cl,...)
   {    
     do.call("rbind",sapply(names(dend.list), function(x){

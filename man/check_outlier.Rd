@@ -4,13 +4,23 @@
 \alias{check_outlier}
 \title{Check for outlier clusters}
 \usage{
-check_outlier(anno, cluster, norm.dat, select.cells = colnames(norm.dat),
-  keep.cl = NULL, neun.thresh = 0.5,
-  neun.colname = "facs_population_plan", neun.val = "NeuN-pos",
-  qc.metrics = c("Genes.Detected.CPM", "percent_reads_aligned_total",
-  "complexity_cg"), test.genes = c("SNAP25", "GAD1", "GAD2", "SLC17A7",
-  "SLC17A6"), expr.th = 3, prop.th = c(0.4, 0.4, 0.4, 0.4, 0.4),
-  min.prop.th = 0.8, plot = TRUE, plot.path = "output/")
+check_outlier(
+  anno,
+  cluster,
+  norm.dat,
+  select.cells = colnames(norm.dat),
+  keep.cl = NULL,
+  neun.thresh = 0.5,
+  neun.colname = "facs_population_plan",
+  neun.val = "NeuN-pos",
+  qc.metrics = c("Genes.Detected.CPM", "percent_reads_aligned_total", "complexity_cg"),
+  test.genes = c("SNAP25", "GAD1", "GAD2", "SLC17A7", "SLC17A6"),
+  expr.th = 3,
+  prop.th = c(0.4, 0.4, 0.4, 0.4, 0.4),
+  min.prop.th = 0.8,
+  plot = TRUE,
+  plot.path = "output/"
+)
 }
 \arguments{
 \item{anno}{anno dataframe which must include column names listed in `neun.colname`

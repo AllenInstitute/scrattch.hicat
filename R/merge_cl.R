@@ -1,4 +1,14 @@
 
+#' Title
+#'
+#' @param de.pair 
+#' @param de.param 
+#' @param merge.type 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 test_merge <- function(de.pair, de.param, merge.type="undirectional")
   {
     if(length(de.pair)==0){

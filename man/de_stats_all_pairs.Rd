@@ -2,10 +2,16 @@
 % Please edit documentation in R/de.genes.R
 \name{de_stats_all_pairs}
 \alias{de_stats_all_pairs}
-\title{Title}
+\title{Compute differential expression summary statistics for all pairs of clusters based on de_param()}
 \usage{
-de_stats_all_pairs(norm.dat, cl, de.param = de_param(),
-  method = "limma", de.genes = NULL, ...)
+de_stats_all_pairs(
+  norm.dat,
+  cl,
+  de.param = de_param(),
+  method = "limma",
+  de.genes = NULL,
+  ...
+)
 }
 \arguments{
 \item{norm.dat}{a normalized data matrix for data.}
@@ -24,5 +30,5 @@ de_stats_all_pairs(norm.dat, cl, de.param = de_param(),
 a character vector of all differentially expressed genes.
 }
 \description{
-Title
+Compute differential expression summary statistics for all pairs of clusters based on de_param()
 }

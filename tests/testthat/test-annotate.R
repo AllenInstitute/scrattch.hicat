@@ -1,7 +1,8 @@
 context("test-annotate")
 library(scrattch.hicat)
-
+library(devtools)
 # Load glial test data
+devtools::install_github("AllenInstitute/tasic2016data")
 library(tasic2016data)
 
 glial_classes <- c("Astrocyte", "Endothelial Cell", "Microglia", 
@@ -360,31 +361,5 @@ test_that(
   }
 )
 
-## find_low_quality_cl() tests
-test_that(
-  "find_low_quality_cl() performs comparisons to high-quality clusters.",
-  {
-    glial_hq_cl <- glial_train_cl[glial_train_cl %in% c(45, 48,49)]
-    
-    glial_de_genes <- de_stats_all_pairs(norm.dat = glial_train_data, 
-                                         cl = glial_train_cl,  
-                                         de.param = de_param(), 
-                                         method = "limma")
-    
-    cl_test <- find_low_quality_cl(cl.df = train_cl.df,
-                                   cl.good = glial_hq_cl,
-                                   de.score.mat = NULL,
-                                   de.genes = glial_de_genes)
-    
-    expect_is(cl_test, "data.frame")
-    expect_equal(nrow(cl_test), length(levels(glial_train_cl)))
-  }
-)
 
-## plot_low_qc() tests
-test_that(
-  "plot_low_qc() needs tests.",
-  {
 
-  }
-)

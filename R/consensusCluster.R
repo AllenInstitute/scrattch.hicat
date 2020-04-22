@@ -22,29 +22,29 @@ collect_co_matrix <- function(result.files,all.cells)
   }
   co.ratio = co.matrix/pr.matrix
   return(list(co.ratio=co.ratio,cl.list=subsample.cl))
-  }
+}
 
 sample_cl_list <- function(cl.list, max.cl.size=500)
-  {
-    select.cells=c()
-    for(cl in cl.list){
-      cl.size=table(cl)
-      more.cl = cl[setdiff(names(cl), select.cells)]
-      more.size = table(more.cl)
-      add.cells= unlist(lapply(names(more.size), function(x){
-        sample(names(more.cl)[more.cl==x], min(more.size[[x]],max.cl.size))
-      }))
-      select.cells= c(select.cells, add.cells)
-    }
-    return(select.cells)
+{
+  select.cells=c()
+  for(cl in cl.list){
+    cl.size=table(cl)
+    more.cl = cl[setdiff(names(cl), select.cells)]
+    more.size = table(more.cl)
+    add.cells= unlist(lapply(names(more.size), function(x){
+      sample(names(more.cl)[more.cl==x], min(more.size[[x]],max.cl.size))
+    }))
+    select.cells= c(select.cells, add.cells)
   }
+  return(select.cells)
+}
 
 get_co_ratio <- function(cl.mat, cells, n.times)
-  {
-    co.ratio = Matrix::crossprod(cl.mat[,cells])
-    co.ratio@x = co.ratio@x/n.times
-    return(co.ratio)
-  }
+{
+  co.ratio = Matrix::crossprod(cl.mat[,cells])
+  co.ratio@x = co.ratio@x/n.times
+  return(co.ratio)
+}
 
 #' Iterative consensus clustering
 #'
@@ -62,7 +62,20 @@ get_co_ratio <- function(cl.mat, cells, n.times)
 #'
 #' @return A list with cluster membership, and top pairwise marker genes. 
 #'
-iter_consensus_clust <- function(cl.list, co.ratio=NULL,  cl.mat=NULL, norm.dat, select.cells=names(cl.list[[1]]), diff.th=0.25, prefix=NULL, method=c("auto", "louvain","ward.D"), verbose=FALSE, de.param = de.param, max.cl.size = 300, result=NULL, split.size = de.param$min.cells*2, merge.type=c("undirectional", "directional"))
+iter_consensus_clust <- function(cl.list, 
+                                 co.ratio=NULL,  
+                                 cl.mat=NULL, 
+                                 norm.dat, 
+                                 select.cells=names(cl.list[[1]]), 
+                                 diff.th=0.25, 
+                                 prefix=NULL, 
+                                 method=c("auto", "louvain","ward.D"), 
+                                 verbose=FALSE, 
+                                 de.param = de.param, 
+                                 max.cl.size = 300, 
+                                 result=NULL, 
+                                 split.size = de.param$min.cells*2, 
+                                 merge.type=c("undirectional", "directional"))
 {
   method=method[1]
   require(igraph)
@@ -133,13 +146,13 @@ iter_consensus_clust <- function(cl.list, co.ratio=NULL,  cl.mat=NULL, norm.dat,
       gr = graph.adjacency(adj.mat, mode="undirected",weighted=TRUE)
       comm= cluster_louvain(gr)
       rm(gr)
-
+      
       if(pass_louvain(modularity(comm), adj.mat)){
         tmp.cl = setNames(comm$membership,colnames(adj.mat))
         if(length(unique(tmp.cl))==1){
           return(NULL)
         }
-       
+        
       }
       else{
         return(NULL)
@@ -238,14 +251,14 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
 }
 
 compile_cl_mat <- function(cl.list, select.cells)
-  {
-    cl.mat = do.call("cbind", sapply(names(cl.list), function(x){
-      print(x)
-      cl = cl.list[[x]]
-      get_cl_mat(cl[select.cells])
-    },simplify=F))
-    cl.mat= Matrix::t(cl.mat)
-  }
+{
+  cl.mat = do.call("cbind", sapply(names(cl.list), function(x){
+    print(x)
+    cl = cl.list[[x]]
+    get_cl_mat(cl[select.cells])
+  },simplify=F))
+  cl.mat= Matrix::t(cl.mat)
+}
 
 
 
@@ -261,7 +274,14 @@ compile_cl_mat <- function(cl.list, select.cells)
 #' @param verbose If true, print out step-by-step improvement. 
 #' @return 
 #' @author Zizhen Yao
-refine_cl <- function(cl, co.ratio=NULL, cl.mat=NULL, confusion.th=0.6,min.cells=4, niter=50, tol.th=0.02, verbose=0)
+refine_cl <- function(cl, 
+                      co.ratio=NULL, 
+                      cl.mat=NULL, 
+                      confusion.th=0.6, 
+                      min.cells=4, 
+                      niter=50, 
+                      tol.th=0.02, 
+                      verbose=0)
 {
   ###If cl is factor, turn in to integer vector first. 
   cl = setNames(as.integer(as.character(cl)), names(cl))
@@ -360,35 +380,35 @@ get_cell.cl.co.ratio <- function(cl, co.ratio=NULL, cl.mat=NULL)
 
 get_cl_co_stats <- function (cl, co.ratio = NULL, cl.mat = NULL) 
 {
-    require(matrixStats)
-    cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio = co.ratio, cl.mat = cl.mat)
-    cl.co.ratio <- get_cl_means(t(cell.cl.co.ratio), cl)
-    cell.co.stats <- sapply(1:ncol(cell.cl.co.ratio), function(i) {
-        select.cells = names(cl)[cl == colnames(cell.cl.co.ratio)[i]]
-        cohesion = setNames(cell.cl.co.ratio[select.cells, i, 
-            drop = F], select.cells)
-        best.between = rowMaxs(cell.cl.co.ratio[select.cells, 
-            -i, drop = F])
-        confusion = best.between/cohesion
-        separability = cohesion - best.between
-        df = data.frame(cohesion, separability, confusion)
-        colnames(df) = c("cohesion", "separability", "confusion")
-        df
-    }, simplify = F)
-    cell.co.stats = do.call("rbind", cell.co.stats)
-    cl.co.stats = as.data.frame(do.call("rbind", tapply(1:nrow(cell.co.stats), 
-        cl[row.names(cell.co.stats)], function(x) {
-            sapply(cell.co.stats[x, ], median)
-        })))
-    return(list(cell.cl.co.ratio = cell.cl.co.ratio, cl.co.ratio = cl.co.ratio, 
-                cell.co.stats = cell.co.stats, cl.co.stats = cl.co.stats))
+  require(matrixStats)
+  cell.cl.co.ratio = get_cell.cl.co.ratio(cl, co.ratio = co.ratio, cl.mat = cl.mat)
+  cl.co.ratio <- get_cl_means(t(cell.cl.co.ratio), cl)
+  cell.co.stats <- sapply(1:ncol(cell.cl.co.ratio), function(i) {
+    select.cells = names(cl)[cl == colnames(cell.cl.co.ratio)[i]]
+    cohesion = setNames(cell.cl.co.ratio[select.cells, i, 
+                                         drop = F], select.cells)
+    best.between = rowMaxs(cell.cl.co.ratio[select.cells, 
+                                            -i, drop = F])
+    confusion = best.between/cohesion
+    separability = cohesion - best.between
+    df = data.frame(cohesion, separability, confusion)
+    colnames(df) = c("cohesion", "separability", "confusion")
+    df
+  }, simplify = F)
+  cell.co.stats = do.call("rbind", cell.co.stats)
+  cl.co.stats = as.data.frame(do.call("rbind", tapply(1:nrow(cell.co.stats), 
+                                                      cl[row.names(cell.co.stats)], function(x) {
+                                                        sapply(cell.co.stats[x, ], median)
+                                                      })))
+  return(list(cell.cl.co.ratio = cell.cl.co.ratio, cl.co.ratio = cl.co.ratio, 
+              cell.co.stats = cell.co.stats, cl.co.stats = cl.co.stats))
 }
 
 init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,method="ward.D",verbose=FALSE)
 {
   avg.cl.num = mean(sapply(cl.list, function(cl){
-      sum(table(cl[select.cells]) >= min.cells)
-    }))
+    sum(table(cl[select.cells]) >= min.cells)
+  }))
   tmp.dat = co.ratio[select.cells, select.cells]
   hc=  hclust(as.dist(1-as.matrix(crossprod(tmp.dat))), method="ward.D")
   tmp.cl = cutree(hc, ceiling(avg.cl.num)+2)
@@ -404,50 +424,50 @@ init_cut <- function(co.ratio, select.cells, cl.list, min.cells=4, th = 0.3,meth
 }
 
 plot_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
-  {
-      blue.red <- colorRampPalette(c("blue", "white", "red"))
-      select.cells = names(cl)
-      select.cells = sample_cells(cl, max.cl.size)
-      tom  = Matrix::crossprod(co.ratio[select.cells, select.cells])
-      row.names(tom)=colnames(tom)=select.cells
-###
-      all.hc = hclust(as.dist(1-tom),method="average")
-      ord1 = all.hc$labels[all.hc$order]
-      ord1 = ord1[ord1%in% select.cells]
-      ord = ord1[order(cl[ord1])]
-      sep = cl[ord]
-      sep=which(sep[-1]!=sep[-length(sep)])
-      if(is.null(col)){
-        heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
-      }
-      else{
-        heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord],labRow="")
-      }
-    }
+{
+  blue.red <- colorRampPalette(c("blue", "white", "red"))
+  select.cells = names(cl)
+  select.cells = sample_cells(cl, max.cl.size)
+  tom  = Matrix::crossprod(co.ratio[select.cells, select.cells])
+  row.names(tom)=colnames(tom)=select.cells
+  ###
+  all.hc = hclust(as.dist(1-tom),method="average")
+  ord1 = all.hc$labels[all.hc$order]
+  ord1 = ord1[ord1%in% select.cells]
+  ord = ord1[order(cl[ord1])]
+  sep = cl[ord]
+  sep=which(sep[-1]!=sep[-length(sep)])
+  if(is.null(col)){
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", labRow="")
+  }
+  else{
+    heatmap.3(as.matrix(co.ratio[ord,ord]), col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black", ColSideColors=col[,ord],labRow="")
+  }
+}
 
 
 plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
-  {
-    blue.red <- colorRampPalette(c("blue", "white", "red"))
-    select.cells = sample_cells(cl, max.cl.size)
-    co.stats = get_cl_co_stats(cl, co.ratio)
-    mat = co.stats$cell.cl.co.ratio
-    
-    tom  = Matrix::tcrossprod(mat[select.cells,])
-    row.names(tom)=colnames(tom)=select.cells
-###
-    all.hc = hclust(as.dist(1-tom),method="average")
-    ord1 = all.hc$labels[all.hc$order]
-    ord = ord1[order(cl[ord1])]
-    sep = cl[ord]
-    sep=which(sep[-1]!=sep[-length(sep)])
-    if(is.null(col)){
-      heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", dendrogram="none",labRow="")
-    }
-    else{
-      heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", ColSideColors=col[,ord],dendogram="none",labRow="")
-    }
+{
+  blue.red <- colorRampPalette(c("blue", "white", "red"))
+  select.cells = sample_cells(cl, max.cl.size)
+  co.stats = get_cl_co_stats(cl, co.ratio)
+  mat = co.stats$cell.cl.co.ratio
+  
+  tom  = Matrix::tcrossprod(mat[select.cells,])
+  row.names(tom)=colnames(tom)=select.cells
+  ###
+  all.hc = hclust(as.dist(1-tom),method="average")
+  ord1 = all.hc$labels[all.hc$order]
+  ord = ord1[order(cl[ord1])]
+  sep = cl[ord]
+  sep=which(sep[-1]!=sep[-length(sep)])
+  if(is.null(col)){
+    heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", dendrogram="none",labRow="")
   }
+  else{
+    heatmap.3(mat[ord,], col = blue.red(150)[50:150], trace="none", Rowv=NULL, Colv=NULL,rowsep=sep,sepcolor="black", ColSideColors=col[,ord],dendogram="none",labRow="")
+  }
+}
 
 
 #' Wrapper function to repeatively run clustering on subsampled cells and infer consensus clusters
@@ -466,7 +486,20 @@ plot_cell_cl_co_matrix <- function(co.ratio, cl, max.cl.size=100, col=NULL)
 #'
 #' @export
 #' 
-run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter=100, sample.frac=0.8, co.result=NULL, output_dir="subsample_result",mc.cores=1, de.param=de_param(), merge.type=c("undirectional","directional"), override=FALSE, init.result=NULL, cut.method="auto",confusion.th=0.6,...)
+run_consensus_clust <- function(norm.dat, 
+                                select.cells=colnames(norm.dat), 
+                                niter=100, 
+                                sample.frac=0.8, 
+                                co.result=NULL, 
+                                output_dir="subsample_result",
+                                mc.cores=1, 
+                                de.param=de_param(), 
+                                merge.type=c("undirectional","directional"), 
+                                override=FALSE, 
+                                init.result=NULL, 
+                                cut.method="auto",
+                                confusion.th=0.6,
+                                ...)
 {
   if(!dir.exists(output_dir)){
     dir.create(output_dir)
@@ -511,7 +544,7 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
   }
   else{
     result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=all.cells, de.param = de.param, merge.type= merge.type, result= init.result,...)
-
+    
     cl=merge_cl_by_co(result$cl, co.ratio=NULL, cl.mat=co.result$cl.mat, diff.th=0.25)
     refine.result = refine_cl(cl, cl.mat = co.result$cl.mat, tol.th=0.01, confusion.th=0.6, min.cells=de.param$min.cells)
     markers=result$markers      
@@ -520,4 +553,3 @@ run_consensus_clust <- function(norm.dat, select.cells=colnames(norm.dat), niter
   merge.result= merge_cl(norm.dat=norm.dat, cl=cl, rd.dat.t=norm.dat[markers,], de.param = de.param, merge.type=merge.type, return.markers=FALSE)
   return(list(co.result=co.result, cl.result=merge.result))
 }
-

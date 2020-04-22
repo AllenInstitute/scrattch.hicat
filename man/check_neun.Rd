@@ -4,8 +4,13 @@
 \alias{check_neun}
 \title{Check whether clusters are Neun+ or Neun-}
 \usage{
-check_neun(anno, cluster, neun.thresh = 0.5,
-  neun.colname = "facs_population_plan", neun.val = "NeuN-pos")
+check_neun(
+  anno,
+  cluster,
+  neun.thresh = 0.5,
+  neun.colname = "facs_population_plan",
+  neun.val = "NeuN-pos"
+)
 }
 \arguments{
 \item{anno}{anno dataframe which must include column name listed in `neun.colname`}
