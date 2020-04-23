@@ -685,7 +685,7 @@ de_stats_pair <- function(df,
          genes = select,
          up.genes = up,
          down.genes = down, 
-         de.df = df[df$padj < de.param$padj.th, ])
+         de.df = df[select, ])
   }
   
 }
