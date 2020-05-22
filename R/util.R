@@ -262,7 +262,7 @@ get_cl_sums <- function(mat,
     cl.sums <- Matrix::tcrossprod(mat[,rownames(cl.mat)], Matrix::t(cl.mat))
   }
   else{
-    cl.sums <- Matrix::crossprod(mat[rownames(cl.mat),], cl.mat)
+    cl.sums <- Matrix::crossprod(mat[,rownames(cl.mat)], cl.mat)
   }
   cl.sums <- as.matrix(cl.sums)
   return(cl.sums)
@@ -286,6 +286,36 @@ get_cl_means <- function(mat,
   cl.means <- as.matrix(Matrix::t(Matrix::t(cl.sums)/as.vector(cl.size[colnames(cl.sums)])))
   
   return(cl.means)
+}
+
+
+
+get_cl_sqr_means<- function(mat, cl)
+  {
+    tmp = mat
+    if(is.matrix(tmp)){
+      tmp = tmp^2
+    }
+    else{
+      tmp@x = tmp@x^2
+    }
+    cl.sqr = get_cl_means(tmp,cl)
+  }
+
+
+get_cl_vars <- function(mat, 
+                        cl, cl.means=NULL, cl.sqr.means = NULL) {
+  
+  if(is.null(cl.means)){
+    cl.means = get_cl_means(mat,cl)
+  }
+  if(is.null(cl.sqr.means)){
+    cl.sqr.means = get_cl_sqr_means(tmat,cl)
+  }
+  cl.vars = cl.sqr.means - cl.means^2
+  cl.size = as.vector(table(cl)[colnames(cl.vars)])
+  cl.vars  = t(t(cl.vars)  *  cl.size/(cl.size - 1))
+  return(cl.vars)
 }
 
 #' Compute cluster medians for each row in a matrix

@@ -107,16 +107,16 @@ find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
       cl1= row.names(nn.df)[i]
       cl2=as.character(nn.df$nn.cl[i])
       de = get_de_pair(de.genes, cl1, cl2)
-      up.genes = head(de$up.genes, 50)
+      up.genes = head(de$names(up.genes), 50)
       nn.df$up.genes[i] = length(up.genes)
-      nn.df$up.genes.score[i] = get_de_score(de$de.df, up.genes)
+      nn.df$up.genes.score[i] = sum(-log10(de$up.genes[up.genes]))
       
       up.genes.olap =sapply( setdiff(cl.good, c(cl1,cl2)), function(k){
         p = paste0(k,"_",cl2)
         tmp.de = get_de_pair(de.genes, k, cl2)
-        olap.genes= intersect(tmp.de$up.genes, up.genes)
+        olap.genes= intersect(names(tmp.de$up.genes), up.genes)
         olap.num = length(olap.genes)
-        olap.score= get_de_score(de$de.df, olap.genes)
+        olap.score= sum(-log10(de$up.genes[olap.genes]))
         c(olap.num, olap.score)
       })
       cl3 = names(which.max(up.genes.olap[1,]))
@@ -126,12 +126,12 @@ find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
       nn.df$max.olap.ratio1[i] = up.genes.olap[2,cl3]/nn.df$up.genes.score[i]
       
       de1 = get_de_pair(de.genes, cl1, cl3)
-      up.genes = head(de1$up.genes, 50)
-      up.gene.score= get_de_score(de1$de.df, up.genes)
+      up.genes = head(names(de1$up.genes), 50)
+      up.gene.score= sum(-log10(de1$up.genes[up.genes]))
       de2 = get_de_pair(de.genes, cl2, cl3)
-      olap.genes = intersect(de2$up.genes, up.genes)  
+      olap.genes = intersect(names(de2$up.genes), up.genes)  
       nn.df$max.olap.genes2[i] = length(olap.genes)
-      nn.df$max.olap.score2[i] = get_de_score(de1$de.df, olap.genes)
+      nn.df$max.olap.score2[i] = sum(-log10(de1$up.genes[olap.genes]))
       nn.df$max.olap.ratio2[i] = nn.df$max.olap.score2[i]/ up.gene.score
     }
     nn.df$max.olap.cl_label = cl.df[as.character(nn.df$max.olap.cl),"cluster_label"]
@@ -154,10 +154,10 @@ find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
 #' @examples
 plot_doublet <- function(norm.dat, cl, doublet.df, de.genes, all.col)
   {
-    for(i in 1:nrow(doublets.df)){                                  
-      x = as.character(doublets.df[i, "cl"])
-      y = as.character(doublets.df[i, "cl1"])
-      z = as.character(doublets.df[i, "cl2"])
+    for(i in 1:nrow(doublet.df)){                                  
+      x = as.character(doublet.df[i, "cl"])
+      y = as.character(doublet.df[i, "cl1"])
+      z = as.character(doublet.df[i, "cl2"])
       tmp.cl = cl[cl %in% c(x, y, z)]
       tmp.cl = setNames(factor(as.character(tmp.cl), c(x,y,z)), names(tmp.cl))
       tmp=display_cl(tmp.cl, norm.dat, prefix=paste0("doublet.",paste(levels(tmp.cl), collapse="_")), col=all.col, max.cl.size=100, de.genes=de.genes)
@@ -288,81 +288,81 @@ find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
     if(is.null(de.genes)){
       stop("Need to specify de.genes")
     }
-    require(foreach)
-    require(doParallel)
-    if (mc.cores == 1) {
-      registerDoSEQ()
-    }
-    else {
-      cores <- makeForkCluster(mc.cores)
-      doParallel::registerDoParallel(cores)
-      on.exit(parallel::stopCluster(cores), add = TRUE)
-    }
-    result.list= foreach(p=names(de.genes), .combine='list',.multicombine=TRUE, .maxcombine=length(de.genes)) %dopar% {
-    #result.list= sapply(names(de.genes), function(p){
-      #print(p)
-      de = de.genes[[p]]
-      if(de$up.num < min.genes | de$down.num < min.genes){
-        return(NULL)
-      }
-      tmp=strsplit(p,"_")[[1]]
-      cl1 = tmp[[1]]
-      cl2 = tmp[[2]]
-
-      up.genes = head(de$up.genes, 50)
-      down.genes = head(de$down.genes,50)
-
-      up.genes.score = get_de_score(de$de.df, up.genes)
-      down.genes.score = get_de_score(de$de.df, down.genes)
-      
-      results = sapply(setdiff(as.character(cl),c(cl1,cl2)), function(cl3){
-        tmp1.de = get_de_pair(de.genes, cl1, cl3)
-        tmp2.de = get_de_pair(de.genes, cl3, cl2)
-
-        olap.up.genes1 = intersect(tmp2.de$up.genes, up.genes)
-        olap.up.num1 = length(olap.up.genes1)
-        olap.up.score1 = get_de_score(de$de.df, olap.up.genes1)        
-        olap.up.ratio1 = olap.up.score1 / up.genes.score
-
-        olap.down.genes1 = intersect(tmp1.de$down.genes, down.genes)
-        olap.down.num1 = length(olap.down.genes1)
-        olap.down.score1 = get_de_score(de$de.df, olap.down.genes1)        
-        olap.down.ratio1 = olap.down.score1 / down.genes.score
-
-        up.genes2 = head(tmp1.de$up.genes, 50)
-        up.genes.score2 =  get_de_score(tmp1.de$de.df, up.genes2)
-        olap.up.genes2 = intersect(up.genes2,de$up.genes)
-        olap.up.num2 = length(olap.up.genes2)
-        olap.up.score2 = get_de_score(tmp1.de$de.df, olap.up.genes2)
-        olap.up.ratio2 = olap.up.score2 /up.genes.score2
+    #require(foreach)
+    #require(doParallel)
+    #if (mc.cores == 1) {
+    #  registerDoSEQ()
+    #}
+    #else {
+    #  cores <- makeForkCluster(mc.cores)
+    #  doParallel::registerDoParallel(cores)
+    #  on.exit(parallel::stopCluster(cores), add = TRUE)
+    #}
+    result.list=  pvec(names(de.genes), function(pairs){
+      result.list= sapply(pairs, function(p){
+                                        #print(p)
+        de = de.genes[[p]]
+        if(de$up.num < min.genes | de$down.num < min.genes){
+          return(NULL)
+        }
+        tmp=strsplit(p,"_")[[1]]
+        cl1 = tmp[[1]]
+        cl2 = tmp[[2]]
         
-     
-        down.genes2 = head(tmp2.de$down.genes, 50)
-        down.genes.score2 =  get_de_score(tmp2.de$de.df, down.genes2)
-        olap.down.genes2 = intersect(down.genes2,de$down.genes)
-        olap.down.num2 = length(olap.down.genes2)
-        olap.down.score2 = get_de_score(tmp2.de$de.df, olap.down.genes2)
-        olap.down.ratio2 = olap.down.score2 /down.genes.score2
+        up.genes = head(names(de$up.genes), 50)
+        down.genes = head(names(de$down.genes),50)
         
-        result = list(
-          cl1=cl1,
-          cl2=cl2,
-          up.num = length(up.genes),
-          down.num = length(down.genes),
-          olap.num=c(olap.up.num1, olap.down.num1, olap.up.num2, olap.down.num2),
-          olap.ratio = c(olap.up.ratio1, olap.down.ratio1, olap.up.ratio2, olap.down.ratio2),
-          olap.score = c(olap.up.score1, olap.down.score1, olap.up.score2, olap.down.score2)
-          )
-        result$score = sum(result$olap.score) / sum(c(up.genes.score, down.genes.score, up.genes.score2, down.genes.score2))
-        return(result)
+        up.genes.score = sum(-log10(de$up.genes[up.genes]))
+        down.genes.score = sum(-log10(de$down.genes[down.genes]))
+        
+        results = sapply(setdiff(as.character(cl),c(cl1,cl2)), function(cl3){
+          tmp1.de = get_de_pair(de.genes, cl1, cl3)
+          tmp2.de = get_de_pair(de.genes, cl3, cl2)
+          
+          olap.up.genes1 = intersect(names(tmp2.de$up.genes), up.genes)
+          olap.up.num1 = length(olap.up.genes1)
+          olap.up.score1 = sum(-log10(de$up.genes[olap.up.genes1]))
+          olap.up.ratio1 = olap.up.score1 / up.genes.score
+          
+          olap.down.genes1 = intersect(names(tmp1.de$down.genes), down.genes)
+          olap.down.num1 = length(olap.down.genes1)
+          olap.down.score1 = sum(-log10(de$down.genes[olap.down.genes1]))
+          olap.down.ratio1 = olap.down.score1 / down.genes.score
+          
+          up.genes2 = head(names(tmp1.de$up.genes), 50)
+          up.genes.score2 = sum(-log10(tmp1.de$up.genes[up.genes2]))
+          olap.up.genes2 = intersect(names(up.genes2),de$up.genes)
+          olap.up.num2 = length(olap.up.genes2)
+          olap.up.score2 = sum(-log10(tmp1.de$up.genes[olap.up.genes2]))
+          olap.up.ratio2 = olap.up.score2 /up.genes.score2
+          
+          
+          down.genes2 = head(names(tmp2.de$down.genes), 50)
+          down.genes.score2 = sum(-log10(tmp2.de$down.genes[down.genes2]))
+          olap.down.genes2 = intersect(down.genes2,names(de$down.genes))
+          olap.down.num2 = length(olap.down.genes2)
+          olap.down.score2 = sum(-log10(tmp2.de$down.genes[olap.down.genes2]))
+          olap.down.ratio2 = olap.down.score2 /down.genes.score2
+          
+          result = list(
+            cl1=cl1,
+            cl2=cl2,
+            up.num = length(up.genes),
+            down.num = length(down.genes),
+            olap.num=c(olap.up.num1, olap.down.num1, olap.up.num2, olap.down.num2),
+            olap.ratio = c(olap.up.ratio1, olap.down.ratio1, olap.up.ratio2, olap.down.ratio2),
+            olap.score = c(olap.up.score1, olap.down.score1, olap.up.score2, olap.down.score2)
+            )
+          result$score = sum(result$olap.score) / sum(c(up.genes.score, down.genes.score, up.genes.score2, down.genes.score2))
+          return(result)
+        },simplify=F)
+        test.score=sapply(results, function(x)x$score)
+        tmp = names(which.max(test.score))
+        result = results[[tmp]]
+        result$cl = tmp
+        return(result)                                        
       },simplify=F)
-      test.score=sapply(results, function(x)x$score)
-      tmp = names(which.max(test.score))
-      result = results[[tmp]]
-      result$cl = tmp
-      return(result)
-    #},simplify=F)
-    }
+    },mc.cores=mc.cores)
     names(result.list) = names(de.genes)
     result.list = result.list[!sapply(result.list, is.null)]
     cl = sapply(result.list, function(x)x$cl)

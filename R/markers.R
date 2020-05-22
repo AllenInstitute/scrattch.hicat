@@ -10,6 +10,8 @@
 #' @export
 #'
 #' @examples
+
+
 select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)                           
   {
     if(is.null(de.genes)){
@@ -17,11 +19,14 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)
     }
     pairs = names(de.genes)
     pairs.df = gsub("cl","", do.call("rbind",strsplit(pairs, "_")))
+
+
+
     row.names(pairs.df)=pairs
     select.pairs = pairs[pairs.df[,1] %in% cl & pairs.df[,2]%in% cl]
     de.markers = sapply(select.pairs, function(s){
       tmp = de.genes[[s]]
-      c(head(tmp$up.genes,n.markers), head(tmp$down.genes,n.markers))
+      c(head(names(tmp$up.genes),n.markers), head(names(tmp$down.genes),n.markers))
     },simplify=F)
     markers = intersect(unlist(de.markers),row.names(norm.dat))
     return(list(markers=markers, de.genes=de.genes[select.pairs]))
@@ -38,26 +43,31 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)
 #' @export
 #'
 #' @examples
-get_gene_score <- function(de.genes,top.n=50, max.num=1000,bin.th=4)
+get_gene_score <- function(de.genes,cl.means, top.n=50, max.num=1000,bin.th=4)
   {
-    select.genes <- sapply(de.genes, function(x){
-      up.genes = x$up.genes
+    select.genes <- sapply(names(de.genes), function(p){
+      de = de.genes[[p]]
+      pair = strsplit(p, "_")
+      x = pair[[1]]
+      y = pair[[2]]
+      lfc = cl.means[,x] - cl.means[,y]
+      up.genes = names(de$up.genes)
       #Deal with pairs with too many DEX genes, include all binary markers
-      up.binary.genes = up.genes[x$q.stats[up.genes, 3] < 1 & x$q.stats[up.genes,2]>bin.th]
+      up.binary.genes = up.genes[lfc[up.genes] > bin.th]
       up.genes=up.genes[up.genes %in% c(head(up.genes, top.n), up.binary.genes)]
-      down.genes = x$down.genes
-      down.binary.genes = down.genes[x$q.stats[down.genes, 1] < 1 & x$q.stats[down.genes,4]>bin.th]
+      down.genes = de$down.genes
+      down.binary.genes = down.genes[lfc[down.genes] < -bin.th]
       down.genes=down.genes[down.genes %in% c(head(down.genes, top.n), down.binary.genes)]
       list(up=up.genes, down=down.genes)
     },simplify=F)
     all.genes=unique(unlist(select.genes))
     up.gene.score = sapply(select.genes, function(x){   
-      tmp=match(all.genes, x$up)
+      tmp=match(all.genes, de$up)
       tmp[is.na(tmp)]=max.num
       tmp
     })
     down.gene.score = sapply(select.genes, function(x){   
-      tmp=match(all.genes, x$down)
+      tmp=match(all.genes, de$down)
       tmp[is.na(tmp)]=max.num
       tmp
     })
@@ -80,14 +90,14 @@ get_gene_score <- function(de.genes,top.n=50, max.num=1000,bin.th=4)
 #' @export
 #'
 #' @examples
-select_markers_pair <- function(de.genes, add.genes, gene.score=NULL,rm.genes=NULL,top.n=50,max.num=2000)
+select_markers_pair <- function(de.genes, add.genes, cl.means, gene.score=NULL,rm.genes=NULL,top.n=50,max.num=2000)
   {
     pairs =do.call("rbind",strsplit(gsub("cl","",names(add.genes)), "_"))
     row.names(pairs)= names(add.genes)
     de.genes.list=list()
     if(is.null(gene.score)){
       de.genes= de.genes[names(add.genes)]
-      tmp=get_gene_score(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
+      tmp=get_gene_score(de.genes,cl.means=cl.means, top.n=top.n, max.num=max.num,bin.th=4)
       up.gene.score=tmp$up.gene.score
       down.gene.score=tmp$down.gene.score      
       gene.score=pmin(up.gene.score, down.gene.score)
@@ -126,7 +136,7 @@ select_markers_pair <- function(de.genes, add.genes, gene.score=NULL,rm.genes=NU
 #' @export
 #'
 #' @examples
-select_markers_pair_direction <- function(de.genes, add.up,add.down,up.gene.score=NULL,down.gene.score=NULL,rm.genes=NULL,top.n=50,max.num=2000)
+select_markers_pair_direction <- function(de.genes, add.up,add.down,cl.means, up.gene.score=NULL,down.gene.score=NULL,rm.genes=NULL,top.n=50,max.num=2000)
   {
     up.genes = down.genes=list()
     final.genes=c()
@@ -135,7 +145,7 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,up.gene.scor
       pairs =do.call("rbind",strsplit(gsub("cl","",pairs.n), "_"))
       row.names(pairs)= pairs.n
       de.genes= de.genes[pairs.n]
-      tmp=get_gene_score(de.genes,top.n=top.n, max.num=max.num,bin.th=4)
+      tmp=get_gene_score(de.genes,cl.means, top.n=top.n, max.num=max.num,bin.th=4)
       up.gene.score=tmp$up.gene.score
       down.gene.score=tmp$down.gene.score      
     }
@@ -198,7 +208,7 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,up.gene.scor
 #' @export
 #'
 #' @examples
-select_markers_pair_group <- function(cl, g1,g2,de.genes,top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
+select_markers_pair_group <- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
 {
   pairs = do.call("rbind",strsplit(names(de.genes), "_"))
   pairs = gsub("cl", "",pairs)
@@ -207,7 +217,7 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,top.n=50,max.num=1000,n
   down.pairs = row.names(pairs)[pairs[,1] %in% g2 & pairs[,2] %in% g1]
   select.pairs = c(up.pairs, down.pairs)
   if(is.null(up.gene.score)){
-    tmp=get_gene_score(de.genes[select.pairs],top.n=top.n, max.num=max.num,bin.th=4)
+    tmp=get_gene_score(de.genes[select.pairs],cl.means=cl.means, top.n=top.n, max.num=max.num,bin.th=4)
     up.gene.score=tmp$up.gene.score
     down.gene.score=tmp$down.gene.score
   }
@@ -251,19 +261,19 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,top.n=50,max.num=1000,n
 #' @export
 #'
 #' @examples
-select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num =1, add.up=pair.num, add.down=pair.num, rm.genes=NULL, pairs=names(de.genes))
+select_N_markers <- function(de.genes, cl.means, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num =1, add.up=pair.num, add.down=pair.num, rm.genes=NULL, pairs=names(de.genes))
   {
    add.up = setNames(rep(add.up, length(pairs)), pairs)
    add.down= setNames(rep(add.down, length(pairs)), pairs)
    if(!is.null(default.markers)){
-     up.default = sapply(pairs, function(p){intersect(de.genes[[p]]$up.genes, default.markers)},simplify=F)
-     down.default = sapply(pairs, function(p){intersect(de.genes[[p]]$down.genes, default.markers)},simplify=F)
+     up.default = sapply(pairs, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
+     down.default = sapply(pairs, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
      add.up = pmax(add.up -  sapply(up.default, length),0)
      add.down = pmax(add.down -  sapply(down.default, length),0)
    }
    add.up = add.up[add.up>0, drop=F]
    add.down = add.down[add.down>0, drop=F]
-   result = select_markers_pair_direction(add.up,add.down,de.genes=de.genes, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers),top.n=50,max.num=2000)
+   result = select_markers_pair_direction(add.up,add.down,de.genes=de.genes, cl.means=cl.means,up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers),top.n=50,max.num=2000)
    up.genes = up.default
    down.genes=down.default
    for(x in names(result$up.genes)){
@@ -291,7 +301,7 @@ select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL,
 #' @export
 #'
 #' @examples
-select_pos_markers <- function(de.genes, cl, n.markers=3, default.markers=NULL, rm.genes=NULL, up.gene.score=NULL, down.gene.score=NULL)
+select_pos_markers <- function(de.genes, cl, cl.means, n.markers=3, default.markers=NULL, rm.genes=NULL, up.gene.score=NULL, down.gene.score=NULL)
   {
     pairs = names(de.genes)
     pairs.df = as.data.frame(do.call("rbind", strsplit(pairs, "_")))
@@ -311,15 +321,15 @@ select_pos_markers <- function(de.genes, cl, n.markers=3, default.markers=NULL, 
       add.up = setNames(rep(n.markers, length(up.pairs)), up.pairs)
       add.down = setNames(rep(n.markers, length(down.pairs)), down.pairs)
 
-      up.default = sapply(up.pairs, function(p){intersect(de.genes[[p]]$up.genes, default.markers)},simplify=F)
-      down.default = sapply(down.pairs, function(p){intersect(de.genes[[p]]$down.genes, default.markers)},simplify=F)
+      up.default = sapply(up.pairs, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
+      down.default = sapply(down.pairs, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
       if(length(up.default)>0){
         add.up = pmax(add.up -  sapply(up.default, length),0)
       }
       if(length(down.default)>0){
         add.down = pmax(add.down -  sapply(down.default, length),0)
       }
-      tmp.result = select_markers_pair_direction(add.up=add.up, add.down=add.down,de.genes=de.genes, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers))
+      tmp.result = select_markers_pair_direction(add.up=add.up, add.down=add.down,de.genes=de.genes, cl.means=cl.means, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers))
       
       unique(c(tmp.result$markers, unlist(up.default), unlist(down.default)))
     },simplify=F)  
