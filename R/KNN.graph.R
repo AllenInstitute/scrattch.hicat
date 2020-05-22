@@ -1,3 +1,16 @@
+#' get knn graph
+#'
+#' @param rd.dat 
+#' @param cl 
+#' @param cl.df 
+#' @param k 
+#' @param knn.outlier.th 
+#' @param outlier.frac.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac.th=0.5)
 {
   knn.result = RANN::nn2(rd.dat,k=k)
@@ -46,6 +59,7 @@ get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac
 
 
 #' @param knn.cl.df output of KNN.graph. Dataframe providing information about the cluster call of nearest neighbours of cells within a cluster. required columns: "cl.from" = cluster_id of edge origin, "cl.to" = cluster_id of edge destination, "Freq" = , "cl.from.total" = total nr of neigbours (above threshold) from cluster of origin, "cl.to.total" = total nr of neigbours (above threshold) from destination cluster, "frac" = fraction of total edge outgoing. 
+#'
 #' @param cl.center.df dataframe containing metadata and coordinates for plotting cluster centroids. Required columns: "x" = x coordinate, "y" = y coordinate, "cl" = unique cluster id that should match "cl.to" and "cl.from" columns in knn.cl.df, "cluster_color","size" = nr of cells in cluster 
 #' @param out.dir location to write plotting files to
 #' @param node.label Label to identify plotted nodes.
@@ -53,8 +67,11 @@ get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac
 #' @param curved Wheter edges should be curved or not. Default is TRUE.
 #' @param plot.parts output of intermediate files. default is FALSE.
 #' @param plot.hull plot convex around cell type neighbourhood. Provide neighbourhood_id's that need to be plotted
-#' @param plot.height/width output height.width in cm
 #' @param node.dodge whether or not nodes are allowed to overlap. Default is false 
+#' @param plot.height 
+#' @param plot.width 
+#' @param label.size 
+#' @param max_size 
 #' 
 #' @example_data:
 #'  
@@ -567,6 +584,17 @@ if (exxageration !=1) {
 
 
 ## function to draw (curved) line between to points
+#' function to draw (curved) line between two points
+#'
+#' @param whichRow 
+#' @param len 
+#' @param line.segments 
+#' @param curved 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 edgeMaker <- function(whichRow, len=100, line.segments, curved=FALSE){
   
   fromC <- unlist(line.segments[whichRow,c(3,4)])# Origin
@@ -598,16 +626,47 @@ edgeMaker <- function(whichRow, len=100, line.segments, curved=FALSE){
 
 
 #utils from vwline (https://github.com/pmur002/vwline) to draw variable width lines. 
+#' Title
+#'
+#' @param x 
+#' @param y 
+#' @param len 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 perpStart <- function(x, y, len) {
     perp(x, y, len, angle(x, y), 1)
         }
 
+#' Title
+#'
+#' @param x 
+#' @param y 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 avgangle <- function(x, y) {
     a1 <- angle(x[1:2], y[1:2])
     a2 <- angle(x[2:3], y[2:3])
     atan2(sin(a1) + sin(a2), cos(a1) + cos(a2))
 }
 
+#' Title
+#'
+#' @param x 
+#' @param y 
+#' @param len 
+#' @param a 
+#' @param mid 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 perp <- function(x, y, len, a, mid) {
     dx <- len*cos(a + pi/2)
     dy <- len*sin(a + pi/2)
@@ -616,17 +675,46 @@ perp <- function(x, y, len, a, mid) {
     rbind(upper, lower)    
         }
 
+#' Title
+#'
+#' @param x 
+#' @param y 
+#' @param len 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 perpMid <- function(x, y, len) {
     ## Now determine angle at midpoint
     perp(x, y, len, avgangle(x, y), 2)
         }
 
+#' Title
+#'
+#' @param x 
+#' @param y 
+#' @param len 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 perpEnd <- function(x, y, len) {
     perp(x, y, len, angle(x, y), 2)
 }
 
 
 ## x and y are vectors of length 2
+#' Title
+#'
+#' @param x vector
+#' @param y vector
+#'
+#' @return
+#' @export
+#'
+#' @examples
 angle <- function(x, y) {
     atan2(y[2] - y[1], x[2] - x[1])
         }

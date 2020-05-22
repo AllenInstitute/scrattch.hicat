@@ -1,3 +1,15 @@
+#' Title
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param n.markers 
+#' @param de.genes 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)                           
   {
     if(is.null(de.genes)){
@@ -15,6 +27,17 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)
     return(list(markers=markers, de.genes=de.genes[select.pairs]))
   }
 
+#' Title
+#'
+#' @param de.genes 
+#' @param top.n 
+#' @param max.num 
+#' @param bin.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_gene_score <- function(de.genes,top.n=50, max.num=1000,bin.th=4)
   {
     select.genes <- sapply(de.genes, function(x){
@@ -44,6 +67,19 @@ get_gene_score <- function(de.genes,top.n=50, max.num=1000,bin.th=4)
 
 
 
+#' Title
+#'
+#' @param de.genes 
+#' @param add.genes 
+#' @param gene.score 
+#' @param rm.genes 
+#' @param top.n 
+#' @param max.num 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_markers_pair <- function(de.genes, add.genes, gene.score=NULL,rm.genes=NULL,top.n=50,max.num=2000)
   {
     pairs =do.call("rbind",strsplit(gsub("cl","",names(add.genes)), "_"))
@@ -75,6 +111,21 @@ select_markers_pair <- function(de.genes, add.genes, gene.score=NULL,rm.genes=NU
   }
 
 
+#' Title
+#'
+#' @param de.genes 
+#' @param add.up 
+#' @param add.down 
+#' @param up.gene.score 
+#' @param down.gene.score 
+#' @param rm.genes 
+#' @param top.n 
+#' @param max.num 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_markers_pair_direction <- function(de.genes, add.up,add.down,up.gene.score=NULL,down.gene.score=NULL,rm.genes=NULL,top.n=50,max.num=2000)
   {
     up.genes = down.genes=list()
@@ -131,6 +182,22 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,up.gene.scor
     return(list(markers=markers, up.genes=up.genes, down.genes=down.genes))
   }
 
+#' Title
+#'
+#' @param cl 
+#' @param g1 
+#' @param g2 
+#' @param de.genes 
+#' @param top.n 
+#' @param max.num 
+#' @param n.markers 
+#' @param up.gene.score 
+#' @param down.gene.score 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_markers_pair_group <- function(cl, g1,g2,de.genes,top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
 {
   pairs = do.call("rbind",strsplit(names(de.genes), "_"))
@@ -168,6 +235,22 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,top.n=50,max.num=1000,n
 }
 
 
+#' Title
+#'
+#' @param de.genes 
+#' @param up.gene.score 
+#' @param down.gene.score 
+#' @param default.markers 
+#' @param pair.num 
+#' @param add.up 
+#' @param add.down 
+#' @param rm.genes 
+#' @param pairs 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num =1, add.up=pair.num, add.down=pair.num, rm.genes=NULL, pairs=names(de.genes))
   {
    add.up = setNames(rep(add.up, length(pairs)), pairs)
@@ -194,6 +277,20 @@ select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL,
 
 
 
+#' Title
+#'
+#' @param de.genes 
+#' @param cl 
+#' @param n.markers 
+#' @param default.markers 
+#' @param rm.genes 
+#' @param up.gene.score 
+#' @param down.gene.score 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_pos_markers <- function(de.genes, cl, n.markers=3, default.markers=NULL, rm.genes=NULL, up.gene.score=NULL, down.gene.score=NULL)
   {
     pairs = names(de.genes)
@@ -228,6 +325,17 @@ select_pos_markers <- function(de.genes, cl, n.markers=3, default.markers=NULL, 
     },simplify=F)  
   }
 
+#' Title
+#'
+#' @param cl.dat 
+#' @param th 
+#' @param tau.th 
+#' @param n.markers 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 markers_max_tau <- function(cl.dat, th=0.5, tau.th=0.7,n.markers=3)
   {
     tau = calc_tau(cl.dat)
@@ -247,6 +355,18 @@ markers_max_tau <- function(cl.dat, th=0.5, tau.th=0.7,n.markers=3)
     },simplify=F))
   }
 
+#' Title
+#'
+#' @param cl 
+#' @param cl.present.counts 
+#' @param present.th 
+#' @param tau.th 
+#' @param top.n 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 markers_tau_one_vs_other <- function(cl, cl.present.counts, present.th=0.4, tau.th=0.8,top.n=10)
   {
     all.g = row.names(cl.present.counts)
@@ -267,6 +387,19 @@ markers_tau_one_vs_other <- function(cl, cl.present.counts, present.th=0.4, tau.
 
 
 
+#' Title
+#'
+#' @param cl.g 
+#' @param norm.dat 
+#' @param cl 
+#' @param de.param 
+#' @param n.markers 
+#' @param cl.present.counts 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 group_specific_markers <- function(cl.g, 
                                    norm.dat, 
                                    cl, 
@@ -317,6 +450,17 @@ group_specific_markers <- function(cl.g,
 }
 
 
+#' Title
+#'
+#' @param cl.g 
+#' @param norm.dat 
+#' @param cl 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
   {
     cl = as.factor(cl)
@@ -337,6 +481,16 @@ within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
 
 ###Beta score from Trygve
 
+#' Title
+#'
+#' @param propExpr 
+#' @param spec.exp 
+#' @param mcores 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_beta_score <- function(propExpr, spec.exp = 2, mcores=1){
   if(mcores ==1){
     registerDoSEQ()

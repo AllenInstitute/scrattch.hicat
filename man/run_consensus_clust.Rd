@@ -4,12 +4,22 @@
 \alias{run_consensus_clust}
 \title{Wrapper function to repeatively run clustering on subsampled cells and infer consensus clusters}
 \usage{
-run_consensus_clust(norm.dat, select.cells = colnames(norm.dat),
-  niter = 100, sample.frac = 0.8, co.result = NULL,
-  output_dir = "subsample_result", mc.cores = 1,
-  de.param = de_param(), merge.type = c("undirectional",
-  "directional"), override = FALSE, init.result = NULL,
-  cut.method = "auto", ...)
+run_consensus_clust(
+  norm.dat,
+  select.cells = colnames(norm.dat),
+  niter = 100,
+  sample.frac = 0.8,
+  co.result = NULL,
+  output_dir = "subsample_result",
+  mc.cores = 1,
+  de.param = de_param(),
+  merge.type = c("undirectional", "directional"),
+  override = FALSE,
+  init.result = NULL,
+  cut.method = "auto",
+  confusion.th = 0.6,
+  ...
+)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1).}

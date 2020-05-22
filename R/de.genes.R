@@ -194,9 +194,9 @@ de_param <- function(low.th = 1,
        de.score.th = de.score.th, 
        min.cells = min.cells, 
        min.genes = min.genes)
-  
-  
 }
+
+
 
 #' Vectorized Chi-squared tests for differential gene detection
 #' 
@@ -561,6 +561,17 @@ de_all_pairs <- function(norm.dat,
 }
 
 # Add docs and implement within functions
+
+#' Title
+#'
+#' @param cn 
+#' @param direction 
+#' @param include.self 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 create_pairs <- function(cn, direction="nondirectional", include.self = FALSE)
   {
     cl.n = length(cn)	
@@ -674,7 +685,7 @@ de_stats_pair <- function(df,
          genes = select,
          up.genes = up,
          down.genes = down, 
-         de.df = df[df$padj < de.param$padj.th, ])
+         de.df = df[select, ])
   }
   
 }
@@ -784,7 +795,7 @@ de_stats_selected_pairs <- function(norm.dat,
 }
 
 
-#' Title
+#' Compute differential expression summary statistics for all pairs of clusters based on de_param()
 #'
 #' @param norm.dat a normalized data matrix for data.
 #' @param cl a cluster factor object.
@@ -870,6 +881,20 @@ get_de_matrix <- function(de.genes,
 }
 
 
+
+
+
+#' Title
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param binary.cat 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 DE_genes_cat_by_cl <- function(norm.dat, 
                                cl, 
                                binary.cat, 
@@ -928,6 +953,22 @@ DE_genes_cat_by_cl <- function(norm.dat,
 
 
 
+
+
+
+#' Title
+#'
+#' @param de.genes 
+#' @param dend 
+#' @param cl.label 
+#' @param directed 
+#' @param file 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_de_num <- function(de.genes, 
                         dend, 
                         cl.label = NULL, 
@@ -963,6 +1004,20 @@ plot_de_num <- function(de.genes,
 }
 
 
+
+
+
+#' Title
+#'
+#' @param de.genes 
+#' @param top.n 
+#' @param select.pair 
+#' @param cl.label 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_de_lfc_num <- function(de.genes, 
                             top.n = 100, 
                             select.pair = NULL, 
@@ -1060,7 +1115,26 @@ plot_de_lfc_num <- function(de.genes,
               de.summary = de.summary))
 }
 
+
+
+
 # New plotting functions from Zizhen - to be checked
+
+
+#' Title
+#'
+#' @param pair.num 
+#' @param file 
+#' @param directed 
+#' @param dend 
+#' @param col 
+#' @param cl.label 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_pair_matrix <- function(pair.num, file, directed=FALSE, dend=NULL, col=jet.colors(100), cl.label=NULL,...)
   {
     pair.matrix <- convert_pair_matrix(pair.num, directed = directed)

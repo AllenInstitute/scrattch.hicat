@@ -1,44 +1,42 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
 Version: 1.0.0
-Authors@R: c(
-  person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
+Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
   person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
   person("Cindy", "van Velthoven", email = "cindy.vanvelthoven@alleninstitute.org", role = c("aut")),
   person("Jeremy", "Miller", email = "jeremym@alleninstitute.org", role = c("aut")),	
-  person("Adriana","Sedeno-Cortes", email ="adrianas@alleninstitute.org", role= c("aut")),
-  person("Changkyu","Lee", email="Changkyul@alleninstitute.org", role= c("aut")),
-  person("Lawrence","Huang", email="lawrenceh@alleninstitute.org", role="c("aut")),
-  person("Saroja","Somasundaram",email="sarojas@alleninstitute.org", role="c("aut"))	
-) 
+  person("Adriana","Sedeno-Cortes", email ="adrianas@alleninstitute.org", role = c("aut")),
+  person("Changkyu","Lee", email="Changkyul@alleninstitute.org", role = c("aut")),
+  person("Lawrence","Huang", email="lawrenceh@alleninstitute.org", role = c("aut")),
+  person("Saroja","Somasundaram", email="sarojas@alleninstitute.org", role = c("aut")))
 Description: Iteractive clustering of single cell RNASeq dataset. 
+BugReports: https://github.com/AllenInstitute/scrattch.hicat/issues
 Depends: R (>= 3.3.0)
-License: GNU General Public License (Version 3, 29 June 2007)
+License: GPL-3
 Encoding: UTF-8
-LazyData: true
+LazyData: TRUE
+VignetteBuilder: knitr
+RoxygenNote: 7.0.2
 Requires: Matrix
 Imports: 
   data.table,
   dendextend,
+  devtools,
   doParallel,
   dplyr,
   foreach,
   ggplot2,
   grid,
   limma,
-  Matrix,
   matrixStats,
   pvclust,
   qlcMatrix,
-  Rphenograph,
-  Rtsne
-RoxygenNote: 6.1.1
+  Rtsne,
+  WGCNA
 Suggests: 
-    WGCNA,
     knitr,
     rmarkdown,
     testthat,
-    tasic2016data,
+    Rphenograph,
     covr
-VignetteBuilder: knitr

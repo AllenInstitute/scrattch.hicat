@@ -4,15 +4,29 @@
 \alias{merge_cl}
 \title{Merge clusters based on pairwise differential expressed genes.}
 \usage{
-merge_cl(norm.dat, cl, rd.dat.t, de.param = de_param(),
-  merge.type = c("undirectional", "directional"), max.cl.size = 300,
-  de.method = "limma", de.genes = NULL, return.markers = FALSE,
-  pairBatch = 40, verbose = 0)
+merge_cl(
+  norm.dat,
+  cl,
+  rd.dat = NULL,
+  rd.dat.t = NULL,
+  de.param = de_param(),
+  merge.type = c("undirectional", "directional"),
+  max.cl.size = 300,
+  de.method = "limma",
+  de.genes = NULL,
+  return.markers = FALSE,
+  pairBatch = 40,
+  verbose = 0
+)
 }
 \arguments{
 \item{norm.dat}{normalized expression data matrix in log transform, using genes as rows, and cells and columns. Users can use log2(FPKM+1) or log2(CPM+1)}
 
 \item{cl}{A vector of cluster membership with cell index as names, and cluster id as values.}
+
+\item{rd.dat}{Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first.}
+
+\item{rd.dat.t}{Transpose of rd.dat}
 
 \item{de.param}{The DE gene criteria. See de_param for details.}
 
@@ -27,8 +41,6 @@ merge_cl(norm.dat, cl, rd.dat.t, de.param = de_param(),
 \item{return.markers}{If TRUE, compute the DE genes between very pairs of clusters as markers}
 
 \item{pairBatch}{The number of pairs to be tested for merging in one batch. Avoid compairing many pairs at the same time to reduce memory comsumption. Default 40}
-
-\item{rd.dat}{Reduced dimensions for cells. Used to determine which clusters are close to each other. Clusters are merged among nearest neighbors first.}
 
 \item{sampled}{For big dataset, norm.dat may not include all cells from cl. If TRUE, norm.dat is the data matrix for downsampled cells, and no need for further down sampling.}
 }

@@ -4,29 +4,37 @@
 \alias{doubletFinder}
 \title{Doublet detection in single-cell RNA sequencing data}
 \usage{
-doubletFinder(data, select.genes, proportion.artificial = 0.2,
-  k = pmin(100, ncol(data) * 0.01))
+doubletFinder(
+  data,
+  select.genes,
+  proportion.artificial = 0.2,
+  k = NULL,
+  plot = FALSE
+)
 }
 \arguments{
-\item{seu}{A fully-processed Seurat object (i.e. after normalization, variable gene definition,
-scaling, PCA, and tSNE).}
+\item{data}{gene x sample matrix with counts (non-normalized)}
 
-\item{expected.doublets}{The number of doublets expected to be present in the original data.
-This value can best be estimated from cell loading densities into the 10X/Drop-Seq device.}
+\item{select.genes}{list of genes with highest variance between samples}
 
-\item{porportion.artificial}{The proportion (from 0-1) of the merged real-artificial dataset
+\item{proportion.artificial}{The proportion (from 0-1) of the merged real-artificial dataset
 that is artificial. In other words, this argument defines the total number of artificial doublets.
-Default is set to 25\%, based on optimization on PBMCs (see McGinnis, Murrow and Gartner 2018, BioRxiv).}
+Default is set to 20\%}
 
-\item{proportion.NN}{The proportion (from 0-1) of the merged real-artificial dataset used to define
-each cell's neighborhood in PC space. Default set to 1%, based on optimization on PBMCs (see McGinnis,
-Murrow and Gartner 2018, BioRxiv).}
+\item{k}{The number of nearest neighbours of the merged real-artificial dataset used to define
+each cell's neighborhood in PC space. Value is the minimum of 1% of cells sampled or 100.}
+
+\item{plot}{}
 }
 \value{
-An updated Seurat object with metadata for pANN values and doublet predictions.
+An list of doublet.scores per samples and plots depicting the doublet scores for cells and artificial doublets.
 }
 \description{
-This function generaetes artificial nearest neighbors from existing single-cell RNA
+Adopted from https://www.cell.com/cell-systems/fulltext/S2405-4712(19)30073-0 
+(https://github.com/chris-mcginnis-ucsf/DoubletFinder)
+}
+\details{
+This function generates artificial nearest neighbors from existing single-cell RNA
 sequencing data. First, real and artificial data are merged. Second, dimension reduction
 is performed on the merged real-artificial dataset using PCA. Third, the proportion of
 artificial nearest neighbors is defined for each real cell. Finally, real cells are rank-

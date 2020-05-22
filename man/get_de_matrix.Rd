@@ -4,10 +4,10 @@
 \alias{get_de_matrix}
 \title{Generate a matrix of pairwise DE results}
 \usage{
-get_de_matrix(de.results, directed = FALSE, field = "num")
+get_de_matrix(de.genes, directed = FALSE, field = "num")
 }
 \arguments{
-\item{de.results}{Output from \code{de_score_selected_pairs} or \code{de_score_all_pairs}.}
+\item{de.genes}{Output from \code{de_score} or \code{de_stats_all_pairs}.}
 
 \item{directed}{Logical indicating whether to select results based on all DE genes (Default, FALSE) or up/down regulated genes (see Details).}
 

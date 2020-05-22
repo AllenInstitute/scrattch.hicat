@@ -41,6 +41,17 @@ prepare_harmonize<- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = 
 
 
 
+#' Test knn
+#'
+#' @param knn 
+#' @param cl 
+#' @param reference 
+#' @param ref.cl 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 test_knn <- function(knn, cl, reference, ref.cl)
   {
     library(reshape)
@@ -90,6 +101,17 @@ test_knn <- function(knn, cl, reference, ref.cl)
   }
 
 
+#' Sample sets lists
+#'
+#' @param cells.list 
+#' @param cl.list 
+#' @param cl.sample.size 
+#' @param sample.size 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 sample_sets_list <- function(cells.list, cl.list, cl.sample.size=100, sample.size=5000)
   {
     for(x in names(cells.list)){
@@ -109,6 +131,21 @@ sample_sets_list <- function(cells.list, cl.list, cl.sample.size=100, sample.siz
     return(cells.list)
   }
 
+
+
+#' Batch process
+#'
+#' @param x 
+#' @param batch.size 
+#' @param FUN 
+#' @param mc.cores 
+#' @param .combine 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
   {
     require(foreach)
@@ -125,18 +162,22 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
     results= foreach(i=1:length(bins), .combine=.combine) %dopar% FUN(bins[[i]],...)
     return(results)
   }
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param dat 
-##' @param ref.dat 
-##' @param method 
-##' @param batch.size 
-##' @param mc.cores 
-##' @param ... 
-##' @return 
-##' @author Zizhen Yao
+
+
+#' get knn batch
+#'
+#' @param dat 
+#' @param ref.dat 
+#' @param k 
+#' @param method 
+#' @param dim 
+#' @param batch.size 
+#' @param mc.cores 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1)
   {
     results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine="rbind", FUN=function(x){
@@ -146,6 +187,18 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
   }
 
 
+#' Get KNN
+#'
+#' @param dat 
+#' @param ref.dat 
+#' @param k 
+#' @param method 
+#' @param dim 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL)
   {
     
@@ -172,6 +225,23 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL)
   }
 
 
+#' Select joint genes
+#'
+#' @param comb.dat 
+#' @param ref.list 
+#' @param select.cells 
+#' @param maxGenes 
+#' @param vg.padj.th 
+#' @param max.dim 
+#' @param use.markers 
+#' @param top.n 
+#' @param rm.eigen 
+#' @param rm.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20,use.markers=TRUE, top.n=100,rm.eigen=NULL, rm.th=rep(0.7, ncol(rm.eigen)))
   {
     select.genes.list = list()
@@ -244,25 +314,24 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
   }
 
 
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param comb.dat 
-##' @param select.genes 
-##' @param ref.list 
-##' @param select.sets 
-##' @param select.cells 
-##' @param k 
-##' @param method 
-##' @param self.method 
-##' @param batch.size 
-##' @param mc.cores 
-##' @return 
-##' @author Zizhen Yao
-##'
-##'
-##'
+
+#' compute knn
+#'
+#' @param comb.dat 
+#' @param select.genes 
+#' @param ref.list 
+#' @param select.sets 
+#' @param select.cells 
+#' @param k 
+#' @param method 
+#' @param self.method 
+#' @param batch.size 
+#' @param mc.cores 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb.dat$dat.list), select.cells=comb.dat$all.cells, k=15, method="cor", self.method="RANN", batch.size=10000, mc.cores=1)
   {
     cat("Number of select genes", length(select.genes), "\n")
@@ -317,21 +386,28 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
     return(knn.comb)
   }
 
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param comb.dat 
-##' @param select.sets 
-##' @param select.cells 
-##' @param select.genes 
-##' @param method 
-##' @param k 
-##' @param sample.size 
-##' @param cl.sample.size 
-##' @param ... 
-##' @return 
-##' @author Zizhen Yao
+#' knn joint
+#'
+#' @param comb.dat 
+#' @param ref.sets 
+#' @param select.sets 
+#' @param merge.sets 
+#' @param select.cells 
+#' @param select.genes 
+#' @param method 
+#' @param self.method 
+#' @param k 
+#' @param sample.size 
+#' @param cl.sample.size 
+#' @param batch.size 
+#' @param verbose 
+#' @param mc.cores 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, method="cor", self.method = "RANN", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,mc.cores=1,...)
 {
   #attach(comb.dat)
@@ -399,6 +475,15 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
 })
 }
 
+#' Sim knn
+#'
+#' @param sim 
+#' @param k 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 sim_knn <- function(sim, k=15)
 {
   
@@ -408,6 +493,16 @@ sim_knn <- function(sim, k=15)
   return(knn.idx)
 }
 
+#' KNN cor
+#'
+#' @param ref.dat 
+#' @param query.dat 
+#' @param k 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 knn_cor <- function(ref.dat, query.dat, k = 15)
 {
   #sim = cor(as.matrix(query.dat), as.matrix(ref.dat), use="pairwise.complete.obs")
@@ -417,6 +512,16 @@ knn_cor <- function(ref.dat, query.dat, k = 15)
   return(knn.idx)
 }
 
+#' KNN cosine
+#'
+#' @param ref.dat 
+#' @param query.dat 
+#' @param k 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 knn_cosine <- function(ref.dat, query.dat, k = 15)
   {
     library(qlcMatrix)
@@ -428,7 +533,14 @@ knn_cosine <- function(ref.dat, query.dat, k = 15)
 
 
 
-
+#' KNN Jaccard Louvain
+#'
+#' @param knn.index 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 knn_jaccard_louvain <- function(knn.index)
   {
     require(igraph)
@@ -443,6 +555,18 @@ knn_jaccard_louvain <- function(knn.index)
 
 
 
+#' Harmonize
+#'
+#' @param comb.dat 
+#' @param prefix 
+#' @param overwrite 
+#' @param dir 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 harmonize <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
   {
     if(!file.exists(dir)){
@@ -469,17 +593,24 @@ harmonize <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
     #plot_confusion(result$cl, prefix,comb.dat)
     return(result)
   }
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param comb.dat 
-##' @param select.cells 
-##' @param prefix 
-##' @param result 
-##' @param ... 
-##' @return 
-##' @author Zizhen Yao
+
+
+
+
+#' i harmonize
+#'
+#' @param comb.dat 
+#' @param select.cells 
+#' @param ref.sets 
+#' @param prefix 
+#' @param result 
+#' @param overwrite 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 i_harmonize <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=names(comb.dat$dat.list), prefix="", result=NULL, overwrite=TRUE, ...)
   {
     
@@ -522,6 +653,14 @@ i_harmonize <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=name
 
 
 
+#' combine cl
+#'
+#' @param all.results 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 combine_cl <- function(all.results)
   {
     cl = all.results[[1]]$cl
@@ -542,6 +681,14 @@ combine_cl <- function(all.results)
 
 
 
+#' merge knn result
+#'
+#' @param split.results 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 merge_knn_result <- function(split.results)
   {
     ref.cells = unlist(lapply(split.results, function(x)x$ref.cells))
@@ -575,6 +722,22 @@ merge_knn_result <- function(split.results)
 
 
 
+#' Plot tsne
+#'
+#' @param cl 
+#' @param cl.df 
+#' @param comb.dat 
+#' @param prefix 
+#' @param tsne.df 
+#' @param cex 
+#' @param fn.size 
+#' @param height 
+#' @param width 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, height=8, width=10)
   {
     library(ggplot2)
@@ -621,6 +784,21 @@ plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, 
 
 
 
+#' Plot markers cl means
+#'
+#' @param select.genes 
+#' @param gene.ordered 
+#' @param cl.means.list 
+#' @param comb.dat 
+#' @param cl 
+#' @param cl.col 
+#' @param prefix 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_markers_cl_means <- function(select.genes, gene.ordered=FALSE, cl.means.list = NULL, comb.dat=NULL, cl=NULL, cl.col=NULL, prefix="",...)
   {
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -651,6 +829,14 @@ plot_markers_cl_means <- function(select.genes, gene.ordered=FALSE, cl.means.lis
   }
 
 
+#' Get gene cl correlation
+#'
+#' @param cl.means.list 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_gene_cl_correlation <- function(cl.means.list)
   {
     sets=names(cl.means.list)
@@ -667,6 +853,14 @@ get_gene_cl_correlation <- function(cl.means.list)
   }
 
 
+#' Simple dendrogram
+#'
+#' @param cl.means.list 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 simple_dend <- function(cl.means.list)
 {
   levels = unique(unlist(lapply(cl.means.list, colnames)))
@@ -681,6 +875,15 @@ simple_dend <- function(cl.means.list)
   hclust(as.dist(1-tmp.cor))
 }
 
+#' Impute val cor
+#'
+#' @param dat 
+#' @param impute.dat 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 impute_val_cor <- function(dat, impute.dat)
   {
     gene.cor = pair_cor(dat, impute.dat)
@@ -689,6 +892,17 @@ impute_val_cor <- function(dat, impute.dat)
   }
 
 
+#' Build dend harmonize
+#'
+#' @param impute.dat.list 
+#' @param cl 
+#' @param cl.df 
+#' @param ncores 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 build_dend_harmonize <- function(impute.dat.list, cl, cl.df, ncores=1)
   {
     cl.means = do.call("rbind",sapply(impute.dat.list, function(x)get_cl_means(x,cl),simplify=F))

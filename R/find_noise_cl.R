@@ -1,3 +1,13 @@
+#' Get de score
+#'
+#' @param de.df 
+#' @param top.genes 
+#' @param upper 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_score <- function(de.df, top.genes, upper=20)
   {
     gene.score = -log10(de.df[top.genes,"padj"])
@@ -6,6 +16,14 @@ get_de_score <- function(de.df, top.genes, upper=20)
     return(gene.score)
   }
 
+#' Get de genes sym
+#'
+#' @param de.genes 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_genes_sym <- function(de.genes)
   {
     de.genes.sym = de.genes
@@ -22,6 +40,16 @@ get_de_genes_sym <- function(de.genes)
   }
 
 
+#' Get de pair
+#'
+#' @param de.genes 
+#' @param cl1 
+#' @param cl2 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_de_pair<- function(de.genes, cl1, cl2)
   {
     pair = paste0(cl1, "_", cl2)
@@ -39,6 +67,17 @@ get_de_pair<- function(de.genes, cl1, cl2)
   }
 
 
+#' Find doublet
+#'
+#' @param cl.df 
+#' @param cl.sim 
+#' @param cl.good 
+#' @param de.genes 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
   {    
     diag(cl.sim)=0
@@ -101,15 +140,43 @@ find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
   }
 
 
-plot_doublet <- function(norm.dat, cl, nn.df, de.genes, all.col)
+#' Plot doublet
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param doublet.df 
+#' @param de.genes 
+#' @param all.col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_doublet <- function(norm.dat, cl, doublet.df, de.genes, all.col)
   {
-    for(i in 1:nrow(nn.df)){
-        tmp.cl = droplevels(cl[cl %in% as.character(c(row.names(nn.df)[i],nn.df[i,"nn.cl"],nn.df[i,"max.olap.cl"]))])
-        tmp=display_cl(tmp.cl, norm.dat, prefix=paste(levels(tmp.cl), collapse="_"), col=all.col, max.cl.size=100, de.genes=de.genes)
-      }
+    for(i in 1:nrow(doublets.df)){                                  
+      x = as.character(doublets.df[i, "cl"])
+      y = as.character(doublets.df[i, "cl1"])
+      z = as.character(doublets.df[i, "cl2"])
+      tmp.cl = cl[cl %in% c(x, y, z)]
+      tmp.cl = setNames(factor(as.character(tmp.cl), c(x,y,z)), names(tmp.cl))
+      tmp=display_cl(tmp.cl, norm.dat, prefix=paste0("doublet.",paste(levels(tmp.cl), collapse="_")), col=all.col, max.cl.size=100, de.genes=de.genes)
+    }
   }
 
 
+#' Plot cl low
+#'
+#' @param norm.dat 
+#' @param cl 
+#' @param low.df 
+#' @param de.genes 
+#' @param all.col 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_cl_low <- function(norm.dat, cl, low.df, de.genes, all.col)
   {
     for(i in 1:nrow(low.df)){
@@ -210,3 +277,124 @@ plot_low_qc <- function(norm.dat,
                       de.genes = de.genes)
   }  
 }
+
+
+
+
+
+
+find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
+  {    
+    if(is.null(de.genes)){
+      stop("Need to specify de.genes")
+    }
+    require(foreach)
+    require(doParallel)
+    if (mc.cores == 1) {
+      registerDoSEQ()
+    }
+    else {
+      cores <- makeForkCluster(mc.cores)
+      doParallel::registerDoParallel(cores)
+      on.exit(parallel::stopCluster(cores), add = TRUE)
+    }
+    result.list= foreach(p=names(de.genes), .combine='list',.multicombine=TRUE, .maxcombine=length(de.genes)) %dopar% {
+    #result.list= sapply(names(de.genes), function(p){
+      #print(p)
+      de = de.genes[[p]]
+      if(de$up.num < min.genes | de$down.num < min.genes){
+        return(NULL)
+      }
+      tmp=strsplit(p,"_")[[1]]
+      cl1 = tmp[[1]]
+      cl2 = tmp[[2]]
+
+      up.genes = head(de$up.genes, 50)
+      down.genes = head(de$down.genes,50)
+
+      up.genes.score = get_de_score(de$de.df, up.genes)
+      down.genes.score = get_de_score(de$de.df, down.genes)
+      
+      results = sapply(setdiff(as.character(cl),c(cl1,cl2)), function(cl3){
+        tmp1.de = get_de_pair(de.genes, cl1, cl3)
+        tmp2.de = get_de_pair(de.genes, cl3, cl2)
+
+        olap.up.genes1 = intersect(tmp2.de$up.genes, up.genes)
+        olap.up.num1 = length(olap.up.genes1)
+        olap.up.score1 = get_de_score(de$de.df, olap.up.genes1)        
+        olap.up.ratio1 = olap.up.score1 / up.genes.score
+
+        olap.down.genes1 = intersect(tmp1.de$down.genes, down.genes)
+        olap.down.num1 = length(olap.down.genes1)
+        olap.down.score1 = get_de_score(de$de.df, olap.down.genes1)        
+        olap.down.ratio1 = olap.down.score1 / down.genes.score
+
+        up.genes2 = head(tmp1.de$up.genes, 50)
+        up.genes.score2 =  get_de_score(tmp1.de$de.df, up.genes2)
+        olap.up.genes2 = intersect(up.genes2,de$up.genes)
+        olap.up.num2 = length(olap.up.genes2)
+        olap.up.score2 = get_de_score(tmp1.de$de.df, olap.up.genes2)
+        olap.up.ratio2 = olap.up.score2 /up.genes.score2
+        
+     
+        down.genes2 = head(tmp2.de$down.genes, 50)
+        down.genes.score2 =  get_de_score(tmp2.de$de.df, down.genes2)
+        olap.down.genes2 = intersect(down.genes2,de$down.genes)
+        olap.down.num2 = length(olap.down.genes2)
+        olap.down.score2 = get_de_score(tmp2.de$de.df, olap.down.genes2)
+        olap.down.ratio2 = olap.down.score2 /down.genes.score2
+        
+        result = list(
+          cl1=cl1,
+          cl2=cl2,
+          up.num = length(up.genes),
+          down.num = length(down.genes),
+          olap.num=c(olap.up.num1, olap.down.num1, olap.up.num2, olap.down.num2),
+          olap.ratio = c(olap.up.ratio1, olap.down.ratio1, olap.up.ratio2, olap.down.ratio2),
+          olap.score = c(olap.up.score1, olap.down.score1, olap.up.score2, olap.down.score2)
+          )
+        result$score = sum(result$olap.score) / sum(c(up.genes.score, down.genes.score, up.genes.score2, down.genes.score2))
+        return(result)
+      },simplify=F)
+      test.score=sapply(results, function(x)x$score)
+      tmp = names(which.max(test.score))
+      result = results[[tmp]]
+      result$cl = tmp
+      return(result)
+    #},simplify=F)
+    }
+    names(result.list) = names(de.genes)
+    result.list = result.list[!sapply(result.list, is.null)]
+    cl = sapply(result.list, function(x)x$cl)
+    cl1 = sapply(result.list, function(x)x$cl1)
+    cl2 = sapply(result.list, function(x)x$cl2)
+    
+    up.num = sapply(result.list, function(x)x$up.num)
+    down.num = sapply(result.list, function(x)x$down.num)
+    olap.num.df = t(sapply(result.list, function(x)x$olap.num))
+    colnames(olap.num.df) = paste0("olap.num.",c("up.1","down.1","up.2","down.2"))
+              
+    olap.ratio.df = t(sapply(result.list, function(x)x$olap.ratio))
+    colnames(olap.ratio.df) = paste0("olap.ratio.",c("up.1","down.1","up.2","down.2"))
+    
+    score = sapply(result.list, function(x)x$score)
+    result.df = data.frame(cl=cl, cl1=cl1, cl2=cl2, score=score, up.num=up.num, down.num=down.num,  as.data.frame(olap.num.df), as.data.frame(olap.ratio.df))
+    return(result.df)
+  }
+
+
+
+find_low_quality_all <- function(de.genes=NULL, de.score.mat=NULL,low.th = 2)
+  {
+    library(dplyr)
+    if(is.null(de.score.mat)){
+      de.score.mat <- get_de_matrix(de.genes, 
+                                    directed = TRUE, 
+                                    field = "num")
+    }
+    de.score.mat.df = as.data.frame(as.table(de.score.mat))
+    de.score.mat.df = de.score.mat.df %>% filter(Freq < low.th & Var1!=Var2)
+    colnames(de.score.mat.df) = c("cl.low","cl", "up.genes")
+    return(de.score.mat.df)
+  }
+

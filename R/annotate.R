@@ -28,6 +28,7 @@
 #   get_de_matrix() de.genes.R
 #   get_pair_matrix() util.R
 
+
 #' Map samples to a training dataset by correlation
 #' 
 #' @param train.dat Training data matrix, usually log-transformed CPM
@@ -100,6 +101,7 @@ map_by_cor <- function(train.dat,
   
   return(out_list)    
 }
+
 
 #' Map a dataset to a reference, and compare existing cluster calls to the reference comparison
 #' 
@@ -208,6 +210,7 @@ predict_annotate_cor <- function(cl,
   return(map_results)
 }
 
+
 #' Perform bootstrapped mapping using a fraction of provided marker genes.
 #' 
 #' @param train.dat Training data matrix, usually log-transformed CPM
@@ -279,6 +282,7 @@ map_sampling <- function(train.dat,
   return(out_list)
 }
 
+
 #' Run a single round of cross-validation of cluster mapping using a subset of marker genes
 #' 
 #' @param norm.dat a normalized data matrix for clustered cells
@@ -314,7 +318,7 @@ map_cv <- function(norm.dat,
                    }
                    setNames(tmp[sample(length(tmp))], x)
                  })
-  
+
   names(bins) <- NULL
   bins <- unlist(bins)
   bins <- bins[names(cl)]
@@ -446,17 +450,10 @@ compare_annotate <- function(cl,
   select.cells <- names(cl)
 
   ref.cl.size <- table(ref.cl[common.cells])
-  
-  tb.df$jaccard <- as.vector(tb.df$Freq / (cl.size[as.character(tb.df[,1])] + ref.cl.size[as.character(tb.df[,2])] - tb.df$Freq))
 
   # Compute Jaccard statistics for each pair of clusters
-  #tb.df$jaccard <- 0
-  #for(i in 1:nrow(tb.df)){
-  #  n_ol <- length(union(common.cells[cl[common.cells] == as.character(tb.df[i,1])],
-  #                       common.cells[ref.cl[common.cells] == as.character(tb.df[i,2])]))
-  #  
-  #  tb.df$jaccard[i] <- tb.df$Freq[i] / n_ol
-  #}
+  tb.df$jaccard <- as.vector(tb.df$Freq / (cl.size[as.character(tb.df[,1])] + ref.cl.size[as.character(tb.df[,2])] - tb.df$Freq))
+
   
   tb.df$ref.cl.label <- factor(ref.cl.df[as.character(tb.df$ref.cl),"cluster_label"], levels=ref.cl.df$cluster_label)
   
@@ -611,4 +608,3 @@ match_cl <- function(cl,
               cl.df = cl.df, 
               cor = mat))
 }
-

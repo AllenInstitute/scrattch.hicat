@@ -4,9 +4,21 @@
 \alias{display_cl}
 \title{Display cluster plot}
 \usage{
-display_cl(cl, norm.dat, prefix = NULL, plot = !is.null(prefix),
-  col = NULL, max.cl.size = NULL, markers = NULL, de.genes = NULL,
-  main = "", height = 13, width = 9, min.sep = 10, ...)
+display_cl(
+  cl,
+  norm.dat,
+  prefix = NULL,
+  plot = !is.null(prefix),
+  col = NULL,
+  max.cl.size = NULL,
+  markers = NULL,
+  de.genes = NULL,
+  main = "",
+  height = 13,
+  width = 9,
+  min.sep = 10,
+  ...
+)
 }
 \arguments{
 \item{cl}{}

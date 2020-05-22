@@ -4,10 +4,17 @@
 \alias{check_donor}
 \title{Find donor clusters}
 \usage{
-check_donor(anno, cluster, norm.dat, select.cells = names(cluster),
-  keep.cl = NULL, meta1_area = "roi",
-  meta2_donor = "external_donor_name", plot = TRUE,
-  plot.path = "output/")
+check_donor(
+  anno,
+  cluster,
+  norm.dat,
+  select.cells = names(cluster),
+  keep.cl = NULL,
+  meta1_area = "roi",
+  meta2_donor = "external_donor_name",
+  plot = TRUE,
+  plot.path = "output/"
+)
 }
 \arguments{
 \item{anno}{anno dataframe which must include column names listed in `neun.colname`

@@ -1,3 +1,16 @@
+#' Title
+#'
+#' @param dat 
+#' @param theta 
+#' @param nthreads 
+#' @param perplexity 
+#' @param fast.tsne.path 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 fast_tsne <- function(dat,theta=0.05, nthreads=12, perplexity=20, fast.tsne.path="~/src/FIt-SNE", ...){
   source(file.path(fast.tsne.path, "fast_tsne.R"))
   fast.tsne.df <- fftRtsne(dat, theta=theta,nthreads = nthreads, perplexity=perplexity, fast_tsne_path=file.path(fast.tsne.path,"bin/fast_tsne"),...)
@@ -7,6 +20,23 @@ fast_tsne <- function(dat,theta=0.05, nthreads=12, perplexity=20, fast.tsne.path
 }
 
 
+#' Title
+#'
+#' @param norm.dat 
+#' @param select.genes 
+#' @param cl 
+#' @param cl.df 
+#' @param tsne.df 
+#' @param show.legend 
+#' @param cex 
+#' @param fn.size 
+#' @param alpha.val 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show.legend=FALSE, cex=0.15, fn.size=2, alpha.val=1, ...)
   {
     library(ggplot2)
@@ -25,18 +55,48 @@ plot_tsne_cl <- function(norm.dat, select.genes, cl, cl.df, tsne.df = NULL, show
   }
 
 ###Backward compatible to with the original function definition.
+#' Title
+#'
+#' @param tsne.df 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_tSNE_meta <- function(tsne.df, ...)
   {
     plot_RD_meta(tsne.df, ...)
   }
 
 ###Backward compatible to with the original function definition.
+#' Title
+#'
+#' @param tsne.df 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_tSNE_gene <- function(tsne.df, ...)
   {
     plot_RD_gene(tsne.df, ...)
   }
 
 
+#' Title
+#'
+#' @param dat 
+#' @param select.genes 
+#' @param select.samples 
+#' @param dims 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 build_tsne <- function(dat, select.genes = rownames(dat), select.samples = colnames(dat), dims=2, ...)
 {
   library(Rtsne)

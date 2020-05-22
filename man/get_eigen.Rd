@@ -4,8 +4,15 @@
 \alias{get_eigen}
 \title{Compute module eigen genes}
 \usage{
-get_eigen(gene.mod, norm.dat, select.cells = colnames(norm.dat),
-  prefix = NULL, method = "ward.D", hc = NULL, ...)
+get_eigen(
+  gene.mod,
+  norm.dat,
+  select.cells = colnames(norm.dat),
+  prefix = NULL,
+  method = "ward.D",
+  hc = NULL,
+  ...
+)
 }
 \arguments{
 \item{gene.mod}{A list of gene modules.}
@@ -27,4 +34,6 @@ A list with two elements: module eigen genes, and if prefix is not NULL, dendrog
 }
 \description{
 Compute module eigen genes
+}
+\details{
 }

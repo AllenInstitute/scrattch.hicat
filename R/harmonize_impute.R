@@ -1,4 +1,14 @@
 
+#' Title
+#'
+#' @param knn.dist 
+#' @param scale 
+#' @param exclude.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_knn_weight <- function(knn.dist, scale=0.2, exclude.th = 0.0001)
   {
     w = exp(-knn.dist*scale)
@@ -8,6 +18,16 @@ get_knn_weight <- function(knn.dist, scale=0.2, exclude.th = 0.0001)
     return(w)
   }
 
+#' Title
+#'
+#' @param knn.idx 
+#' @param reference 
+#' @param cl 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 predict_knn <- function(knn.idx, reference, cl)
   {
     library(matrixStats)
@@ -25,6 +45,17 @@ predict_knn <- function(knn.idx, reference, cl)
     return(list(pred.df=pred.df, pred.prob = tb))
   }
 
+#' Title
+#'
+#' @param knn.idx 
+#' @param reference 
+#' @param cl 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 predict_knn_new <- function(knn.idx, reference, cl, ...)
   {
     library(matrixStats)
@@ -39,6 +70,19 @@ predict_knn_new <- function(knn.idx, reference, cl, ...)
 
 
 
+#' Title
+#'
+#' @param knn.idx 
+#' @param reference 
+#' @param dat 
+#' @param knn.dist 
+#' @param w 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w, ...)
   {
     query = row.names(knn.idx)
@@ -67,6 +111,19 @@ impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w, ...)
   }
 
 
+#' Title
+#'
+#' @param knn 
+#' @param ref 
+#' @param dat 
+#' @param tol 
+#' @param max.iter 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 iter_impute_knn <- function(knn, ref, dat, tol=10^-3,max.iter=100,...)
   {
     old.dat = NULL
@@ -92,6 +149,23 @@ iter_impute_knn <- function(knn, ref, dat, tol=10^-3,max.iter=100,...)
 
 
 
+#' Title
+#'
+#' @param comb.dat 
+#' @param split.results 
+#' @param select.genes 
+#' @param select.cells 
+#' @param ref.list 
+#' @param sets 
+#' @param max.dim 
+#' @param th 
+#' @param rm.eigen 
+#' @param rm.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 impute_knn_global <- function(comb.dat, split.results, select.genes, select.cells, ref.list, sets=comb.dat$sets, max.dim=80, th=0.5, rm.eigen=NULL,rm.th=0.65)
   {
     org.rd.dat.list <- list()

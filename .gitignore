@@ -9,3 +9,5 @@ include
 bin
 .vscode
 .DS_Store
+doc
+Meta

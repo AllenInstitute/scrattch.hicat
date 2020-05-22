@@ -1,6 +1,18 @@
 #require(dendextend)
 #require(dplyr)      
 
+#' Pv clust show significant gradient
+#'
+#' @param dend 
+#' @param pvclust_obj 
+#' @param signif_type 
+#' @param signif_col_fun 
+#' @param ... 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp", "au"), signif_col_fun = colorRampPalette(c("black", 
     "darkred", "red")), ...) 
 {
@@ -21,6 +33,19 @@ pvclust_show_signif_gradient <- function (dend, pvclust_obj, signif_type = c("bp
   dend= dend %>% assign_values_to_branches_edgePar(the_cols, "col") %>% assign_values_to_branches_edgePar(the_lwds, "lwd") %>% assign_values_to_branches_edgePar(pvalue_by_all_nodes, "conf") 
 }
 
+#' Build dend
+#'
+#' @param cl.dat 
+#' @param cl.cor 
+#' @param l.rank 
+#' @param l.color 
+#' @param nboot 
+#' @param ncores 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100, ncores=1)
   {
     require(dendextend)
@@ -60,6 +85,15 @@ build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100
   }
 
 
+#' Unbranch by conf
+#'
+#' @param dend 
+#' @param conf.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 unbranch_by_conf  <- function(dend, conf.th)
   {
     if(length(dend)>1){
@@ -106,6 +140,16 @@ unbranch_by_conf  <- function(dend, conf.th)
   }
 
 
+#' Prune dendrogram
+#'
+#' @param dend 
+#' @param rm.labels 
+#' @param top.level 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 prune_dend <- function(dend, rm.labels, top.level=TRUE)
   {
     if(length(dend)>1){
@@ -142,6 +186,16 @@ prune_dend <- function(dend, rm.labels, top.level=TRUE)
     return(dend)  
   }
   
+#' Reorder dendrogram
+#'
+#' @param dend 
+#' @param l.rank 
+#' @param top.level 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 reorder_dend <- function(dend, l.rank, top.level=TRUE)
   {
     tmp.dend = dend
@@ -168,6 +222,15 @@ reorder_dend <- function(dend, l.rank, top.level=TRUE)
   }
 
 
+#' Unbranch by length
+#'
+#' @param dend 
+#' @param length.th 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 unbranch_by_length <- function(dend, length.th)
   {
     if(length(dend)>1){
@@ -208,6 +271,15 @@ unbranch_by_length <- function(dend, length.th)
   }
 
 
+#' Cut tree dendrogram
+#'
+#' @param dend 
+#' @param h 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 cutree_dend <- function(dend, h)
   {
     if(length(dend)>1){
@@ -248,6 +320,15 @@ cutree_dend <- function(dend, h)
 
 
 
+#' Label dendrogram
+#'
+#' @param dend 
+#' @param n 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 label_dend <- function(dend,n=1)
   {  
     if(is.null(attr(dend,"label"))){
@@ -265,6 +346,14 @@ label_dend <- function(dend,n=1)
   }
 
 
+#' Get dendrogram parent
+#'
+#' @param dend 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_dend_parent <- function(dend)
   {
     if(length(dend)>1){
@@ -278,7 +367,15 @@ get_dend_parent <- function(dend)
     return(NULL)
   }
 
-####get dendrogram precomputed markers
+#' get dendrogram precomputed markers
+#'
+#' @param dend 
+#' @param n 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_dend_markers <- function(dend, n = 20)
   {
     if(length(dend)>1){
@@ -294,6 +391,15 @@ get_dend_markers <- function(dend, n = 20)
   }
 
 ####get dendrogram precomputed markers
+#' get dendrogram precomputed markers (direction)
+#'
+#' @param dend 
+#' @param n 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_dend_markers_direction <- function(dend, n = 20)
   {
     if(length(dend)>1){
@@ -310,6 +416,17 @@ get_dend_markers_direction <- function(dend, n = 20)
 
 
 
+#' Plot dendrogram
+#'
+#' @param dend 
+#' @param dendro_data 
+#' @param node_size 
+#' @param r 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_dend <- function(dend, dendro_data=NULL,node_size=1,r=c(-0.1,1))
   {
     require(dendextend)
@@ -335,6 +452,14 @@ plot_dend <- function(dend, dendro_data=NULL,node_size=1,r=c(-0.1,1))
   }
 
 
+#' Dendrogram list
+#'
+#' @param dend 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 dend_list <- function(dend)
   {
     l = list()
@@ -347,6 +472,17 @@ dend_list <- function(dend)
     return(l)
   }
 
+#' Dend lca
+#'
+#' @param dend 
+#' @param l1 
+#' @param l2 
+#' @param l 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 dend_lca <- function(dend, l1, l2, l=rep(attr(dend,"label"),length(l1)))
   {
     node.height=setNames(get_nodes_attr(dend, "height"),get_nodes_attr(dend, "label"))
@@ -370,6 +506,15 @@ dend_lca <- function(dend, l1, l2, l=rep(attr(dend,"label"),length(l1)))
 
 
 
+#' Dendrogram match
+#'
+#' @param dend.list 
+#' @param cl.group 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 dend_match <- function(dend.list, cl.group){
   dend_group=sapply(dend.list, function(d){
     table(cl.group[labels(d)])

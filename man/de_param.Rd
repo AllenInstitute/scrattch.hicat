@@ -4,9 +4,17 @@
 \alias{de_param}
 \title{Set differential expression (DE) parameters for genes and clusters.}
 \usage{
-de_param(low.th = 1, padj.th = 0.01, lfc.th = 1, q1.th = 0.5,
-  q2.th = NULL, q.diff.th = 0.7, de.score.th = 150, min.cells = 4,
-  min.genes = 5)
+de_param(
+  low.th = 1,
+  padj.th = 0.01,
+  lfc.th = 1,
+  q1.th = 0.5,
+  q2.th = NULL,
+  q.diff.th = 0.7,
+  de.score.th = 150,
+  min.cells = 4,
+  min.genes = 5
+)
 }
 \arguments{
 \item{low.th}{Lower boundary for normalized gene expression. Default = 1. See details.}

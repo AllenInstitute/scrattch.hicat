@@ -4,10 +4,18 @@
 \alias{find_vg}
 \title{Identify high variability genes using Brennecke's method}
 \usage{
-find_vg(dat, plot_file = NULL, return_type = "data", verbose = FALSE)
+find_vg(
+  dat,
+  rescaled = FALSE,
+  plot_file = NULL,
+  return_type = "data",
+  verbose = FALSE
+)
 }
 \arguments{
 \item{dat}{A matrix or dgCMatrix with samples as columns and genes as rows}
+
+\item{rescaled}{logical - whether the data matrix should be normalized by columns). Assume input data have already been normalized}
 
 \item{plot_file}{(optional) A file to use to output diagnostic plots. Default is NULL.}
 
