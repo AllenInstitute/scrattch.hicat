@@ -265,7 +265,7 @@ onestep_clust <- function(norm.dat,
     }
     else{
       counts = norm.dat[,sampled.cells]
-      counts@x = 2^(norm.dat@x) - 1
+      counts@x = 2^(counts@x) - 1
     }
   }
   plot_file=NULL
