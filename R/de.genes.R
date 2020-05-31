@@ -6,9 +6,7 @@
 #
 # vec_chisq_test()
 #
-# score_pair_limma() Tests for one pair of clusters
 #
-# score_pair_chisq() Tests for one pair of clusters
 #   vec_chisq_test() de.genes.R
 #
 # de_selected_pairs() Tests for multiple pairs of clusters. Was DE_genes_pairs().
@@ -16,16 +14,11 @@
 #   score_pair_limma() de.genes.R
 #   score_pair_chisq() de.genes.R
 #
-# de_all_pairs() Tests for every pair of clusters. Was DE_genes_pw().
-#   DE_genes_pairs() de.genes.R
 #
 # compute_pair_deScore() Compute deScores based on score_pair_X() results and de_param(). Was de_pairs().
 # 
-# de_score()
-#   de_score_pairs() de.genes.R
 #
-# de_score_pairs()
-#   DE_genes_pairs de.genes.R
+
 #
 # get_de_matrix()
 #   get_pairs() de.genes.R
@@ -580,10 +573,12 @@ de_pair_fast_limma <- function(pair,
                                method = "limma", 
                                cl.means = NULL,
                                cl.present = NULL,
-                              use.voom = FALSE, 
-                              counts = NULL,
-                              mc.cores = 1) {
-  
+                               cl.sq.means = NULL,
+                               use.voom = FALSE, 
+                               counts = NULL,
+                               mc.cores = 1,
+                               return.df = FALSE) {
+   
   method <- match.arg(method,
                       choices = c("limma", "fast_limma", "chisq", "t.test"))
                                         
@@ -655,7 +650,7 @@ de_pair_fast_limma <- function(pair,
     }
   }
   else if (method == "fast_limma"){
-    fit = simple_lmFit(norm.dat, cl=cl, cl.means= cl.means)
+    fit = simple_lmFit(norm.dat, cl=cl, cl.means= cl.means, cl.sqr.means= cl.sqr.means)
   }
   else if (method == "t.test"){
     cl.vars <- as.data.frame(get_cl_vars(norm.dat, cl, cl.means = cl.means))
@@ -716,43 +711,13 @@ de_pair_fast_limma <- function(pair,
       stats= de_stats_pair(df, 
         de.param = de.param, 
         cl.size1, 
-        cl.size2)    
+        cl.size2,
+        return.df = return.df)    
     },simplify=F)
   },mc.cores=mc.cores)
 
   names(de_list) <- paste(pairs[,1],pairs[,2],sep="_")  
   return(de_list)
-}
-
-####Make sure dat and cl has the same dimension, and cells are in the same order
-
-#' Perform all pairwise differential expression comparison between clusters
-#' 
-#' @param norm.dat a normalized data matrix for data.
-#' @param cl a cluster factor object.
-#' @param ... Additional parameters passed to DE_genes_pairs()
-#' 
-#' @seealso \link{DE_genes_pairs}
-#' 
-#' @return a list containing DE results for every pair of clusters
-#' 
-#' @export
-de_all_pairs <- function(norm.dat,
-                         cl, 
-                         ...) {
-  
-  if(sum(names(cl) %in% colnames(norm.dat)) != length(cl)) {
-    stop("Missing data for some cells in cl.")
-  }
-
-  cn <- as.character(sort(unique(cl)))
-  pairs = create_pairs(cn)
-  
-  de_selected_pairs(norm.dat = norm.dat,
-                    cl = cl,
-                    pairs = pairs, 
-                    ...)
-  
 }
 
 # Add docs and implement within functions
@@ -860,22 +825,27 @@ de_stats_pair <- function(df,
   if(length(select) == 0){
     return(list())
   } else {
+
+    up.genes = setNames(-log10(df[up,"padj"]), up)
+    down.genes = setNames(-log10(df[down,"padj"]), down)
     
-    df$padj[df$padj < 1e-20] <- 1e-20
-    up.score <- sum(-log10(df[up,"padj"]))
-    down.score <- sum(-log10(df[down,"padj"]))
-    
-    if(length(up) == 0) { up.score <- 0 }
-    if(length(down) == 0) { down.score <- 0 }
-    
-    result=list(score = up.score + down.score,
-         up.score = up.score,
-         down.score = down.score,
-         num = length(select),
-         up.num = length(up),
-         down.num = length(down),
-         up.genes = setNames(df[up,"padj"], up),
-         down.genes = setNames(df[down,"padj"], down))
+    tmp = up.genes
+    tmp[tmp > 20] = 20
+    up.score <- sum(tmp)
+    tmp = down.genes
+    tmp[tmp > 20] = 20
+    down.score <- sum(down)    
+   
+    result=list(
+      up.score = up.score,
+      down.score = down.score,
+      score = up.score + down.score,
+      up.num = length(up.genes),
+      down.num = length(down.genes),
+      num = up.num + down.num
+      )
+
+
     if(return.df){
       result$de.df = df[select,]
     }
@@ -896,7 +866,7 @@ de_stats_pair <- function(df,
 #' @return a character vector of all differentially expressed genes. 
 #' @export
 #'
-de_stats_all_pairs <- function(norm.dat, 
+de_all_pairs <- function(norm.dat, 
                                cl,
                                de.param = de_param(), 
                                method = "limma", 

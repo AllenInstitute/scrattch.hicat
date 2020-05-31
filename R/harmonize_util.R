@@ -174,6 +174,44 @@ get_cl_means_list <- function(dat.list, cl, de.param.list=NULL, min.cells=NULL, 
   }
 
 
+get_cl_sqr_means_list <- function(dat.list, cl, de.param.list=NULL, min.cells=NULL, select.genes=NULL, sets=names(dat.list))
+  {
+    if(is.null(min.cells)){
+      if(!is.null(de.param.list)){
+        min.cells = lapply(de.param.list,"[[", "min.cells")
+      }
+      else{
+        min.cells = setNames(rep(1, length(dat.list)), names(dat.list))
+      }
+    }
+    else{
+      if(length(min.cells) ==1){
+        min.cells = setNames(rep(min.cells, length(dat.list)), names(dat.list))
+      }
+    }
+    cl.sqr.means.list = list()
+    for(x in sets){
+      tmp.cells = intersect(names(cl), colnames(dat.list[[x]]))
+      tmp.cl = cl[tmp.cells]
+      cl.size = table(tmp.cl)
+      select.cl = names(cl.size)[cl.size >= min.cells[[x]]]
+      if(length(select.cl)==0){
+        return(NULL)
+      }
+      tmp.cl = tmp.cl[tmp.cl %in% select.cl]
+      if(is.factor(tmp.cl)){
+        tmp.cl=droplevels(tmp.cl)
+      }
+      tmp=get_cl_sqr_means(dat.list[[x]], tmp.cl)
+      if(!is.null(select.genes)){
+        tmp=tmp[select.genes,,drop=F]
+      }
+      cl.sqr.means.list[[x]]= tmp
+    }
+    return(cl.sqr.means.list)
+  }
+
+
 
 #' Title
 #'
