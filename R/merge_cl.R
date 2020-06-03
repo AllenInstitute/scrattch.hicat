@@ -55,7 +55,8 @@ test_merge <- function(de.pair, de.param, merge.type="undirectional")
 #'
 merge_cl<- function(norm.dat,
                     cl, 
-                    rd.dat,
+                    rd.dat=NULL,
+                    rd.dat.t = NULL,
                     de.param = de_param(), 
                     merge.type = c("undirectional","directional"), 
                     max.cl.size = 300,
@@ -76,7 +77,12 @@ merge_cl<- function(norm.dat,
       row.names(pairs)=names(de.genes)
     }
      ###Merge small clusters with the closest neighbors first.
-    cl.rd = as.data.frame(get_cl_means(rd.dat,cl[names(cl) %in% row.names(rd.dat)]))
+    if(is.null(rd.dat)){
+      cl.rd = as.data.frame(get_cl_means(rd.dat,cl[names(cl) %in% row.names(rd.dat)]))
+    }
+    else{
+      cl.rd = as.data.frame(get_cl_means(rd.dat.t,cl[names(cl) %in% colnames(rd.dat)]))
+    }
     cl.size = table(cl)
     while(TRUE){
       cl.size = table(cl)
