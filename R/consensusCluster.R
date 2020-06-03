@@ -165,8 +165,7 @@ iter_consensus_clust <- function(cl.list,
     }
     tmp.cl=merge_cl_by_co(tmp.cl, co.ratio=co.ratio, cl.mat=cl.mat[,names(tmp.cl)],diff.th)
     cell.cl.co.ratio= get_cell.cl.co.ratio(tmp.cl, co.ratio= co.ratio, cl.mat=cl.mat[,names(tmp.cl)])    
-    tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat.t=t(cell.cl.co.ratio), verbose=verbose,  de.param = de.param, return.markers=TRUE, max.cl.size= max.cl.size, merge.type=merge.type)
-    
+    tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, verbose=verbose,  de.param = de.param, return.markers=TRUE, max.cl.size= max.cl.size, merge.type=merge.type)
     markers=tmp$markers
     if(is.null(tmp) | !is.list(tmp)) return(NULL)
     if (length(unique(tmp$cl))==1) return(NULL)

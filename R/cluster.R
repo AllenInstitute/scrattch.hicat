@@ -52,49 +52,11 @@ jaccard_louvain.RANN <- function(dat,
   library(RANN)  
   
   knn.matrix = RANN::nn2(dat, k = k)[[1]]
-  jaccard.adj  <- knn_jaccard(knn.matrix)
-  
-  
-  leiden.result = leiden(jaccard.adj)
-  
+  jaccard.adj  <- knn_jaccard(knn.matrix)  
   jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
                                         mode = "undirected", 
                                         weighted = TRUE)
   louvain.result <- igraph::cluster_louvain(jaccard.gr)
-  mod.sc <- igraph::modularity(louvain.result)
-  
-  if(pass_louvain(mod.sc, jaccard.adj)) {
-    
-    cl <- setNames(louvain.result$membership, row.names(dat))
-    
-    return(list(cl = cl, result = louvain.result))
-    
-  } else{
-    return(NULL)
-  }
-}
-
-#' Perform Jaccard/Louvain clustering based on RANN
-#'
-#' @param dat A matrix of features (rows) x samples (columns)
-#' @param k K nearest neighbors to use
-#' 
-#' @return A list object with the cluster factor object and (cl) and Jaccard/Louvain results (result)
-#' 
-jaccard_leiden.RANN <- function(dat, 
-                                k = 10)
-{
-  library(igraph)
-  library(matrixStats)
-  library(RANN)  
-  library(leiden)
-  
-  knn.matrix = RANN::nn2(dat, k = k)[[1]]
-  
-  jaccard.adj  <- knn_jaccard(knn.matrix)
-  
-  
-  leiden.result <- igraph::cluster_louvain(jaccard.gr)
   mod.sc <- igraph::modularity(louvain.result)
   
   if(pass_louvain(mod.sc, jaccard.adj)) {
@@ -159,8 +121,8 @@ filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
 #
 
 jaccard_leiden <- function(dat, k = 10, weight = NULL,
-                           num_iter = 2,
-                           resolution_parameter = 0.0001,
+                           num_iter = 5,
+                           resolution_parameter = 1,                           
                            random_seed = NULL,
                            verbose = FALSE, ...) {
   
@@ -182,8 +144,8 @@ jaccard_leiden <- function(dat, k = 10, weight = NULL,
   
   cluster_result <- leidenbase::leiden_find_partition(jaccard.gr,
                                                       partition_type = partition_type,
-                                                      num_iter=10,
-                                                      resolution_parameter=0.01,
+                                                      num_iter=num_iter,
+                                                      resolution_parameter=resolution_parameter,
                                                       verbose = FALSE )
   
   cl <- setNames(cluster_result$membership, row.names(dat))
@@ -222,7 +184,7 @@ jaccard_leiden <- function(dat, k = 10, weight = NULL,
 onestep_clust <- function(norm.dat, 
                           select.cells = colnames(norm.dat), 
                           counts = NULL, 
-                          method = c("louvain","leiden","ward.D", "kmeans"), 
+                          method = c("leiden","louvain","ward.D", "kmeans"), 
                           vg.padj.th = 0.5, 
                           dim.method = c("pca","WGCNA"), 
                           max.dim = 20, 
@@ -236,7 +198,8 @@ onestep_clust <- function(norm.dat,
                           k.nn = 15,
                           prefix = NULL, 
                           verbose = FALSE, 
-                          regress.x=NULL)
+                          regress.x=NULL,
+                          max.cl=NULL)
 
 {
   library(matrixStats)
@@ -261,10 +224,10 @@ onestep_clust <- function(norm.dat,
   ###Find high variance genes.
   if(is.null(counts)){
     if(is.matrix(norm.dat)){
-      counts = 2^(norm.dat[,sampled.cells])-1
+      counts = 2^(norm.dat[select.genes,sampled.cells])-1
     }
     else{
-      counts = norm.dat[,sampled.cells]
+      counts = norm.dat[select.genes,sampled.cells]
       counts@x = 2^(norm.dat@x) - 1
     }
   }
@@ -272,7 +235,9 @@ onestep_clust <- function(norm.dat,
   if(verbose & !is.null(prefix)){
     plot_file=paste0(prefix,".vg.pdf")
   }
-  vg = find_vg(as.matrix(counts[select.genes,sampled.cells]),plot_file=plot_file)
+  vg = find_vg(counts,plot_file=plot_file)
+  rm(counts)
+  gc()
   if(dim.method=="auto"){
     if(length(select.cells)> 1000){
       dim.method="pca"
@@ -305,13 +270,16 @@ onestep_clust <- function(norm.dat,
   if(!is.null(rm.eigen)){
     rd.dat <- filter_RD(rd.dat, rm.eigen, rm.th, verbose=verbose)
   }
+ 
   if(is.null(rd.dat)||ncol(rd.dat)==0){
     return(NULL)
   }
   if(verbose){
     print(method)
   }
-  max.cl = ncol(rd.dat)*2 + 1
+  if(is.null(max.cl)){
+    max.cl = ncol(rd.dat)*2 + 1
+  }
   if(method=="louvain"){
     k = pmin(k.nn, round(nrow(rd.dat)/2))
     tmp = jaccard_louvain(rd.dat, k)
@@ -320,15 +288,12 @@ onestep_clust <- function(norm.dat,
     }
     cl = tmp$cl
     if(length(unique(cl))>max.cl){
-      tmp.means =do.call("cbind",tapply(names(cl),cl, function(x){
-        colMeans(rd.dat[x,,drop=F])
-      },simplify=F))
+      tmp.means = get_cl_means(rd.dat, cl)
       tmp.hc = hclust(dist(t(tmp.means)), method="average")
       tmp.cl= cutree(tmp.hc, pmin(max.cl, length(unique(cl))))
       cl = setNames(tmp.cl[as.character(cl)], names(cl))
     }
   }
-  
   
   else if(method=="leiden"){
     k = pmin(k.nn, round(nrow(rd.dat)/2))
@@ -359,8 +324,8 @@ onestep_clust <- function(norm.dat,
     stop(paste("Unknown clustering method", method))
   }
   #print(table(cl))
-  rd.dat.t = t(rd.dat)
-  merge.result=merge_cl(norm.dat, cl=cl, rd.dat.t=rd.dat.t, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size,verbose=verbose)
+  merge.result=merge_cl(norm.dat, cl=cl, rd.dat=rd.dat, merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size,verbose=verbose)
+  
   gc()
   if(is.null(merge.result))return(NULL)
   sc = merge.result$sc

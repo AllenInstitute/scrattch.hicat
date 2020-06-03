@@ -20,8 +20,6 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)
     pairs = names(de.genes)
     pairs.df = gsub("cl","", do.call("rbind",strsplit(pairs, "_")))
 
-
-
     row.names(pairs.df)=pairs
     select.pairs = pairs[pairs.df[,1] %in% cl & pairs.df[,2]%in% cl]
     de.markers = sapply(select.pairs, function(s){

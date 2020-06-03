@@ -222,6 +222,11 @@ convert_pair_matrix_str <- function(pair.str,
 }
 
 
+get_weighted_means <- function(mat, w)
+  {
+    rowSums(tcrossprod(mat,diag(w)))/sum(w)
+  }
+
 #' Generate a sparse matrix one-hot representation of clusters x samples
 #' 
 #' @param cl a cluster factor object
@@ -229,20 +234,25 @@ convert_pair_matrix_str <- function(pair.str,
 #' @return a sparse, one-hot matrix indicating which cluster(columns) each sample (rows) belongs to.
 #' @export
 #' 
-get_cl_mat <- function(cl) {
+get_cl_mat <- function(cl, all.cells=NULL) {
   
   if(!is.factor(cl)){
     cl <- as.factor(cl)
   }
   cl <- droplevels(cl)
-  
-  cl.mat <- Matrix::sparseMatrix(i = 1:length(cl),  
-                                 j = as.integer(cl), 
-                                 x = 1)
-  
-  rownames(cl.mat) <- names(cl)
+  if(is.null(all.cells)){
+    all.cells = names(cl)
+    i = 1:length(cl)
+  }
+  else{
+    i = match(names(cl),all.cells)
+  }
+  j = as.integer(cl)
+  cl.mat <- Matrix::sparseMatrix(i = i,
+                                 j = j,
+                                 x = 1, dims=c(length(all.cells), max(j)))  
+  rownames(cl.mat) <- all.cells
   colnames(cl.mat) <- levels(cl)
-  
   return(cl.mat)
 }
 
@@ -255,14 +265,15 @@ get_cl_mat <- function(cl) {
 #' @export
 #' 
 get_cl_sums <- function(mat, 
-                        cl) {
-  
-  cl.mat <- get_cl_mat(cl)
+                        cl)
+{  
   if(all(names(cl) %in% colnames(mat))){
-    cl.sums <- Matrix::tcrossprod(mat[,rownames(cl.mat)], Matrix::t(cl.mat))
+    cl.mat <- get_cl_mat(cl, all.cells=colnames(mat))
+    cl.sums <- Matrix::tcrossprod(mat, Matrix::t(cl.mat))
   }
   else{
-    cl.sums <- Matrix::crossprod(mat[,rownames(cl.mat)], cl.mat)
+    cl.mat <- get_cl_mat(cl, all.cells=row.names(mat))
+    cl.sums <- Matrix::crossprod(mat, cl.mat)
   }
   cl.sums <- as.matrix(cl.sums)
   return(cl.sums)
@@ -288,7 +299,17 @@ get_cl_means <- function(mat,
   return(cl.means)
 }
 
-
+get_cl_present <- function(mat, cl, low.th)
+  {
+    tmp = mat
+    if(is.matrix(tmp)){
+      tmp = tmp > low.th
+    }
+    else{
+      tmp@x = as.numeric(tmp@x > low.th)
+    }
+    cl.present = get_cl_means(tmp,cl)
+  }
 
 get_cl_sqr_means<- function(mat, cl)
   {

@@ -479,6 +479,7 @@ simple_ebayes <- function(fit,proportion=0.01,stdev.coef.lim=c(0.1,4),trend=FALS
 #	8 Sept 2002.  Last revised 1 May 2013.
 #	Made a non-exported function 18 Feb 2018.
 {
+  require(limma)
 	coefficients <- fit$coefficients
 	stdev.unscaled <- fit$stdev.unscaled
 	sigma <- fit$sigma
@@ -532,12 +533,12 @@ de_pair_fast_limma <- function(pair,
   padj <- p.adjust(pval) 
   
    # Note: Above depends on the data being log2 scaled already.
-                                        # If we change this expectation, we may need a more generalized calculation.
+   # If we change this expectation, we may need a more generalized calculation.
    # fc <- cl.means[, x] / cl.means[, y]
    # lfc <- log2(fc)
    # lfc[is.na(lfc)] <- 0
 
-   results <- data.frame(padj = padj,
+  results <- data.frame(padj = padj,
                          pval = pval,
                          lfc = lfc,
                          meanA = m1,
@@ -545,9 +546,9 @@ de_pair_fast_limma <- function(pair,
                          q1 = cl.present[[x]],
                          q2 = cl.present[[y]])
 
-   row.names(results) <- genes
+  row.names(results) <- genes
 
-     return(results)
+  return(results)
 
  }
 
@@ -570,26 +571,26 @@ de_pair_fast_limma <- function(pair,
                                cl,
                                pairs,
                                de.param = de_parm(),
-                               method = "limma", 
+                               method = "fast_limma", 
                                cl.means = NULL,
                                cl.present = NULL,
-                               cl.sq.means = NULL,
+                               cl.sqr.means = NULL,
                                use.voom = FALSE, 
                                counts = NULL,
                                mc.cores = 1,
                                return.df = FALSE) {
    
   method <- match.arg(method,
-                      choices = c("limma", "fast_limma", "chisq", "t.test"))
+                      choices = c("fast_limma", "limma","chisq", "t.test"))
                                         
   if(use.voom & is.null(counts)) {
     stop("The use.voom = TRUE parameter requires a raw count matrix via the counts parameter.")
   }
   
   # Sample filtering based on selected clusters
-  select.cl <- unique(c(pairs[,1], pairs[,2]))
   cl.size <- table(cl)
   cl.size = setNames(as.integer(cl.size), names(cl.size))
+  select.cl <- unique(c(pairs[,1], pairs[,2]))
   select.cl <- intersect(select.cl, names(cl.size)[cl.size >= de.param$min.cells])
   pairs = pairs[pairs[,1]%in% select.cl & pairs[,2] %in% select.cl,]
 
@@ -624,15 +625,11 @@ de_pair_fast_limma <- function(pair,
   
   # Compute fraction of cells in each cluster with expression >= low.th
   if(is.null(cl.present)){
-    low.th = de.param$low.th
-    if(length(low.th) == 1) {
-      low.th <- setNames(rep(low.th, nrow(norm.dat)), row.names(norm.dat))      
-    }
-    cl.present <- as.data.frame(get_cl_means(norm.dat >= low.th[row.names(norm.dat)],cl))
+    cl.present <- as.data.frame(get_cl_present(norm.dat, cl, de.param$low.th))
   } else {
     cl.present <- as.data.frame(cl.present)
   }
-
+  
   if(method == "limma"){
     norm.dat <- as.matrix(norm.dat[, names(cl)])
     cl <- setNames(as.factor(paste0("cl",cl)),names(cl))
@@ -661,11 +658,11 @@ de_pair_fast_limma <- function(pair,
     registerDoSEQ()
   }
   else {
-    cl <- makeForkCluster(mc.cores)
-    doParallel::registerDoParallel(cl)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
+    Clu <- makeForkCluster(mc.cores)
+    doParallel::registerDoParallel(Clu)
+    on.exit(parallel::stopCluster(Clu), add = TRUE)
   }                 
-
+  
   de_list = pvec(1:nrow(pairs), function(x){
     sapply(x, function(i){
       if(method == "limma") {
@@ -834,17 +831,19 @@ de_stats_pair <- function(df,
     up.score <- sum(tmp)
     tmp = down.genes
     tmp[tmp > 20] = 20
-    down.score <- sum(down)    
+    down.score <- sum(tmp)    
    
     result=list(
+      up.genes=up.genes,
+      down.genes=down.genes,
       up.score = up.score,
       down.score = down.score,
       score = up.score + down.score,
       up.num = length(up.genes),
       down.num = length(down.genes),
-      num = up.num + down.num
+      num = length(up.genes) + length(down.genes)
       )
-
+    
 
     if(return.df){
       result$de.df = df[select,]
