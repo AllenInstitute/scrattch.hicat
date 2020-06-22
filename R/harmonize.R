@@ -486,7 +486,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
 #' @examples
 sim_knn <- function(sim, k=15)
 {
-  
+  require(matrixStats)
   th =  rowOrderStats(as.matrix(sim), which=ncol(sim)-k+1)
   select = sim >= th
   knn.idx = t(apply(select, 1, function(x)head(which(x),k)))

@@ -81,7 +81,7 @@ merge_cl<- function(norm.dat,
       cl.rd = as.data.frame(get_cl_means(rd.dat,cl[names(cl) %in% row.names(rd.dat)]))
     }
     else{
-      cl.rd = as.data.frame(get_cl_means(rd.dat.t,cl[names(cl) %in% colnames(rd.dat)]))
+      cl.rd = as.data.frame(get_cl_means(rd.dat.t,cl[names(cl) %in% colnames(rd.dat.t)]))
     }
     cl.size = table(cl)
     while(TRUE){
@@ -229,7 +229,7 @@ merge_cl<- function(norm.dat,
       else{
         tmp.cl= cl
       }
-      de.genes = de_all_pairs(norm.dat, cl=tmp.cl, de.genes=de.genes, de.param=de.param, cl.means=cl.means, cl.present=cl.present, cl.sqr.mans=cl.sqr.means)
+      de.genes = de_all_pairs(norm.dat, cl=tmp.cl, de.genes=de.genes, de.param=de.param, cl.means=cl.means, cl.present=cl.present, cl.sqr.means=cl.sqr.means)
     }
     markers = select_markers(norm.dat, cl, de.genes=de.genes, n.markers=50)$markers
     sc = sapply(de.genes, function(x){

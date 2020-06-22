@@ -48,7 +48,7 @@ get_co_ratio <- function(cl.mat, cells, n.times)
 
 #' Iterative consensus clustering
 #'
-#' @param co.ratio cell cell co-clustering matrix
+#' @param co.ratio cell cel√l co-clustering matrix
 #' @param cl.list  The list of subsampled clustering results. 
 #' @param norm.dat The log2 transformed normalzied expression matrix 
 #' @param select.cells Cells to be clustered
@@ -165,7 +165,7 @@ iter_consensus_clust <- function(cl.list,
     }
     tmp.cl=merge_cl_by_co(tmp.cl, co.ratio=co.ratio, cl.mat=cl.mat[,names(tmp.cl)],diff.th)
     cell.cl.co.ratio= get_cell.cl.co.ratio(tmp.cl, co.ratio= co.ratio, cl.mat=cl.mat[,names(tmp.cl)])    
-    tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, verbose=verbose,  de.param = de.param, return.markers=TRUE, max.cl.size= max.cl.size, merge.type=merge.type)
+    tmp= merge_cl(norm.dat=norm.dat, cl=tmp.cl, rd.dat=cell.cl.co.ratio, verbose=verbose,  de.param = de.param, return.markers=FALSE, max.cl.size= max.cl.size, merge.type=merge.type)
     markers=tmp$markers
     if(is.null(tmp) | !is.list(tmp)) return(NULL)
     if (length(unique(tmp$cl))==1) return(NULL)
@@ -219,12 +219,17 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     if(is.null(result)){
       return(NULL)
     }
-    cl= result$cl
+    cl= result$cl    
     test.cells = setdiff(all.cells, names(cl))
-    markers=unique(result$markers)
-    map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="mean")$pred.df
-    test.cl = setNames(map.df$pred.cl, row.names(map.df))
-    all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
+    if(length(test.cells)>0){
+      markers=unique(result$markers)
+      map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="mean")$pred.df
+      test.cl = setNames(map.df$pred.cl, row.names(map.df))
+      all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
+    }
+    else{
+      all.cl = cl
+    }
     return(all.cl[all.cells])
   }
   if (mc.cores==1){

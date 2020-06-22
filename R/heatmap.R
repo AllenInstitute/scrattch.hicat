@@ -452,7 +452,7 @@ heatmap.3 <- function (x,
       lmat <- rbind(lmat[1, ] + 1, c(NA, 1), lmat[2, ] + 1)
       nnn <- ifelse(is.vector(ColSideColors),
                     1,
-                    nrow(colSideColors))
+                    nrow(ColSideColors))
       lhei <- c(lhei[1], nnn * 0.1, lhei[2])
     }
     if (!missing(RowSideColors)) {

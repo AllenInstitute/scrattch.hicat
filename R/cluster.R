@@ -122,7 +122,7 @@ filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
 
 jaccard_leiden <- function(dat, k = 10, weight = NULL,
                            num_iter = 5,
-                           resolution_parameter = 1,                           
+                           resolution_parameter = 0.01,                           
                            random_seed = NULL,
                            verbose = FALSE, ...) {
   
@@ -130,9 +130,11 @@ jaccard_leiden <- function(dat, k = 10, weight = NULL,
   library(matrixStats)
   library(RANN)  
   library(Matrix)
-  
+
+  if(verbose){
+    cat("Compute Jaccard distance\n")
+  }
   knn.matrix = RANN::nn2(dat, k = k)[[1]]
-  
   jaccard.adj  <- knn_jaccard(knn.matrix)
   jaccard.gr <- igraph::graph.adjacency(jaccard.adj, 
                                         mode = "undirected", 
@@ -141,7 +143,9 @@ jaccard_leiden <- function(dat, k = 10, weight = NULL,
   partition_type <- 'CPMVertexPartition'
   
   #write line to determine optimal resolutoin↔
-  
+  if(verbose){
+    cat("Leiden clustering\n")
+  }
   cluster_result <- leidenbase::leiden_find_partition(jaccard.gr,
                                                       partition_type = partition_type,
                                                       num_iter=num_iter,
@@ -149,8 +153,6 @@ jaccard_leiden <- function(dat, k = 10, weight = NULL,
                                                       verbose = FALSE )
   
   cl <- setNames(cluster_result$membership, row.names(dat))
-  
-  
   return(list(cl = cl, result = cluster_result))
 }
 
@@ -184,7 +186,7 @@ jaccard_leiden <- function(dat, k = 10, weight = NULL,
 onestep_clust <- function(norm.dat, 
                           select.cells = colnames(norm.dat), 
                           counts = NULL, 
-                          method = c("leiden","louvain","ward.D", "kmeans"), 
+                          method = c("louvain","ward.D", "leiden","kmeans"), 
                           vg.padj.th = 0.5, 
                           dim.method = c("pca","WGCNA"), 
                           max.dim = 20, 
@@ -220,7 +222,8 @@ onestep_clust <- function(norm.dat,
     sampled.cells = select.cells
   }
   ###Find high variance genes
-  select.genes = row.names(norm.dat)[which(Matrix::rowSums(norm.dat[,select.cells] > de.param$low.th) >= de.param$min.cells)]
+  tmp = get_cl_present(norm.dat, setNames(rep(1, length(select.cells)),select.cells), de.param$low.th)
+  select.genes = row.names(norm.dat)[which(tmp * length(select.cells) >= de.param$min.cells)]
   ###Find high variance genes.
   if(is.null(counts)){
     if(is.matrix(norm.dat)){
@@ -262,7 +265,11 @@ onestep_clust <- function(norm.dat,
     if(length(select.genes)< de.param$min.genes){
       return(NULL)
     }
-    rd.dat = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)$rd.dat
+    rd.result = rd_PCA(norm.dat,select.genes, select.cells, sampled.cells=sampled.cells, max.pca = max.dim)    
+    rd.dat = rd.result$rd.dat
+    if(verbose){
+      cat("PCA dimensions:",ncol(rd.dat),"\n")
+    }
   }
   if(is.null(rd.dat)||ncol(rd.dat)==0){
     return(NULL)
@@ -278,7 +285,7 @@ onestep_clust <- function(norm.dat,
     print(method)
   }
   if(is.null(max.cl)){
-    max.cl = ncol(rd.dat)*2 + 1
+    max.cl = pmin(ncol(rd.dat)*2 + 1, round(length(select.cells)/de.param$min.cells))
   }
   if(method=="louvain"){
     k = pmin(k.nn, round(nrow(rd.dat)/2))

@@ -592,7 +592,7 @@ de_pair_fast_limma <- function(pair,
   cl.size = setNames(as.integer(cl.size), names(cl.size))
   select.cl <- unique(c(pairs[,1], pairs[,2]))
   select.cl <- intersect(select.cl, names(cl.size)[cl.size >= de.param$min.cells])
-  pairs = pairs[pairs[,1]%in% select.cl & pairs[,2] %in% select.cl,]
+  pairs = pairs[pairs[,1]%in% select.cl & pairs[,2] %in% select.cl,,drop=F]
 
   cl <- cl[cl %in% select.cl]
   if(is.factor(cl)){
@@ -652,7 +652,9 @@ de_pair_fast_limma <- function(pair,
   else if (method == "t.test"){
     cl.vars <- as.data.frame(get_cl_vars(norm.dat, cl, cl.means = cl.means))
   }
-  library(foreach)
+  if(nrow(pairs)< 50){
+    mc.cores=1
+  }
   library(doParallel)
   if (mc.cores == 1) {
     registerDoSEQ()
@@ -744,6 +746,20 @@ create_pairs <- function(cn, direction="nondirectional", include.self = FALSE)
   }
 
 
+null_de <- function()
+  {
+    tmp=sapply(c("score","up.score","down.score","num","up.num","down.num"), function(x)0)
+    tmp = c(tmp, list(up.genes=NULL, down.genes=NULL))
+  }
+
+
+get_de_truncate_score_sum <- function(gene.score, th=20)
+  {
+    tmp = gene.score
+    tmp[tmp > 20] = 20
+    return(sum(tmp))
+  }
+
 #' Compute differential expression summary statistics based on a differential results data.frame and de_param().
 #' 
 #' @param df A data.frame of pairwise differential expression results (i.e. from \code{score_selected_pairs()}).
@@ -781,7 +797,7 @@ de_stats_pair <- function(df,
    }
   
   if(is.null(select) | length(select) == 0){
-    return(list())
+    return(null_de())
   }
   
   up <- select[df[select, "lfc"] > 0]
@@ -820,7 +836,7 @@ de_stats_pair <- function(df,
   select <- c(up, down)
   
   if(length(select) == 0){
-    return(list())
+    return(null_de())
   } else {
 
     up.genes = setNames(-log10(df[up,"padj"]), up)
@@ -868,7 +884,7 @@ de_stats_pair <- function(df,
 de_all_pairs <- function(norm.dat, 
                                cl,
                                de.param = de_param(), 
-                               method = "limma", 
+                               method = "fast_limma", 
                                de.genes = NULL,
                                ...) {   
   cn <- as.character(sort(unique(cl)))

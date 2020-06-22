@@ -279,6 +279,23 @@ get_cl_sums <- function(mat,
   return(cl.sums)
 }
 
+###Get row means without subsetting the matrix
+get_row_sums <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
+  {
+    if(!is.integer(select.col)){
+      select.col = match(select.col, colnames(mat))
+    }
+    tmp.mat = Matrix::sparseMatrix(x = 1, j= select.col, i = rep(1,length(select.col)),dims=c(1, ncol(mat)))
+    sums = Matrix::tcrossprod(mat,tmp.mat)
+    sums[select.row,]
+  }
+
+get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
+  {
+    sums = get_row_sums(mat, select.row, select.col)
+    sums/ length(select.col)
+  }
+
 #' Compute cluster means for each row in a matrix
 #' 
 #' @param mat A gene (rows) x samples (columns) sparse matrix
@@ -378,7 +395,7 @@ get_cl_medians <- function(mat, cl)
 #' 
 get_cl_prop <- function(mat, 
                         cl, 
-                        threshold = 1) {
+                        threshold = 0) {
   
   cl.mat <- get_cl_mat(cl)
   
