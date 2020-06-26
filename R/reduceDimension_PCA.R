@@ -56,7 +56,7 @@ rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=coln
   if(length(sampled.cells)< length(select.cells)){
     rot  =  pca$rotatio[,select,drop=F]
     tmp.dat = norm.dat[row.names(rot), select.cells,drop=F]
-    rd.dat = as.matrix(crossprod(tmp.dat, rot))
+    rd.dat = as.matrix(Matrix::crossprod(tmp.dat, rot))
   }
   else{
     rd.dat=pca$x[,select,drop=F]

@@ -224,7 +224,7 @@ convert_pair_matrix_str <- function(pair.str,
 
 get_weighted_means <- function(mat, w)
   {
-    rowSums(tcrossprod(mat,diag(w)))/sum(w)
+    rowSums(Matrix::tcrossprod(mat,diag(w)))/sum(w)
   }
 
 #' Generate a sparse matrix one-hot representation of clusters x samples
