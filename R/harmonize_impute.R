@@ -83,7 +83,7 @@ predict_knn_new <- function(knn.idx, reference, cl, ...)
 #' @export
 #'
 #' @examples
-impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w, ...)
+impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, ...)
   {
     query = row.names(knn.idx)
     impute.dat= matrix(0, nrow=nrow(knn.idx),ncol=ncol(dat))
