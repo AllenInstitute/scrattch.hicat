@@ -18,3 +18,8 @@ r_github_packages:
 bioc_packages:
   - limma
   - WGCNA
+  
+script: 
+  - |
+    R CMD build .
+    travis_wait 20 R CMD check scrattch.hicat*tar.gz
