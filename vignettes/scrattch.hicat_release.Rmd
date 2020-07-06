@@ -11,10 +11,11 @@ vignette: >
 
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+TRAVIS <- !identical(tolower(Sys.getenv("TRAVIS")), "true")
+knitr::opts_chunk$set(purl = TRAVIS,
+      collapse = TRUE,
+        comment = "#>"
+        )
 ```
 
 `scrattch.hicat` offers functions to perform iterative clustering for single cell RNAseq datasets. 
