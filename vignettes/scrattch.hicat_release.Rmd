@@ -11,9 +11,7 @@ vignette: >
 
 
 ```{r, include = FALSE}
-TRAVIS <- !identical(tolower(Sys.getenv("TRAVIS")), "true")
-knitr::opts_chunk$set(purl = TRAVIS,
-      collapse = TRUE,
+knitr::opts_chunk$set(collapse = TRUE,
         comment = "#>"
         )
 ```
