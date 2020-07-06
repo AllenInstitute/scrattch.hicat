@@ -348,7 +348,7 @@ result <- run_consensus_clust(norm.dat[,select.cells],
                               niter = 20, 
                               de.param = de.param, 
                               rm.eigen = rm.eigen, 
-                              dim.method = "PCA", 
+                              dim.method = "pca", 
                               output_dir = "subsample_PCA")
 ```
 
@@ -359,7 +359,7 @@ result <- run_consensus_clust(norm.dat,
                               niter = 20, 
                               de.param = de.param, 
                               rm.eigen = rm.eigen, 
-                              dim.method = "PCA", 
+                              dim.method = "pca", 
                               output_dir = "subsample_PCA", 
                               mc.cores = 4)
 ```
@@ -393,7 +393,7 @@ subsample.result <- sapply(1:n_iter,
                              result <- iter_clust(norm.dat, 
                                                   select.cells = tmp.cells, 
                                                   prefix = prefix, 
-                                                  dim.method = "PCA", 
+                                                  dim.method = "pca", 
                                                   de.param = de.param)
                              save(result, file = file.path(d, paste0("result.", i, ".rda")))
                            }
