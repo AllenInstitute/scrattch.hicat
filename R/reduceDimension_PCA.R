@@ -1,4 +1,5 @@
-#' prcomp irlba
+
+                                        #' prcomp irlba
 #'
 #' @param x 
 #' @param max.rank 
@@ -37,32 +38,50 @@ prcomp.irlba <- function(x, max.rank=500, maxit=1000, tol=1e-05, center=TRUE,...
 #' @export
 #'
 #' @examples
-rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2)
+rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2, verbose=FALSE)
 {
   library(Matrix)
   library(stats)
-  
-  pca = stats::prcomp(t(as.matrix(norm.dat[select.genes,sampled.cells])),tol=0.01)
 
-  #pca.importance = summary(pca)$importance
-  #v = pca.importance[2,]
-  #m = mean(tail(v, length(v))/2)
-  #sd = sd(tail(v, length(v))/2)
-  #z= (v - m)/sd
-  select = 1:min(max.pca,findElbowPoint(pca$sdev^2))
-  if(length(select)==0){
+  tmp = get_PCA(norm.dat[select.genes, sampled.cells], max.pca, verbose=verbose)
+  if(is.null(tmp)){
     return(NULL)
   }
+  rot = tmp$rot
+  rd.dat = tmp$rd.dat
   if(length(sampled.cells)< length(select.cells)){
-    rot  =  pca$rotatio[,select,drop=F]
+    if(verbose){
+      print("Project")
+    }
     tmp.dat = norm.dat[row.names(rot), select.cells,drop=F]
-    rd.dat = as.matrix(Matrix::crossprod(tmp.dat, rot))
-  }
-  else{
-    rd.dat=pca$x[,select,drop=F]
+    rd.dat = as.matrix(Matrix::crossprod(tmp.dat, rot))  
   }
   return(list(rd.dat=rd.dat, pca=pca))
 }
+
+
+get_PCA <- function(dat, max.pca, verbose=FALSE)
+  {
+    library(Matrix)
+    library(stats)
+    
+    pca = stats::prcomp(t(as.matrix(dat)),tol=0.01)
+    dim.elbow = findElbowPoint(pca$sdev^2)
+    if(verbose){
+      cat("Elbow dim:", dim.elbow, "\n")
+    }
+    select = 1:min(max.pca,dim.elbow)
+    if(length(select)==0){
+      return(NULL)
+    }
+    rot  =  pca$rotatio[,select,drop=F]
+    rd.dat = pca$x[,select,drop=F]
+    return(list(rot=rot, rd.dat = rd.dat,pca=pca))
+  }
+
+
+
+
 
 top_loading_genes <- function(rot,top.n=10)
   {

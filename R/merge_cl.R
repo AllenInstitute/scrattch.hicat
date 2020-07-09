@@ -117,10 +117,11 @@ merge_cl<- function(norm.dat,
       cl.rd[[p[2]]] = NULL
       cl.size[p[1]] = sum(cl.size[p])
       cl.size = cl.size[names(cl.size)!=p[2]]
-    }		
-    cl.means = as.data.frame(get_cl_means(norm.dat, cl))
-    cl.present = as.data.frame(get_cl_present(norm.dat, cl,low.th=de.param$low.th))
-    cl.sqr.means = as.data.frame(get_cl_sqr_means(norm.dat,cl))
+    }
+    tmp.cl = cl[names(cl) %in% colnames(norm.dat)]
+    cl.means = as.data.frame(get_cl_means(norm.dat, tmp.cl))
+    cl.present = as.data.frame(get_cl_present(norm.dat, tmp.cl,low.th=de.param$low.th))
+    cl.sqr.means = as.data.frame(get_cl_sqr_means(norm.dat,tmp.cl))
 
     while(length(unique(cl)) > 1){
       if(length(unique(cl)) == 2){
