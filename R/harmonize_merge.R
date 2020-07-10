@@ -42,7 +42,8 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
         if(nrow(tmp.pairs)==0){
           next
         }
-        de.genes.list[[x]] = c(de.genes.list[[x]], de_selected_pairs(norm.dat, cl= tmp.cl, pairs = tmp.pairs, de.param=de.param, method=method,cl.means=cl.means.list[[x]], cl.present = cl.present.list[[x]], cl.sqr.means=cl.sqr.means.list[[x]]))
+        tmp = de_selected_pairs(norm.dat, cl= tmp.cl, pairs = tmp.pairs, de.param=de.param.list[[x]], method=method,cl.means=cl.means.list[[x]], cl.present = cl.present.list[[x]], cl.sqr.means=cl.sqr.means.list[[x]])
+        de.genes.list[[x]] = c(de.genes.list[[x]], tmp)
       }               
       for(p in row.names(pairs)){
         lfc = sapply(names(cl.means.list), function(x){
@@ -53,7 +54,10 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
             NULL
           }
         })
-        lfc = as.matrix(lfc)
+        if(is.list(lfc)){
+          lfc = lfc[!sapply(lfc,is.null)]
+          lfc = do.call("cbind",lfc)
+        }
         row.names(lfc) = comb.dat$common.genes
         sign1 = rowSums(lfc > 1)
         sign2 = rowSums(lfc < -1)
@@ -63,8 +67,8 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
           if(is.null(de.genes.list[[x]][[p]])){
             next
           }
-          up.genes = de.genes.list[[p]]$up.genes
-          down.genes = de.genes.list[[p]]$down.genes
+          up.genes = de.genes.list[[x]][[p]]$up.genes
+          down.genes = de.genes.list[[x]][[p]]$down.genes
           up.genes = up.genes[names(up.genes) %in% select.genes]
           down.genes = down.genes[names(down.genes) %in% select.genes]
           tmp = up.genes
@@ -72,7 +76,7 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
           up.score <- sum(tmp)
           tmp = down.genes
           tmp[tmp > 20] = 20
-          down.score <- sum(down)    
+          down.score <- sum(tmp)    
    
           de.genes.list[[x]][[p]]=list(
                               up.score = up.score,
@@ -80,7 +84,7 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
                               score = up.score + down.score,
                               up.num = length(up.genes),
                               down.num = length(down.genes),
-                              num = up.num + down.num
+                              num = length(up.genes) + length(down.genes)
                               )
           
         }
@@ -161,7 +165,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
 {
   print("merge_cl_multiple")
   cl = setNames(as.character(cl),names(cl))
-  merge_x_y <- function(x, y, cl, cl.rd.list, cl.sim, cl.means.list=NULL, cl.present.list=NULL)
+  merge_x_y <- function(x, y)
   {
     cl[cl==x]= y
     if(length(unique(cl))==1){
@@ -212,6 +216,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
       }
 
       if(!is.null(cl.present.list)){
+        
         tmp = colnames(cl.present.list[[set]])!=x
         cl.present.list[[set]] = cl.present.list[[set]][,tmp,drop=F]
         tmp.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F] >= merge.de.param.list[[set]]$low.th)
@@ -305,7 +310,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     return(NULL)
   }
   #cl.rd.list = get_cl_means_list(merge.dat.list, merge.de.param.list, select.genes=anchor.genes, cl=cl)
-  cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, select.genes=anchor.genes)
+  cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, select.genes=anchor.genes, de.param.list = merge.de.param.list)
   
   pairs=NULL
   ###Merge small clusters first
@@ -319,7 +324,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     if(verbose > 0){
         cat("Merge: ", x,y, "sim:", knn[closest.pair,3],"\n")
       }
-    update.result=merge_x_y(x, y, cl, cl.rd.list, cl.sim)
+    update.result=merge_x_y(x, y)
     if(is.null(update.result)){
       return(NULL)
     }
@@ -328,17 +333,18 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     cl.sim = update.result$cl.sim
     cl.means.list = update.result$cl.means.list
     cl.present.list = update.result$cl.present.list
+    cl.sqr.means.list = update.result$cl.sqr.means.list
     cl.small = cl.small[cl.small!=x]
   }
   merge.de.param.list = comb.dat$de.param.list[merge.sets]
 
-  cl.means.list = get_cl_means_list(merge.dat.list, merge.de.param.list, cl=cl)
+  cl.means.list = get_cl_means_list(merge.dat.list,  cl=cl, de.param.list=merge.de.param.list)
   cl.means.list = sapply(cl.means.list, as.data.frame, simplify=F)
 
-  cl.sqr.means.list = get_cl_sqr_means_list(merge.dat.list, merge.de.param.list, cl=cl)
+  cl.sqr.means.list = get_cl_sqr_means_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list)
   cl.sqr.means.list = sapply(cl.sqr.means.list, as.data.frame, simplify=F)
   
-  cl.present.list = get_cl_present_list(merge.dat.list,merge.de.param.list, cl=cl)
+  cl.present.list = get_cl_present_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list)
   cl.present.list = sapply(cl.present.list, as.data.frame, simplify=F)
 
   
@@ -395,7 +401,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         if (verbose > 0) {
           cat("Merge ", x, y, merge.sc[i], sim, sum(cl == x),  "cells", sum(cl == y), "cells", "\n")
         }         
-        update.result=merge_x_y(x=x, y=y, cl, cl.rd.list, cl.sim, cl.means.list, cl.present.list)
+        update.result=merge_x_y(x=x, y=y)
         if(is.null(update.result)){
           return(NULL)
         }
@@ -404,6 +410,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         cl.sim = update.result$cl.sim
         cl.means.list = update.result$cl.means.list
         cl.present.list = update.result$cl.present.list
+        cl.sqr.means.list = update.result$cl.sqr.means.list
         rm.pairs = de.pairs[, 1] %in% c(x,y) | de.pairs[, 2] %in% c(x,y)
         de.genes.list = rm_pairs_de_genes(de.genes.list, row.names(de.pairs)[rm.pairs])
         de.pairs = de.pairs[!rm.pairs,,drop=F]        

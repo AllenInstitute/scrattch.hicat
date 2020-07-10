@@ -149,6 +149,9 @@ get_cl_means_list <- function(dat.list, cl, de.param.list=NULL, min.cells=NULL, 
         min.cells = setNames(rep(min.cells, length(dat.list)), names(dat.list))
       }
     }
+    if(is.null(min.cells)){
+      min.cells = setNames(rep(1, length(dat.list)), names(dat.list))
+    }
     cl.means.list = list()
     for(x in sets){
       tmp.cells = intersect(names(cl), colnames(dat.list[[x]]))
@@ -225,18 +228,27 @@ get_cl_sqr_means_list <- function(dat.list, cl, de.param.list=NULL, min.cells=NU
 #' @export
 #'
 #' @examples
-get_cl_present_list <- function(dat.list, de.param.list, select.genes=NULL, cl, sets=names(dat.list))
+get_cl_present_list <- function(dat.list, de.param.list=NULL, min.cells=NULL, select.genes=NULL, cl, sets=names(dat.list))
   {
-    cl.present =  sapply(sets, function(x){
+    if(is.null(min.cells)){
+      if(!is.null(de.param.list)){
+        min.cells = lapply(de.param.list,"[[", "min.cells")
+      }
+      else{
+        min.cells = setNames(rep(1, length(dat.list)), names(dat.list))
+      }
+    }
+    else{
+      if(length(min.cells) ==1){
+        min.cells = setNames(rep(min.cells, length(dat.list)), names(dat.list))
+      }
+    }
+    cl.present.list = list()
+    for(x in sets){
       tmp.cells = intersect(names(cl), colnames(dat.list[[x]]))
       tmp.cl = cl[tmp.cells]
       cl.size = table(tmp.cl)
-      if(!is.null(de.param.list[[x]])){
-        select.cl = names(cl.size)[cl.size >= de.param.list[[x]]$min.cells]
-      }
-      else{
-        select.cl = names(cl.size)[cl.size >= 4]
-      }
+      select.cl = names(cl.size)[cl.size >= min.cells[[x]]]
       if(length(select.cl)==0){
         return(NULL)
       }
@@ -244,14 +256,13 @@ get_cl_present_list <- function(dat.list, de.param.list, select.genes=NULL, cl, 
       if(is.factor(tmp.cl)){
         tmp.cl=droplevels(tmp.cl)
       }
-      if(is.null(select.genes)){
-        tmp=get_cl_means(dat.list[[x]] > de.param.list[[x]]$low.th, tmp.cl)
+      tmp=get_cl_present(dat.list[[x]], tmp.cl, de.param.list$low.th)
+      if(!is.null(select.genes)){
+        tmp=tmp[select.genes,,drop=F]
       }
-      else{
-        tmp=get_cl_means(dat.list[[x]][select.genes,] > de.param.list[[x]]$low.th, tmp.cl)
-      }      
-    },simplify=F)
-    return(cl.present)
+      cl.present.list[[x]]= tmp
+    }
+    return(cl.present.list)
   }
 
 
