@@ -631,6 +631,7 @@ de_pair_fast_limma <- function(pair,
   }
   
   if(method == "limma"){
+    require("limma")    
     norm.dat <- as.matrix(norm.dat[, names(cl)])
     cl <- setNames(as.factor(paste0("cl",cl)),names(cl))
     design <- model.matrix(~0 + cl)
@@ -655,11 +656,11 @@ de_pair_fast_limma <- function(pair,
   if(nrow(pairs)< 50){
     mc.cores=1
   }
-  library(doParallel)
   if (mc.cores == 1) {
     registerDoSEQ()
   }
   else {
+    rquire("doParallel")
     Clu <- makeForkCluster(mc.cores)
     doParallel::registerDoParallel(Clu)
     on.exit(parallel::stopCluster(Clu), add = TRUE)
@@ -668,6 +669,7 @@ de_pair_fast_limma <- function(pair,
   de_list = pvec(1:nrow(pairs), function(x){
     sapply(x, function(i){
       if(method == "limma") {
+        require("limma")
         df= de_pair_limma(pair = pairs[i,],
           cl.present = cl.present,
           cl.means = cl.means,

@@ -1,11 +1,15 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
   person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
   person("Cindy", "van Velthoven", email = "cindy.vanvelthoven@alleninstitute.org", role = c("aut")),
   person("Jeremy", "Miller", email = "jeremym@alleninstitute.org", role = c("aut")),	
+
+
+
+
   person("Adriana","Sedeno-Cortes", email ="adrianas@alleninstitute.org", role = c("aut")),
   person("Changkyu","Lee", email="Changkyul@alleninstitute.org", role = c("aut")),
   person("Lawrence","Huang", email="lawrenceh@alleninstitute.org", role = c("aut")),
@@ -28,13 +32,13 @@ Imports:
   foreach,
   ggplot2,
   grid,
-  limma,
+  Matrix,
   matrixStats,
   pvclust,
   qlcMatrix,
-  Rtsne,
-  WGCNA
-Suggests: 
+  Rtsne
+Suggests:
+    WGCNA, 
     knitr,
     rmarkdown,
     testthat,
