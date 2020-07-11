@@ -256,7 +256,7 @@ get_cl_present_list <- function(dat.list, de.param.list=NULL, min.cells=NULL, se
       if(is.factor(tmp.cl)){
         tmp.cl=droplevels(tmp.cl)
       }
-      tmp=get_cl_present(dat.list[[x]], tmp.cl, de.param.list$low.th)
+      tmp=get_cl_present(dat.list[[x]], tmp.cl, de.param.list[[x]]$low.th)
       if(!is.null(select.genes)){
         tmp=tmp[select.genes,,drop=F]
       }

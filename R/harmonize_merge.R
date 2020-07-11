@@ -58,6 +58,9 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
           lfc = lfc[!sapply(lfc,is.null)]
           lfc = do.call("cbind",lfc)
         }
+        if(is.null(lfc)){
+          return(NULL)
+        }
         row.names(lfc) = comb.dat$common.genes
         sign1 = rowSums(lfc > 1)
         sign2 = rowSums(lfc < -1)

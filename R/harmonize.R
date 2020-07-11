@@ -428,7 +428,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   
   sampled.cells = unlist(cells.list)
   result = knn_jaccard_louvain(knn.comb[sampled.cells,])
-  result$cl.mat = t(result$memberships)
+  result$cl.mat = as.matrix(t(result$memberships))
   row.names(result$cl.mat) = sampled.cells
   result$knn = knn.comb
   cl = setNames(result$cl.mat[,1], row.names(result$cl.mat))
