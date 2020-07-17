@@ -660,7 +660,7 @@ de_pair_fast_limma <- function(pair,
     registerDoSEQ()
   }
   else {
-    rquire("doParallel")
+    require("doParallel")
     Clu <- makeForkCluster(mc.cores)
     doParallel::registerDoParallel(Clu)
     on.exit(parallel::stopCluster(Clu), add = TRUE)
