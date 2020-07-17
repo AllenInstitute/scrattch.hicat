@@ -38,12 +38,12 @@ prcomp.irlba <- function(x, max.rank=500, maxit=1000, tol=1e-05, center=TRUE,...
 #' @export
 #'
 #' @examples
-rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2, verbose=FALSE)
+rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2, verbose=FALSE, method="zscore")
 {
   library(Matrix)
   library(stats)
 
-  tmp = get_PCA(norm.dat[select.genes, sampled.cells], max.pca, verbose=verbose)
+  tmp = get_PCA(norm.dat[select.genes, sampled.cells], max.pca=max.pca, verbose=verbose,th=th,  method=method)
   if(is.null(tmp)){
     return(NULL)
   }
@@ -60,18 +60,27 @@ rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=coln
   return(list(rd.dat=rd.dat, pca=pca))
 }
 
-
-get_PCA <- function(dat, max.pca, verbose=FALSE)
+get_PCA <- function(dat, max.pca, verbose=FALSE, method="zscore",th=2)
   {
     library(Matrix)
     library(stats)
     
     pca = stats::prcomp(t(as.matrix(dat)),tol=0.01)
-    dim.elbow = findElbowPoint(pca$sdev^2)
-    if(verbose){
-      cat("Elbow dim:", dim.elbow, "\n")
+    if(method=="elbow"){
+      dim.elbow = findElbowPoint(pca$sdev^2)
+      if(verbose){
+        cat("elbow dim:", dim.elbow, "\n")
+      }      
+      select = 1:min(max.pca,dim.elbow)      
     }
-    select = 1:min(max.pca,dim.elbow)
+    else if(method=="zscore"){
+      v = pca.importance[2,]
+      select= which((v - mean(v))/sd(v)>th)
+      select = head(select,max.pca)
+    }
+    else{
+      Stop("Unknown method")
+    }
     if(length(select)==0){
       return(NULL)
     }
@@ -79,8 +88,6 @@ get_PCA <- function(dat, max.pca, verbose=FALSE)
     rd.dat = pca$x[,select,drop=F]
     return(list(rot=rot, rd.dat = rd.dat,pca=pca))
   }
-
-
 
 
 

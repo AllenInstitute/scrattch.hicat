@@ -159,7 +159,7 @@ get_cl_means_list <- function(dat.list, cl, de.param.list=NULL, min.cells=NULL, 
       cl.size = table(tmp.cl)
       select.cl = names(cl.size)[cl.size >= min.cells[[x]]]
       if(length(select.cl)==0){
-        return(NULL)
+        next
       }
       tmp.cl = tmp.cl[tmp.cl %in% select.cl]
       if(is.factor(tmp.cl)){

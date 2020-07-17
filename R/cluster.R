@@ -94,6 +94,10 @@ filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
   rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
   rm.cor[is.na(rm.cor)]=0
   rm.score = rowMaxs(abs(rm.cor))
+  if(verbose){
+    print("rm score")
+    print(tail(sort(rm.score)))
+  }
   select = colSums(t(abs(rm.cor)) >= rm.th) ==0
   if(sum(!select)>0 & verbose){
     print("Remove dimension:")
