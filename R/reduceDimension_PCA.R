@@ -74,6 +74,7 @@ get_PCA <- function(dat, max.pca, verbose=FALSE, method="zscore",th=2)
       select = 1:min(max.pca,dim.elbow)      
     }
     else if(method=="zscore"){
+      pca.importance = summary(pca)$importance
       v = pca.importance[2,]
       select= which((v - mean(v))/sd(v)>th)
       select = head(select,max.pca)

@@ -378,10 +378,9 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
   }
   de.genes = list()
   for(p in pairs){
-    print(p)
     de.counts = table(unlist(lapply(names(de.genes.list), function(set){
       de = de.genes.list[[set]][[p]]
-      de$genes})))
+      c(names(de$up.genes),names(de$down.genes))})))      
     g = intersect(names(de.counts), comb.dat$common.genes)
     pair = unlist(strsplit(p,"_"))
     lfc = lapply(sets, function(set){
@@ -403,8 +402,8 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
     rank =  do.call("cbind",lapply(names(de.genes.list), function(set){
       de = de.genes.list[[set]][[p]]
       
-      tmp1=match(g, de$up.genes)
-      tmp2=match(g, de$down.genes)
+      tmp1=match(g, names(de$up.genes))
+      tmp2=match(g, names(de$down.genes))
       tmp1[is.na(tmp1)] = max.num
       tmp2[is.na(tmp2)] = max.num
       tmp = pmin(tmp1, tmp2)
@@ -427,7 +426,7 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
     up = row.names(df)[which(df$lfc > 0)]
     down = row.names(df)[which(df$lfc < 0)]
     select = c(up,down)
-    de.genes[[p]] = list(up.genes =up, down.genes=down, up.num = length(up),down.num=length(down),num=length(select),genes=select, de.df = df)    
+    de.genes[[p]] = list(up.genes =setNames(df[up,"counts"], up), down.genes=setNames(df[down,"counts"], down), up.num = length(up),down.num=length(down),num=length(select),genes=select, de.df = df)    
   }
   return(de.genes)
 }

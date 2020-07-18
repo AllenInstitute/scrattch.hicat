@@ -203,7 +203,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
           }
         }  
       }
-      if(!is.null(cl.sqr.means.list) & de.method=="fast_limma"){
+      if(!is.null(cl.sqr.means.list) & !is.null(cl.sqr.means.list[[set]]) & de.method=="fast_limma"){
         tmp = colnames(cl.sqr.means.list[[set]])!=x
         cl.sqr.means.list[[set]] = cl.sqr.means.list[[set]][,tmp,drop=F]
         tmp.sqr.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F]^2)        
@@ -217,9 +217,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
           }
         }        
       }
-
-      if(!is.null(cl.present.list)){
-        
+      if(!is.null(cl.present.list) & !is.null(cl.present.list[[set]])){        
         tmp = colnames(cl.present.list[[set]])!=x
         cl.present.list[[set]] = cl.present.list[[set]][,tmp,drop=F]
         tmp.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F] >= merge.de.param.list[[set]]$low.th)
@@ -378,7 +376,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         de.pairs = rbind(merge.pairs[new.pairs,],de.pairs)
       }
       de.genes.list = add_pairs_de_genes(de.genes.list, cl, merge.pairs[new.pairs,])
-      if(sum(sapply(de.genes.list, length))==0){
+      if(is.null(de.genes.list) || sum(sapply(de.genes.list, length))==0){
         return(NULL)
       }
       merge.sc = test_merge_multiple(de.genes.list, merge.type=merge.type)
