@@ -2,7 +2,6 @@
 #'
 #' @param rd.dat 
 #' @param cl 
-#' @param cl.df 
 #' @param k 
 #' @param knn.outlier.th 
 #' @param outlier.frac.th 
@@ -11,33 +10,40 @@
 #' @export
 #'
 #' @examples
-get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac.th=0.5)
+get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.5,clean.cells=row.names(rd.dat))
 {
+  ##fast_knn does not always work for small clusters
+  #knn.result = fast_knn(rd.dat,k=k, ef=ef,M=M)
   knn.result = RANN::nn2(rd.dat,k=k)
   row.names(knn.result[[1]]) = row.names(knn.result[[2]])=row.names(rd.dat)
   knn  = knn.result[[1]]
   knn.dist = knn.result[[2]]
-  cl.knn.dist.mean = tapply(names(cl),cl, function(x) mean(knn.dist[x,-1]))
-  cl.knn.dist.sd = tapply(names(cl),cl, function(x) sd(knn.dist[x,-1]))
-  cl.knn.dist.th = (cl.knn.dist.mean + knn.outlier.th * cl.knn.dist.sd)
+  knn.cl = matrix(cl[row.names(knn)[knn]],ncol=ncol(knn))
+  row.names(knn.cl)= row.names(knn)  
+  cl.knn.dist.med = tapply(clean.cells,cl[clean.cells], function(x) median(knn.dist[x,-1]))
+  cl.knn.dist.mad = tapply(clean.cells, cl[clean.cells], function(x) mad(knn.dist[x,-1]))
+  cl.knn.dist.th = cl.knn.dist.med + knn.outlier.th * cl.knn.dist.mad
+  cl.knn.dist.th = pmax(cl.knn.dist.th, median(cl.knn.dist.th))
   
   knn.dist.th=cl.knn.dist.th[as.character(cl[row.names(knn)])]
   outlier = apply(knn.dist, 2, function(x) x>  knn.dist.th)
+  outlier[!row.names(knn)[knn] %in% clean.cells]=TRUE
   row.names(outlier)  = row.names(knn.dist)
+  outlier.frac= rowMeans(outlier)
+
   knn[outlier] = NA
-  select.cells = row.names(outlier)[rowMeans(outlier) < outlier.frac.th]  
-  pred.result = predict_knn(knn[select.cells,], row.names(rd.dat), cl)
-  pred.prob = pred.result$pred.prob
-  knn.cell.cl.counts = round(pred.prob * ncol(knn))
-  knn.cl.cl.counts = do.call("rbind",tapply(row.names(pred.prob), cl[row.names(pred.prob)], function(x)colSums(knn.cell.cl.counts[x,])))
-  knn.cl.df = as.data.frame(as.table(knn.cl.cl.counts))
-  colnames(knn.cl.df)[1:2] = c("cl.from","cl.to")
-  from.size = rowSums(knn.cl.cl.counts)
-  to.size = colSums(knn.cl.cl.counts)
-  total = sum(knn.cl.cl.counts)
+  knn.cl[outlier] = NA
+
+  select.cells = intersect(clean.cells, names(outlier.frac)[outlier.frac < outlier.frac.th])
+  tmp.df = data.frame(sample_name =rep(select.cells, ncol(knn)), cl.to=as.vector(knn.cl[select.cells,]))
+  tmp.df$cl.from = cl[as.character(tmp.df$sample_name)]
+  knn.cl.df = tmp.df %>% filter(!is.na(cl.to)) %>% group_by(cl.from, cl.to) %>% summarise(Freq=n())
+    
+  from.size = tapply(knn.cl.df$Freq, knn.cl.df$cl.from, sum)
+  to.size = tapply(knn.cl.df$Freq, knn.cl.df$cl.to, sum)
+  total = sum(knn.cl.df$Freq)
   knn.cl.df$cl.from.total= from.size[as.character(knn.cl.df$cl.from)]
   knn.cl.df$cl.to.total = to.size[as.character(knn.cl.df$cl.to)]
-  knn.cl.df = knn.cl.df[knn.cl.df$Freq > 0,]
   knn.cl.df$pval.log = knn.cl.df$odds  = 0
   for(i in 1:nrow(knn.cl.df)){
     q = knn.cl.df$Freq[i] - 1
@@ -45,12 +51,10 @@ get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac
     m = knn.cl.df$cl.to.total[i]
     n = total - m
     knn.cl.df$pval.log[i]=phyper(q, m=m, n=n, k=k, lower.tail = FALSE, log.p=TRUE)
-    knn.cl.df$odds[i] = (q + 1) / (k * m /total)
+    knn.cl.df$odds[i] = (q + 1) / (k /total * m)
   }
   knn.cl.df$frac = knn.cl.df$Freq/knn.cl.df$cl.from.total
-  knn.cl.df$cl.from.label = cl.df[as.character(knn.cl.df$cl.from),"cluster_label"]
-  knn.cl.df$cl.to.label = cl.df[as.character(knn.cl.df$cl.to),"cluster_label"]
-  return(list(knn.result=knn.result, pred.result=pred.result, knn.cl.df=knn.cl.df))
+  return(list(knn.result=knn.result, pred.result=pred.result, knn.cl.df=knn.cl.df,outlier=outlier))
 }
 
 
@@ -568,8 +572,10 @@ if (exxageration !=1) {
   
   g2 <- gridExtra::arrangeGrob(grobs=list(dot.size.legend,edge.width.legend,cl.center.legend), layout_matrix=layout_legend)
   
-  
-  ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = plot.width, height = plot.height, units="cm",useDingbats=FALSE)
+
+  fout = file.path(out.dir,paste0(st,"constellation.pdf"))
+  cat("Save ", fout, "\n")
+  ggsave(fout, marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = plot.width, height = plot.height, units="cm",useDingbats=FALSE)
   
   
 }

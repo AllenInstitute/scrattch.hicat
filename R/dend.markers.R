@@ -1,4 +1,5 @@
-#' Select node specific markers
+
+                                        #' Select node specific markers
 #'
 #' @param dend 
 #' @param norm.dat 
@@ -59,6 +60,7 @@ select_node_specific_markers <- function(dend, norm.dat, cl, n.markers=10,de.gen
 #' @examples
 select_dend_markers <- function(dend, cl, de.genes,norm.dat=NULL,up.gene.score=NULL, down.gene.score=NULL,...)
 {
+  library(matrixStats)
   require(dendextend)
   require(randomForest)
   print(dend)

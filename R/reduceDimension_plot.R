@@ -39,23 +39,33 @@ get_RD_cl_center <- function(rd.dat, cl)
 #' @export
 #'
 #' @examples
-plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=1,show.legend=FALSE, legend.size=2, label.center=TRUE, bg="blank",fn.color="black")
+plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=NULL,show.legend=FALSE, legend.size=2, label.center=TRUE, bg="blank",fn.color="black",no.shape=TRUE,ncol=4)
   {
     rd.dat=as.data.frame(rd.dat)
     colnames(rd.dat) = paste0("Dim", 1:ncol(rd.dat))
-    rd.dat$cl = cl[row.names(rd.dat)] 
-    rd.dat$cl_label = droplevels(factor(cl.label[as.character(rd.dat$cl)], levels=cl.label))
+    rd.dat$cl = factor(cl[row.names(rd.dat)])
     if(label.center){
       cl.center = get_RD_cl_center(rd.dat, cl)
-      row.names(cl.center) = cl.label[row.names(cl.center)]
     }
-    shape = setNames(1:length(levels(rd.dat$cl_label)) %% 20 + 1,levels(rd.dat$cl_label))
-    g=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=cl_label,shape=cl_label),size=cex)
-    g = g+ scale_color_manual(values=alpha(as.vector(cl.color[levels(rd.dat$cl_label)]),alpha.val))+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl_label)]))
+    if(!no.shape){
+      shape = setNames(1:length(levels(rd.dat$cl)) %% 20 + 1,levels(rd.dat$cl))
+      g=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=cl,shape=cl),size=cex)
+      g = g+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl)]))      
+    }
+    else{
+      g=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=cl),size=cex)
+    }
+    if(!is.null(alpha.val)){
+      col = alpha(as.vector(cl.color[levels(rd.dat$cl)]),alpha.val)
+    }
+    else{
+      col = as.vector(cl.color[levels(rd.dat$cl)])
+    }
+    g = g+ scale_color_manual(values=col,labels=cl.label[levels(rd.dat$cl)])
     if(label.center){
       g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y), size=cex*1.5)
       for(i in 1:nrow(cl.center)){
-        g = g +  annotate("text", label=row.names(cl.center)[i], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color=fn.color)
+        g = g +  annotate("text", label=cl.label[row.names(cl.center)[i]], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color=fn.color)
       }
     }
     if(bg=="blank"){
@@ -67,8 +77,12 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
       g = g + theme(panel.background= element_rect(fill=bg, color=NA), panel.border = element_blank(),panel.grid.major = element_blank(), panel.grid.minor= element_blank())
     }
     if(show.legend){
-      g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(rd.dat$cl_label)])),ncol=5)
-      g <- g + guides(color = guide_legend(override.aes = list(size = legend.size)))
+      if(no.shape){
+         g = g +  guides(colour = guide_legend(override.aes = list(size = legend.size),ncol=ncol))
+      }
+      else{
+        g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(rd.dat$cl)],size = legend.size)),ncol=ncol)
+      }
       g = g + theme(legend.position="bottom")
     }
     else{
@@ -445,3 +459,70 @@ plot_3d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", 
     }
   }
   
+
+plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missing.color="gray85",min.size=10,fg.alpha=1,bg.alpha=0.5,...)
+  {
+    cl= setNames(as.character(cl), names(cl))
+    cl = cl[names(cl)%in% select.samples]
+    tmp = setdiff(row.names(rd.dat),names(cl))
+    cl = c(cl, setNames(rep("0",length(tmp)), tmp))
+    cl.size= table(cl)
+    cl.small = names(cl.size)[cl.size < min.size]
+    cl.label[c(cl.small,"0")] = " "
+    cl.color["0"] = missing.color
+    alpha.val = setNames(rep(fg.alpha, length(cl.color)),names(cl.color))
+    alpha.val["0"] = bg.alpha    
+    cl.color = alpha(cl.color, alpha.val)
+    plot_RD_cl(rd.dat, cl, cl.color, cl.label,...)    
+  }
+  
+
+
+
+plot_2d_umap_anno <- function(umap.fn, anno.df, dest.d="./",meta.fields=c("platform","joint_region"))
+  {
+    library(data.table)
+    library(dplyr)
+    library(ggplot2)
+    umap.df <- as.data.frame(fread(file.path(dest.d,umap.fn),header=TRUE))
+    colnames(umap.df) = c("sample_name","Dim1","Dim2")
+    umap.df = umap.df[sample(1:nrow(umap.df)),]
+    umap.df = umap.df %>% left_join(anno.df) 
+    umap.2d = umap.df[,c("Dim1","Dim2")]
+    row.names(umap.2d)=umap.df$sample_name
+    cl = setNames(umap.df$cl, umap.df$sample_name)
+    cl.df = umap.df %>% select(cluster_id, cluster_label, cluster_color,cl) %>% unique
+    cl.color = setNames(cl.df$cluster_color, cl.df$cl)
+    cl.label = setNames(cl.df$cl, cl.df$cl)
+    g= plot_RD_cl(umap.2d, cl, cl.color = cl.color, cl.label =cl.label,alpha=0.5)
+    ggsave(g, file=file.path(dest.d, gsub(".csv",".pdf",umap.fn)))
+    ggsave(g, file=file.path(dest.d, gsub(".csv",".png",umap.fn)))
+
+    for(m in meta.fields){
+      tmp.df = umap.df[,paste0(m, c("_id","_label","_color"))] %>% unique
+      colnames(tmp.df)=c("id","label","color")
+      tmp.df = tmp.df %>% arrange(id)
+      tmp.color = setNames(as.character(tmp.df$color), tmp.df$label)
+      g= plot_RD_meta(umap.2d, factor(umap.df[,paste0(m, "_label")], levels=names(tmp.color)),meta.col = tmp.color,alpha=0.5)
+      ggsave(g, file=file.path(dest.d, gsub("csv",paste0(m,".pdf"),umap.fn)),height=7,width=8.5)
+      ggsave(g, file=file.path(dest.d, gsub("csv",paste0(m,".png"),umap.fn)),height=7,width=8.5)
+    }
+    return(umap.2d)
+  }
+
+
+
+
+
+#dest.d = "Manuscript/common/umap_constellation/"
+#for(umap.fn in dir(dest.d, pattern="umap.2d.sampled.csv")){
+#  plot_2d_umap(umap.fn, dest.d)
+#}
+plot_3d_umap_anno <- function(umap.fn, dest.d, anno.df, cols= c("region_color","cluster_color"), label_cols=list(NULL, "cluster_label"), win.dim=c(20,40,1500, 800), cex=0.7, html.fn = NULL)
+  {
+    umap.3d <- as.data.frame(fread(file.path(dest.d,umap.fn),header=TRUE))
+    colnames(umap.3d) = c("sample_name", paste0("Dim", 1:(ncol(umap.3d)-1)))
+    umap.3d <- umap.3d %>% left_join(anno.df)
+    plot_3d_label_multiple(umap.3d, cols=cols, label_cols=label_cols, cex=cex, win.dim=win.dim, fn = html.fn, dir=dest.d)
+  }
+

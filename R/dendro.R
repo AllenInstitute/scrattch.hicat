@@ -70,13 +70,13 @@ build_dend <- function(cl.dat, cl.cor=NULL, l.rank=NULL, l.color=NULL, nboot=100
       cl.hc = hclust(as.dist(1-cl.cor),method="average")      
       dend = as.dendrogram(cl.hc)
     }
-    dend = dend %>% set("labels_cex", 0.7)
+    dend =  dendextend::set(dend,"labels_cex", 0.7)
     if(!is.null(l.color)){
-      dend = dend %>% set("labels_col", l.color[labels(dend)])
+      dend = dendextend::set(dend, "labels_col", l.color[labels(dend)])
     }
-    dend = dend %>% set("leaves_pch", 19) %>% set("leaves_cex", 0.5)
+    dend = dend %>% dendextend::set("leaves_pch", 19) %>% dendextend::set("leaves_cex", 0.5)
     if(!is.null(l.color)){
-      dend = dend %>% set("leaves_col", l.color[labels(dend)])
+      dend = dendextend::set(dend, "leaves_col", l.color[labels(dend)])
     }
     if(!is.null(l.rank)){
       dend =reorder_dend(dend,l.rank)

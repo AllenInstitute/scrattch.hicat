@@ -12,10 +12,11 @@
 #' @examples
 
 
-select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,...)                  
+select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,bin.lfc.th=NULL,...)                  
   {
+    require(parallel)
     if(is.null(de.genes)){
-      de.genes=de_all_pairs(norm.dat, cl, ...)
+      de.genes=de_all_pairs(norm.dat, cl, mc.cores=mc.cores,...)
     }
     pairs.df = get_pairs(names(de.genes))
     select.pairs = row.names(pairs.df)[pairs.df[,1] %in% cl & pairs.df[,2]%in% cl]
@@ -28,10 +29,17 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,
       on.exit(parallel::stopCluster(Clu), add = TRUE)
     }                 
              
-    de.markers = pvec(select.pairs, function(s){
+    de.markers = parallel::pvec(select.pairs, function(s){
       sapply(s, function(x){
         tmp = de.genes[[x]]
-        c(head(names(tmp$up.genes),n.markers), head(names(tmp$down.genes),n.markers))
+        select.genes = c(head(names(tmp$up.genes),n.markers), head(names(tmp$down.genes),n.markers))
+        ###Choose binary genes even if not the top genes
+        if(!is.null(bin.lfc.th)){
+          de.df = tmp$de.df
+          bin.genes = tmp$genes[abs(de.df[tmp$genes, "lfc"]) > bin.lfc.th]
+          select.genes = union(select.genes, bin.genes)
+        }
+        select.genes
       },simplify=F)
     },mc.cores=mc.cores)
     markers = intersect(unlist(de.markers),row.names(norm.dat))
@@ -53,6 +61,7 @@ get_gene_score <- function(de.genes,cl.means=NULL, all.genes=NULL, top.n=50, max
   {
     require(Matrix)
     require(doParallel)
+    require(parallel)
     if (mc.cores == 1) {
       registerDoSEQ()
     }
@@ -63,7 +72,7 @@ get_gene_score <- function(de.genes,cl.means=NULL, all.genes=NULL, top.n=50, max
     }                 
     
     if(is.null(all.genes)){
-      all.genes <- pvec(names(de.genes), function(p){
+      all.genes <- parallel::pvec(names(de.genes), function(p){
         de = de.genes[[p]]
         pair = strsplit(p, "_")[[1]]
         x = pair[[1]]
@@ -81,7 +90,7 @@ get_gene_score <- function(de.genes,cl.means=NULL, all.genes=NULL, top.n=50, max
       },mc.cores=mc.cores)
       all.genes=unique(unlist(all.genes))
     } 
-    up.gene.score = pvec(names(de.genes),function(x){
+    up.gene.score = parallel::pvec(names(de.genes),function(x){
       mat=sapply(x, function(p){
         de = de.genes[[p]]
         tmp= match(all.genes, head(names(de$up.genes),max.num))
@@ -97,7 +106,7 @@ get_gene_score <- function(de.genes,cl.means=NULL, all.genes=NULL, top.n=50, max
       up.gene.score = do.call("cbind",up.gene.score)
     }
     
-    down.gene.score = pvec(names(de.genes),function(x){
+    down.gene.score = parallel::pvec(names(de.genes),function(x){
       mat=sapply(x, function(p){
         de = de.genes[[p]]
         tmp= match(all.genes, head(names(de$down.genes),max.num))
@@ -249,6 +258,7 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,cl.means, up
 #' @examples
 select_markers_pair_group <- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
 {
+  require(matrixStats)
   pairs = do.call("rbind",strsplit(names(de.genes), "_"))
   pairs = gsub("cl", "",pairs)
   row.names(pairs)= names(de.genes)
@@ -264,8 +274,8 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.
   tmp.up.gene.score = cbind(up.gene.score[,up.pairs,drop=F], down.gene.score[,down.pairs,drop=F])
   tmp.down.gene.score = cbind(down.gene.score[,up.pairs,drop=F], up.gene.score[,down.pairs,drop=F])
   
-  up.genes = row.names(tmp.up.gene.score)[head(order(rowSums(tmp.up.gene.score, decreasing=T)), n.markers)]
-  down.genes = row.names(tmp.down.gene.score)[head(order(rowSums(tmp.down.gene.score,dereasing=T)), n.markers)]
+  up.genes = row.names(tmp.up.gene.score)[head(order(rowSums(tmp.up.gene.score), decreasing=T), n.markers)]
+  down.genes = row.names(tmp.down.gene.score)[head(order(rowSums(tmp.down.gene.score), decreasing=T), n.markers)]
   
   up.num = colSums(tmp.up.gene.score[up.genes,,drop=F] >0)
   down.num = colSums(tmp.down.gene.score[down.genes,,drop=F] >0 )
@@ -273,8 +283,8 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.
   add.genes = setNames(rep(n.markers, ncol(tmp.up.gene.score)), colnames(tmp.up.gene.score)) - total.num
   add.genes = add.genes[add.genes > 0]
   
-  up.genes = up.genes[rowMins(tmp.up.gene.score[up.genes,,drop=F]) > 0 ]
-  down.genes = down.genes[rowMins(tmp.down.gene.score[down.genes,,drop=F]) > 0 ]
+  up.genes = up.genes[rowMins(as.matrix(tmp.up.gene.score[up.genes,,drop=F])) > 0 ]
+  down.genes = down.genes[rowMins(as.matrix(tmp.down.gene.score[down.genes,,drop=F])) > 0 ]
   genes = union(up.genes, down.genes)
   if(length(add.genes)>0){
     tmp=select_markers_pair(add.genes= add.genes,de.genes= de.genes, gene.score=pmin(tmp.up.gene.score, tmp.down.gene.score), rm.genes=c(up.genes, down.genes),top.n=top.n)
@@ -367,7 +377,7 @@ select_pos_markers <- function(de.genes, cl, cl.means=NULL, n.markers=3, default
     }                 
        
     ###for each cluster, find markers that discriminate it from other types
-    cl.markers <- pvec(levels(cl), function(x){
+    cl.markers <- parallel::pvec(levels(cl), function(x){
       sapply(x, function(tmp.cl){
         cat("Cl\n",tmp.cl,"\n")
         up.pairs = row.names(pairs.df)[pairs.df[,1] == tmp.cl]
@@ -406,7 +416,7 @@ select_top_pos_markers <- function(de.genes, cl, n.markers=3, up.gene.score, dow
     }                 
        
     ###for each cluster, find markers that discriminate it from other types
-    cl.markers <- pvec(levels(cl), function(x){
+    cl.markers <- parallel::pvec(levels(cl), function(x){
       sapply(x, function(tmp.cl){
         print(tmp.cl)
         up.pairs = row.names(pairs.df)[pairs.df[,1] == tmp.cl]

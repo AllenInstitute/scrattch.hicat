@@ -473,6 +473,7 @@ simple_lmFit <- function(norm.dat, cl, cl.means = NULL, cl.sqr.means = NULL)
   }
  
 
+
 simple_ebayes <- function(fit,proportion=0.01,stdev.coef.lim=c(0.1,4),trend=FALSE,robust=FALSE,winsor.tail.p=c(0.05,0.1))
 #	Empirical Bayes statistics to select differentially expressed genes
 #	Gordon Smyth
@@ -480,32 +481,32 @@ simple_ebayes <- function(fit,proportion=0.01,stdev.coef.lim=c(0.1,4),trend=FALS
 #	Made a non-exported function 18 Feb 2018.
 {
   require(limma)
-	coefficients <- fit$coefficients
-	stdev.unscaled <- fit$stdev.unscaled
-	sigma <- fit$sigma
-	df.residual <- fit$df.residual
-	if(is.null(coefficients) || is.null(stdev.unscaled) || is.null(sigma) || is.null(df.residual)) stop("No data, or argument is not a valid lmFit object")
-	if(all(df.residual==0)) stop("No residual degrees of freedom in linear model fits")
-	if(all(!is.finite(sigma))) stop("No finite residual standard deviations")
-	if(trend) {
-		covariate <- fit$Amean
-		if(is.null(covariate)) stop("Need Amean component in fit to estimate trend")
-	} else {
-		covariate <- NULL
-	}
-
-#	Moderated t-statistic
-	out <- squeezeVar(sigma^2, df.residual, covariate=covariate, robust=robust, winsor.tail.p=winsor.tail.p)
-	out$s2.prior <- out$var.prior
-	out$s2.post <- out$var.post
-	out$var.prior <- out$var.post <- NULL
-	out$t <- coefficients / stdev.unscaled / sqrt(out$s2.post)
-	df.total <- df.residual + out$df.prior
-	df.pooled <- sum(df.residual,na.rm=TRUE)
-	df.total <- pmin(df.total,df.pooled)
-	out$df.total <- df.total
-	out$p.value <- 2*pt(-abs(out$t),df=df.total)
-        return(out)
+  coefficients <- fit$coefficients
+  stdev.unscaled <- fit$stdev.unscaled
+  sigma <- fit$sigma
+  df.residual <- fit$df.residual
+  if(is.null(coefficients) || is.null(stdev.unscaled) || is.null(sigma) || is.null(df.residual)) stop("No data, or argument is not a valid lmFit object")
+  if(all(df.residual==0)) stop("No residual degrees of freedom in linear model fits")
+  if(all(!is.finite(sigma))) stop("No finite residual standard deviations")
+  if(trend) {
+    covariate <- fit$Amean
+    if(is.null(covariate)) stop("Need Amean component in fit to estimate trend")
+  } else {
+    covariate <- NULL
+  }
+  
+                                        #	Moderated t-statistic
+  out <- squeezeVar(sigma^2, df.residual, covariate=covariate, robust=robust, winsor.tail.p=winsor.tail.p)
+  out$s2.prior <- out$var.prior
+  out$s2.post <- out$var.post
+  out$var.prior <- out$var.post <- NULL
+  out$t <- coefficients / stdev.unscaled / sqrt(out$s2.post)
+  df.total <- df.residual + out$df.prior
+  df.pooled <- sum(df.residual,na.rm=TRUE)
+  df.total <- pmin(df.total,df.pooled)
+  out$df.total <- df.total
+  out$p.value <- 2*pt(-abs(out$t),df=df.total)
+  return(out)
 }
 
 
@@ -582,7 +583,7 @@ de_pair_fast_limma <- function(pair,
    
   method <- match.arg(method,
                       choices = c("fast_limma", "limma","chisq", "t.test"))
-                                        
+  require(parallel)                                      
   if(use.voom & is.null(counts)) {
     stop("The use.voom = TRUE parameter requires a raw count matrix via the counts parameter.")
   }
@@ -666,8 +667,8 @@ de_pair_fast_limma <- function(pair,
     on.exit(parallel::stopCluster(Clu), add = TRUE)
   }                 
   
-  de_list = pvec(1:nrow(pairs), function(x){
-    sapply(x, function(i){
+  de_list = parallel::pvec(1:nrow(pairs), function(x){
+    tmp=sapply(x, function(i){
       if(method == "limma") {
         require("limma")
         df= de_pair_limma(pair = pairs[i,],
@@ -715,9 +716,14 @@ de_pair_fast_limma <- function(pair,
         cl.size2,
         return.df = return.df)    
     },simplify=F)
+    cat(length(tmp), length(x),"\n")
+    if(length(tmp)!=length(x)){
+      save(x, file="Error.pairs.rda")
+      stop('length of de_list does not match pairs')      
+    }
+    names(tmp) = row.names(pairs)[x]
+    tmp
   },mc.cores=mc.cores)
-
-  names(de_list) <- paste(pairs[,1],pairs[,2],sep="_")  
   return(de_list)
 }
 
@@ -884,11 +890,13 @@ de_stats_pair <- function(df,
 #' @export
 #'
 de_all_pairs <- function(norm.dat, 
-                               cl,
-                               de.param = de_param(), 
-                               method = "fast_limma", 
-                               de.genes = NULL,
-                               ...) {   
+                         cl,
+                         de.param = de_param(), 
+                         method = "fast_limma", 
+                         de.genes = NULL,
+                         mc.cores=1,
+                         ...) {
+
   cn <- as.character(sort(unique(cl)))
   pairs= create_pairs(cn)
   
@@ -903,6 +911,7 @@ de_all_pairs <- function(norm.dat,
                                             pairs = missing_pairs,
                                             de.param = de.param,
                                             method = method,
+                                            mc.cores=mc.cores,
                                             ...))
   
   return(de.genes)

@@ -38,7 +38,7 @@ prcomp.irlba <- function(x, max.rank=500, maxit=1000, tol=1e-05, center=TRUE,...
 #' @export
 #'
 #' @examples
-rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2, verbose=FALSE, method="zscore")
+rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=colnames(norm.dat),sampled.cells=select.cells, max.pca=10, th=2, verbose=FALSE, method="zscore", mc.cores=1)
 {
   library(Matrix)
   library(stats)
@@ -54,8 +54,14 @@ rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=coln
     if(verbose){
       print("Project")
     }
-    tmp.dat = norm.dat[row.names(rot), select.cells,drop=F]
-    rd.dat = as.matrix(Matrix::crossprod(tmp.dat, rot))  
+    require(parallel)
+    rd.dat = parallel::pvec(select.cells, function(x){
+      print(length(x))
+      tmp.dat = norm.dat[row.names(rot), x,drop=F]
+      rd.dat = as.matrix(Matrix::crossprod(tmp.dat, rot))
+      return(list(rd.dat))
+    }, mc.cores=mc.cores)
+    rd.dat = do.call("rbind",rd.dat)
   }
   return(list(rd.dat=rd.dat, pca=pca))
 }

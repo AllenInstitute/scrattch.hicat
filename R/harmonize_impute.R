@@ -28,7 +28,7 @@ get_knn_weight <- function(knn.dist, scale=0.2, exclude.th = 0.0001)
 #' @export
 #'
 #' @examples
-predict_knn <- function(knn.idx, reference, cl)
+predict_knn_old <- function(knn.idx, reference, cl)
   {
     library(matrixStats)
     library(dplyr)
@@ -56,7 +56,7 @@ predict_knn <- function(knn.idx, reference, cl)
 #' @export
 #'
 #' @examples
-predict_knn_new <- function(knn.idx, reference, cl, ...)
+predict_knn <- function(knn.idx, reference, cl, ...)
   {
     library(matrixStats)
     library(dplyr)
@@ -83,30 +83,67 @@ predict_knn_new <- function(knn.idx, reference, cl, ...)
 #' @export
 #'
 #' @examples
-impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w, ...)
+impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, mc.cores=1,transpose=FALSE,th=NULL,sparse=FALSE,batch.size=100000,combine=TRUE,...)
   {
+    require(doParallel)
     query = row.names(knn.idx)
-    impute.dat= matrix(0, nrow=nrow(knn.idx),ncol=ncol(dat))
     if(is.null(w)){
       if(!is.null(knn.dist)){
         w = get_knn_weight(knn.dist,...)
       }
-      else{
-        w = matrix(1, nrow=nrow(knn.idx),ncol=ncol(knn.idx))
+    }
+    if (mc.cores == 1) {
+      registerDoSEQ()
+    }
+    else {
+      Clu <- makeForkCluster(mc.cores)
+      doParallel::registerDoParallel(Clu)
+      on.exit(parallel::stopCluster(Clu), add = TRUE)
+    }
+    k = 1:nrow(knn.idx)
+    bins = split(k, floor(k/batch.size))
+    impute.dat = foreach(j=1:length(bins),.combine="c") %dopar% {
+      x = bins[[j]]
+      impute.dat <- matrix(0, nrow=length(x),ncol=ncol(dat))
+      total.w <-  rep(0, length(x))
+      for(i in 1:ncol(knn.idx)){
+        cat("bin", x[1],i, "\n")
+        nn = reference[knn.idx[x,i]]
+        select = nn %in% row.names(dat)
+        tmp.dat = dat[nn[select],] 
+###Ignore the neighbors not present in imputation reference        
+        if(!is.null(w)){
+          impute.dat[select,] <<-  impute.dat[select,] +  tmp.dat* w[select, i]
+          total.w[select] = total.w[select]+ w[select,i]
+        }
+        else{
+          impute.dat[select,]= impute.dat[select,] +  tmp.dat
+          total.w[select] = total.w[select]+ 1
+        }
+        rm(tmp.dat)
+        gc()        
       }
+      impute.dat = impute.dat / total.w
+      row.names(impute.dat) = row.names(knn.idx)[x]
+      colnames(impute.dat) = colnames(dat)
+      if(!is.null(th)){
+        impute.dat[impute.dat < th] = 0
+      }
+      if(transpose){
+        impute.dat = t(impute.dat)
+      }
+      if(sparse){
+        impute.dat = Matrix(impute.dat, sparse=T)
+      }
+      return(list(impute.dat))
     }
-    total.w = rep(0, nrow(knn.idx))
-    for(i in 1:ncol(knn.idx)){
-      print(i)
-      nn = reference[knn.idx[,i]]
-      ###Ignore the neighbors not present in imputation reference
-      select = nn %in% row.names(dat)   
-      impute.dat[select,]= impute.dat[select,] +  dat[nn[select],] * w[select, i]
-      total.w[select] = total.w[select]+ w[select,i]
+    if(combine){
+      method="rbind"
+      if(transpose){
+        method="cbind"
+      }
+      impute.dat = do.call(method, impute.dat)
     }
-    impute.dat = impute.dat / total.w
-    row.names(impute.dat) = row.names(knn.idx)
-    colnames(impute.dat) = colnames(dat)
     return(impute.dat)
   }
 
@@ -166,8 +203,9 @@ iter_impute_knn <- function(knn, ref, dat, tol=10^-3,max.iter=100,...)
 #' @export
 #'
 #' @examples
-impute_knn_global <- function(comb.dat, split.results, select.genes, select.cells, ref.list, sets=comb.dat$sets, max.dim=80, th=0.5, rm.eigen=NULL,rm.th=0.65)
+impute_knn_global <- function(comb.dat, split.results, select.genes, select.cells, ref.list, sets=comb.dat$sets, max.dim=100, k=15, th=0.5, rm.eigen=NULL,rm.th=0.65,method="zscore",mc.cores=1,verbose=FALSE)
   {
+    library(matrixStats)
     org.rd.dat.list <- list()
     knn.list <- list()
     impute.dat.list <- list()
@@ -176,19 +214,28 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
       {
         print(x)
         tmp.cells= select.cells[comb.dat$meta.df[select.cells,"platform"]==x]
-        ref.cells = intersect(ref.list[[x]],tmp.cells)
-        rd.result <- rd_PCA(comb.dat$dat.list[[x]], select.genes, select.cells=tmp.cells, sampled.cells = ref.cells, max.pca =max.dim, th=th)
+        ref.cells = ref.list[[x]]
+        rd.result <- rd_PCA(comb.dat$dat.list[[x]], select.genes, select.cells=tmp.cells, sampled.cells = ref.cells, max.pca =max.dim, th=th, method=method,mc.cores=mc.cores,verbose=verbose)
+        org.rd.dat.list[[x]] = rd.result
+        rd.result = org.rd.dat.list[[x]]
         if(!is.null(rm.eigen)){
-          rd.dat  = filter_RD(rd.result$rd.dat, rm.eigen, rm.th)
+          rd.dat  = filter_RD(rd.result$rd.dat, rm.eigen, rm.th,verbose=verbose)
         }
         print(ncol(rd.dat))
-        knn.result <- RANN::nn2(data=rd.dat[ref.cells,], query=rd.dat, k=15)
-        knn <- knn.result[[1]]
-        row.names(knn) = row.names(rd.dat)    
-        org.rd.dat.list[[x]] = rd.result
-        knn.list[[x]]=knn
-        knn = knn.list[[x]]
-        impute.dat.list[[x]] <- impute_knn(knn, ref.cells, t(as.matrix(comb.dat$dat.list[[x]][select.genes,ref.cells])))
+        knn.result = RANN::nn2(data=rd.dat[ref.cells,],query=rd.dat,k=k)        
+        row.names(knn.result[[1]]) = row.names(rd.dat)
+        knn.list[[x]]=knn.result        
+        knn = knn.list[[x]][[1]]        
+        impute.dat = matrix(0, ncol=length(select.cells),nrow=length(select.genes))
+        row.names(impute.dat)=select.genes
+        colnames(impute.dat) = select.cells                
+        impute.result <- impute_knn(knn, ref.cells, t(as.matrix(comb.dat$dat.list[[x]][select.genes,ref.cells])),mc.cores=mc.cores,  sparse=TRUE, transpose=TRUE,combine=FALSE)
+         for(i in 1:length(impute.result)){
+          print(i)
+          dat = impute.result[[i]]
+          impute.dat[,colnames(dat)] <- as.matrix(dat)
+        }
+        impute.dat.list[[x]] = impute.dat
       }
     ###cross-modality Imputation based on nearest neighbors in each iteraction of clustering using anchoring genes or genes shown to be differentiall expressed. 
     for(x in names(split.results)){
@@ -196,7 +243,7 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
       result = split.results[[x]]
       cl = result$cl
       knn = result$knn
-      for(ref.set in names(result$ref.list)){
+      for(ref.set in intersect(names(result$ref.list),names(ref.list))){
         print(ref.set)
         tmp.cells = row.names(knn)
         add.cells=FALSE
@@ -213,23 +260,41 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         if(sum(select.cols)==0){
           next
         }
-        else{
-          ref.cells = intersect(comb.dat$all.cells[unique(as.vector(knn[, select.cols]))],select.cells)      
-          select.knn = knn[query.cells,select.cols]
-          impute.dat = impute_knn(select.knn, comb.dat$all.cells, impute.dat.list[[ref.set]][ref.cells,impute.genes])
+        ref.cells = intersect(comb.dat$all.cells[unique(as.vector(knn[, select.cols]))],select.cells)      
+        select.knn = knn[query.cells,select.cols]
+        dat = t(impute.dat.list[[ref.set]][impute.genes,ref.cells])
+        impute.result = impute_knn(select.knn, comb.dat$all.cells, dat=dat, transpose=TRUE, mc.cores=mc.cores,combine=FALSE)
+        for(i in 1:length(impute.result)){
+          impute.dat = impute.result[[i]]
+          impute.dat.list[[ref.set]][impute.genes,colnames(impute.dat)] <- impute.dat
+          rm(impute.dat)
+          gc()
         }
-        if(!add.cells){
-          impute.dat.list[[ref.set]][query.cells, impute.genes] <- impute.dat
-        }
-        else{
-          impute.dat.list[[ref.set]] <- rbind(impute.dat.list[[ref.set]],impute.dat)
-        }
-        print("Impute dimension")
-        print(dim(impute.dat.list[[ref.set]]))
-        rm(impute.dat)
-        gc()
       }
     }
     return(list(knn.list =knn.list, org.rd.dat.list = org.rd.dat.list,impute.dat.list=impute.dat.list, ref.list=ref.list))
   }
+
+
+
+
+fast_knn <- function(query.dat, ref.dat=query.dat, distance="euclidean", k=15, M=16, ef=200,method="euclidean")
+  {
+    library("RcppHNSW")
+    if(method=="euclidean"){
+      p = new(HnswL2,ncol(ref.dat), nrow(ref.dat),M, ef)
+    }
+    else if(method=="cosine"){
+      p = new(HnswCosine,ncol(ref.dat), nrow(ref.dat),M, ef)
+    }
+    else if(method=="ip"){
+      p = new(HnswIP,ncol(ref.dat), nrow(ref.dat),M, ef)
+    }
+    p$addItems(ref.dat)
+    knn.result = p$getAllNNsList(query.dat, k=15, include_distance=TRUE)
+    row.names(knn.result[[1]]) = row.names(knn.result[[2]]) = row.names(query.dat)
+    return(knn.result)
+  }
+
+
 

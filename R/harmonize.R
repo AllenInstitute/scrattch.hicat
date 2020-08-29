@@ -555,6 +555,19 @@ knn_jaccard_louvain <- function(knn.index)
 
 
 
+knn_jaccard_leiden <- function(knn.index)
+  {
+    require(igraph)
+    require(leiden)
+    cat("Get jaccard\n")
+    sim=knn_jaccard(knn.index)
+    cat("leiden clustering\n")
+    result <- leiden(sim)
+    return(result)
+  }
+
+
+
 #' Harmonize
 #'
 #' @param comb.dat 
@@ -864,15 +877,31 @@ get_gene_cl_correlation <- function(cl.means.list)
 simple_dend <- function(cl.means.list)
 {
   levels = unique(unlist(lapply(cl.means.list, colnames)))
-  n.counts = tmp.cor=matrix(0, nrow=length(levels), ncol=length(levels))
-  row.names(n.counts) = row.names(tmp.cor)=levels
-  colnames(n.counts)=colnames(tmp.cor)=levels
+  n.counts = cl.cor=matrix(0, nrow=length(levels), ncol=length(levels))
+  row.names(n.counts) = row.names(cl.cor)=levels
+  colnames(n.counts)=colnames(cl.cor)=levels
   for(x in cl.means.list){
-    tmp.cor[colnames(x),colnames(x)] = cor(x)
+    tmp.cor= cor(x)
+    tmp.cor[is.na(tmp.cor)] = 0
+    cl.cor[colnames(x),colnames(x)] = cl.cor[colnames(x),colnames(x)] + tmp.cor
     n.counts[colnames(x),colnames(x)] =   n.counts[colnames(x),colnames(x)] +1
   }
-  tmp.cor = tmp.cor/n.counts
-  hclust(as.dist(1-tmp.cor))
+  cl.cor = cl.cor/n.counts
+  cl.cor[is.na(cl.cor)] = 0
+  dend=as.dendrogram(hclust(as.dist(1-cl.cor)))
+  dend = dend %>% set("labels_cex", 0.7)
+  if (!is.null(l.color)) {
+    dend = dend %>% set("labels_col", l.color[labels(dend)])
+  }
+  dend = dend %>% set("leaves_pch", 19) %>% set("leaves_cex", 
+    0.5)
+  if (!is.null(l.color)) {
+    dend = dend %>% set("leaves_col", l.color[labels(dend)])
+  }
+  if (!is.null(l.rank)) {
+    dend = reorder_dend(dend, l.rank)
+  }
+  return(list(dend=dend, cl.cor=cl.cor))
 }
 
 #' Impute val cor

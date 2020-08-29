@@ -285,6 +285,7 @@ plot_low_qc <- function(norm.dat,
 
 find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
   {    
+    require(parallel)
     if(is.null(de.genes)){
       stop("Need to specify de.genes")
     }
@@ -298,7 +299,7 @@ find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
       doParallel::registerDoParallel(cores)
       on.exit(parallel::stopCluster(cores), add = TRUE)
     }
-    result.list=  pvec(names(de.genes), function(pairs){
+    result.list=  parallel::pvec(names(de.genes), function(pairs){
       result.list= sapply(pairs, function(p){
         de = de.genes[[p]]
         if(length(de)==0){
@@ -311,11 +312,14 @@ find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
         cl1 = tmp[[1]]
         cl2 = tmp[[2]]
         
-        up.genes = head(names(de$up.genes), 50)
-        down.genes = head(names(de$down.genes),50)
-        
-        up.genes.score = de$up.score
-        down.genes.score = de$down.score
+        up.genes.score = head(de$up.genes, 50)
+        down.genes.score = head(de$down.genes,50)
+        up.genes.score[up.genes.score > 20] = 20
+        down.genes.score[down.genes.score > 20] = 20
+        up.genes = names(up.genes.score)
+        down.genes = names(down.genes.score)
+        up.genes.score=sum(up.genes.score)
+        down.genes.score = sum(down.genes.score)
         
         results = sapply(setdiff(as.character(cl),c(cl1,cl2)), function(cl3){
           tmp1.de = get_de_pair(de.genes, cl1, cl3)

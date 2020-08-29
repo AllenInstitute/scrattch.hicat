@@ -170,6 +170,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
   cl = setNames(as.character(cl),names(cl))
   merge_x_y <- function(x, y)
   {
+    cat("merge", x, y, "\n")
     cl[cl==x]= y
     if(length(unique(cl))==1){
       return(NULL)
@@ -190,12 +191,14 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
       }
       include.y = length(tmp.cells2) >= merge.de.param.list[[set]]$min.cells
       if(!is.null(cl.means.list)){
-        tmp = colnames(cl.means.list[[set]])!=x
-        cl.means.list[[set]] = cl.means.list[[set]][,tmp,drop=F]
+        if(!is.null(cl.means.list[[set]])){
+          tmp = colnames(cl.means.list[[set]])!=x
+          cl.means.list[[set]] = cl.means.list[[set]][,tmp,drop=F]
+        }
         tmp.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F])
         if(include.y){
-          if(!is.null(cl.means.list[[set]]) & nrow(cl.means.list[[set]])>0){
-            cl.means.list[[set]][[y]] = tmp.means[row.names(cl.means.list[[set]])]
+          if(!is.null(cl.means.list[[set]])){
+            cl.means.list[[set]][[y]] = tmp.means
           }
           else{
             cl.means.list[[set]] = data.frame(tmp.means)
@@ -204,12 +207,14 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         }  
       }
       if(!is.null(cl.sqr.means.list) & !is.null(cl.sqr.means.list[[set]]) & de.method=="fast_limma"){
-        tmp = colnames(cl.sqr.means.list[[set]])!=x
-        cl.sqr.means.list[[set]] = cl.sqr.means.list[[set]][,tmp,drop=F]
+        if(!is.null(cl.sqr.means.list[[set]])){
+          tmp = colnames(cl.sqr.means.list[[set]])!=x
+          cl.sqr.means.list[[set]] = cl.sqr.means.list[[set]][,tmp,drop=F]
+        }
         tmp.sqr.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F]^2)        
         if(include.y){
-          if(!is.null(cl.sqr.means.list[[set]]) & nrow(cl.sqr.means.list[[set]])>0){
-            cl.sqr.means.list[[set]][[y]] = tmp.sqr.means[row.names(cl.sqr.means.list[[set]])]
+          if(!is.null(cl.sqr.means.list[[set]])){
+            cl.sqr.means.list[[set]][[y]] = tmp.sqr.means
           }
           else{
             cl.sqr.means.list[[set]] = data.frame(tmp.means)
@@ -217,13 +222,15 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
           }
         }        
       }
-      if(!is.null(cl.present.list) & !is.null(cl.present.list[[set]])){        
-        tmp = colnames(cl.present.list[[set]])!=x
-        cl.present.list[[set]] = cl.present.list[[set]][,tmp,drop=F]
+      if(!is.null(cl.present.list) & !is.null(cl.present.list[[set]])){
+        if(!is.null(cl.present.list[[set]])){
+          tmp = colnames(cl.present.list[[set]])!=x
+          cl.present.list[[set]] = cl.present.list[[set]][,tmp,drop=F]
+        }       
         tmp.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F] >= merge.de.param.list[[set]]$low.th)
         if(include.y){
-          if(!is.null(cl.present.list[[set]])&nrow(cl.present.list[[set]])>0){
-            cl.present.list[[set]][[y]] =  tmp.means[row.names(cl.present.list[[set]])]
+          if(!is.null(cl.present.list[[set]])){
+            cl.present.list[[set]][[y]] =  tmp.means
           }
           else{
             cl.present.list[[set]] = data.frame(tmp.means)

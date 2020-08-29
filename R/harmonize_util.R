@@ -332,23 +332,23 @@ get_de_lfc_list <- function(cl.means.list)
 #' @export
 #'
 #' @examples
-get_de_result  <- function(dat.list, de.param.list,  cl, select.sets=names(de.param.list), ...)
+get_de_result  <- function(dat.list, de.param.list,  cl, select.sets=names(de.param.list), max.cl.size=200,...)
   {
-    de.result <- sapply(select.sets, function(x){
+    de.genes.list <- sapply(select.sets, function(x){
       tmp.cl =cl[names(cl) %in% colnames(dat.list[[x]])]
       if(is.factor(tmp.cl)){
         tmp.cl = droplevels(tmp.cl)
       }
+      tmp.cells = sample_cells(tmp.cl, max.cl.size)
+      tmp.cl = tmp.cl[tmp.cells]
+
       if(length(unique(tmp.cl)) > 1){
-        de.result = display_cl(tmp.cl, dat.list[[x]], max.cl.size = 200, de.param= de.param.list[[x]],...)
+        de.result = de_all_pairs(norm.dat= dat.list[[x]], cl=tmp.cl, de.param= de.param.list[[x]],...)
       }
       else{
         return(NULL)
       }
     },simplify=F)
-    marker.counts <- table(unlist(sapply(de.result,function(x)x$markers,simplify=F)))
-    de.genes.list = sapply(de.result, function(x)x$de.genes, simplify=F)
-    return(list(marker.counts=marker.counts, de.genes.list=de.genes.list))
   }
 
 #' Title

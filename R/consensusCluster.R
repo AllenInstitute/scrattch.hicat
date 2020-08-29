@@ -221,10 +221,15 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     }
     cl= result$cl    
     test.cells = setdiff(all.cells, names(cl))
-    if(length(test.cells)>0){
-      markers=unique(result$markers)
-      map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="mean")$pred.df
-      test.cl = setNames(map.df$pred.cl, row.names(map.df))
+    if(length(test.cells) > 0){
+      if(is.null(result$test.cl)){
+        markers=unique(result$markers)
+        map.df = map_by_cor(norm.dat[markers,names(cl)],cl, norm.dat[markers,test.cells],method="mean")$pred.df
+        test.cl = setNames(map.df$pred.cl, row.names(map.df))
+      }
+      else{
+        test.cl = result$test.cl
+      }
       all.cl = c(setNames(as.character(cl),names(cl)), setNames(as.character(test.cl), names(test.cl)))
     }
     else{
@@ -513,6 +518,8 @@ run_consensus_clust <- function(norm.dat,
     all.cells= intersect(all.cells, names(init.result$cl))
   }
   run <- function(i,...){
+    require(foreach)
+    require(parallel)
     prefix = paste("iter",i,sep=".")
     print(prefix)
     outfile= file.path(output_dir, paste0("result.",i,".rda"))
@@ -521,6 +528,7 @@ run_consensus_clust <- function(norm.dat,
     }
     select.cells=sample(all.cells, round(length(all.cells)*sample.frac))
     save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
+
     result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
     save(result, file=outfile)
   }
@@ -529,12 +537,15 @@ run_consensus_clust <- function(norm.dat,
       sapply(1:niter, function(i){run(i,...)})
     }
     else{
-      require(foreach)
+     
       require(doParallel)
-      cl <- makeForkCluster(mc.cores)
-      registerDoParallel(cl)
-      foreach(i=1:niter, .combine='c') %dopar% run(i)
-      stopCluster(cl)
+      require(parallel)
+      require(foreach)
+
+      cl <- parallel::makeCluster(mc.cores)
+      doParallel::registerDoParallel(cl)
+      foreach::foreach(i=1:niter, .combine='c') %dopar% { run(i) }
+      parallel::stopCluster(cl)
     }
     result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))
     co.result <- collect_subsample_cl_matrix(norm.dat,result.files,all.cells)
