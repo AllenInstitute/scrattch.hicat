@@ -444,7 +444,7 @@ get_cl_sigma <- function(mat,cl, cl.means=NULL, cl.sqr.means = NULL)
       cl.means = get_cl_means(mat,cl)
     }
     if(is.null(cl.sqr.means)){
-      cl.sqr.means =  get_cl_sqr_means(mat,cl, cl.means=cl.means)
+      cl.sqr.means =  get_cl_sqr_means(mat,cl)
     }
     df = sum(cl.size) - length(cl.size)
     sigma = sqrt(colSums( t(cl.sqr.means - cl.means^2) * cl.size[colnames(cl.sqr.means)]) / df)
