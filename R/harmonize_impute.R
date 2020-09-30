@@ -28,7 +28,7 @@ get_knn_weight <- function(knn.dist, scale=0.2, exclude.th = 0.0001)
 #' @export
 #'
 #' @examples
-predict_knn_old <- function(knn.idx, reference, cl)
+predict_knn_small <- function(knn.idx, reference, cl)
   {
     library(matrixStats)
     library(dplyr)
@@ -92,6 +92,9 @@ impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, mc.cores=
         w = get_knn_weight(knn.dist,...)
       }
     }
+    if(nrow(knn.idx) < batch.size){
+      mc.cores=1
+    }
     if (mc.cores == 1) {
       registerDoSEQ()
     }
@@ -107,7 +110,7 @@ impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, mc.cores=
       impute.dat <- matrix(0, nrow=length(x),ncol=ncol(dat))
       total.w <-  rep(0, length(x))
       for(i in 1:ncol(knn.idx)){
-        cat("bin", x[1],i, "\n")
+        #cat("bin", x[1],i, "\n")
         nn = reference[knn.idx[x,i]]
         select = nn %in% row.names(dat)
         tmp.dat = dat[nn[select],] 
@@ -237,7 +240,8 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         }
         impute.dat.list[[x]] = impute.dat
       }
-    ###cross-modality Imputation based on nearest neighbors in each iteraction of clustering using anchoring genes or genes shown to be differentiall expressed. 
+    
+    impute.genes=NULL
     for(x in names(split.results)){
       print(x)
       result = split.results[[x]]
@@ -248,15 +252,14 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         tmp.cells = row.names(knn)
         add.cells=FALSE
         query.cells = intersect(tmp.cells[comb.dat$meta.df[tmp.cells,"platform"] != ref.set], select.cells)
-        if(any(!query.cells %in% row.names(impute.dat.list[[ref.set]]))){
-          add.cells=TRUE
+        if(is.null(impute.genes)){
           impute.genes = select.genes
         }
         else{
           impute.genes=intersect(select.genes,c(result$markers, result$select.genes))
         }
         select.cols = comb.dat$meta.df[comb.dat$all.cells[knn[1,]],"platform"] == ref.set
-        print(select.cols)
+        cat("Impute genes", length(impute.genes),"\n")
         if(sum(select.cols)==0){
           next
         }
@@ -272,6 +275,8 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         }
       }
     }
+
+    ###cross-modality Imputation based on nearest neighbors in each iteraction of clustering using anchoring genes or genes shown to be differentiall expressed. 
     return(list(knn.list =knn.list, org.rd.dat.list = org.rd.dat.list,impute.dat.list=impute.dat.list, ref.list=ref.list))
   }
 

@@ -72,21 +72,23 @@ get_gene_score <- function(de.genes,cl.means=NULL, all.genes=NULL, top.n=50, max
     }                 
     
     if(is.null(all.genes)){
-      all.genes <- parallel::pvec(names(de.genes), function(p){
-        de = de.genes[[p]]
-        pair = strsplit(p, "_")[[1]]
-        x = pair[[1]]
-        y = pair[[2]]
-        lfc = cl.means[,x] - cl.means[,y]
-        up.genes = names(de$up.genes)
-        down.genes = names(de$down.genes)
-        #Deal with pairs with too many DEX genes, include all binary markers
-        up.binary.genes = up.genes[lfc[up.genes] > bin.th]
-        up.genes=up.genes[up.genes %in% c(head(up.genes, top.n), up.binary.genes)]
-
-        down.binary.genes = down.genes[lfc[down.genes] < -bin.th]
-        down.genes=down.genes[down.genes %in% c(head(down.genes, top.n), down.binary.genes)]
-        list(up=up.genes, down=down.genes)
+      all.genes <- parallel::pvec(names(de.genes), function(x){
+        genes=lapply(x, function(p){
+          de = de.genes[[p]]
+          pair = strsplit(p, "_")[[1]]
+          x = pair[[1]]
+          y = pair[[2]]
+          lfc = cl.means[,x] - cl.means[,y]
+          up.genes = names(de$up.genes)
+          down.genes = names(de$down.genes)
+                                        #Deal with pairs with too many DEX genes, include all binary markers
+          up.binary.genes = up.genes[lfc[up.genes] > bin.th]
+          up.genes=up.genes[up.genes %in% c(head(up.genes, top.n), up.binary.genes)]
+          
+          down.binary.genes = down.genes[lfc[down.genes] < -bin.th]
+          down.genes=down.genes[down.genes %in% c(head(down.genes, top.n), down.binary.genes)]
+          list(up=up.genes, down=down.genes)
+        })
       },mc.cores=mc.cores)
       all.genes=unique(unlist(all.genes))
     } 

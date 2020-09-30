@@ -106,9 +106,9 @@ unbranch_by_conf  <- function(dend, conf.th)
           conf[i] = attr(dend[[i]],"edgePar")$conf
         }
         dend[[i]]=unbranch_by_conf(dend[[i]],conf.th)
-      }
+      }      
       select = conf < conf.th
-      select.children = which(select )
+      select.children = which(select )      
       if(length(select.children)>0){
         unchanged = which(!select)
         new_dend = dend[unchanged]

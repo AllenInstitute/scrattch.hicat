@@ -12,8 +12,6 @@
 #' @examples
 get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.5,clean.cells=row.names(rd.dat))
 {
-  ##fast_knn does not always work for small clusters
-  #knn.result = fast_knn(rd.dat,k=k, ef=ef,M=M)
   knn.result = RANN::nn2(rd.dat,k=k)
   row.names(knn.result[[1]]) = row.names(knn.result[[2]])=row.names(rd.dat)
   knn  = knn.result[[1]]
@@ -54,7 +52,7 @@ get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.
     knn.cl.df$odds[i] = (q + 1) / (k /total * m)
   }
   knn.cl.df$frac = knn.cl.df$Freq/knn.cl.df$cl.from.total
-  return(list(knn.result=knn.result, pred.result=pred.result, knn.cl.df=knn.cl.df,outlier=outlier))
+  return(list(knn.result=knn.result, knn.cl.df=knn.cl.df,outlier=outlier))
 }
 
 

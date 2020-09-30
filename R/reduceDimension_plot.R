@@ -473,31 +473,36 @@ plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missin
     alpha.val = setNames(rep(fg.alpha, length(cl.color)),names(cl.color))
     alpha.val["0"] = bg.alpha    
     cl.color = alpha(cl.color, alpha.val)
+    rd.rd = rd.dat[order(row.names(rd.dat) %in% select.samples),]
     plot_RD_cl(rd.dat, cl, cl.color, cl.label,...)    
   }
   
 
 
 
-plot_2d_umap_anno <- function(umap.fn, anno.df, dest.d="./",meta.fields=c("platform","joint_region"))
+plot_2d_umap_anno <- function(umap.fn, anno.df, dest.d="./",meta.fields=c("platform","joint_region"),alpha=0.5)
   {
     library(data.table)
     library(dplyr)
     library(ggplot2)
-    umap.df <- as.data.frame(fread(file.path(dest.d,umap.fn),header=TRUE))
+    umap.df <- as.data.frame(fread(umap.fn,header=TRUE))
     colnames(umap.df) = c("sample_name","Dim1","Dim2")
     umap.df = umap.df[sample(1:nrow(umap.df)),]
     umap.df = umap.df %>% left_join(anno.df) 
     umap.2d = umap.df[,c("Dim1","Dim2")]
     row.names(umap.2d)=umap.df$sample_name
+    umap.2d = umap.2d[sample(1:nrow(umap.2d)),]
+    umap.fn = basename(umap.fn)
     cl = setNames(umap.df$cl, umap.df$sample_name)
     cl.df = umap.df %>% select(cluster_id, cluster_label, cluster_color,cl) %>% unique
     cl.color = setNames(cl.df$cluster_color, cl.df$cl)
-    cl.label = setNames(cl.df$cl, cl.df$cl)
-    g= plot_RD_cl(umap.2d, cl, cl.color = cl.color, cl.label =cl.label,alpha=0.5)
+    cl.label = setNames(cl.df$cluster_label, cl.df$cl)
+    g= plot_RD_cl(umap.2d, cl, cl.color = cl.color, cl.label =cl.label,alpha=alpha)
     ggsave(g, file=file.path(dest.d, gsub(".csv",".pdf",umap.fn)))
     ggsave(g, file=file.path(dest.d, gsub(".csv",".png",umap.fn)))
-
+    g= plot_RD_cl(umap.2d, cl, cl.color = cl.color, cl.label =cl.label,alpha=alpha,label.center=FALSE)
+    ggsave(g, file=file.path(dest.d, gsub(".csv",".no.label.png",umap.fn)))
+    
     for(m in meta.fields){
       tmp.df = umap.df[,paste0(m, c("_id","_label","_color"))] %>% unique
       colnames(tmp.df)=c("id","label","color")

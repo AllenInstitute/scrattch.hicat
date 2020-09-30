@@ -234,32 +234,47 @@ map_sampling <- function(train.dat,
                          markers, 
                          markers.perc = 0.8, 
                          iter = 100, 
-                         method = "median",
-                         verbose = TRUE) {
+                         method = "means",
+                         verbose = TRUE,
+                         mc.cores=1) {
   
   method <- match.arg(arg = method,
                       choices = c("mean", "median"))
-  
+
+  if(method =="mean"){
+    train.cl.dat = get_cl_means(train.dat, train.cl)
+  }
+  else{
+    train.cl.dat = get_cl_medians(train.dat, train.cl)
+  }
+  library(parallel)
   # Perform mapping iter times.
-  map.result <- sapply(1:iter, 
+  map.result <- mclapply(1:iter, 
                        function(i){
                          if(verbose) {
                            cat("\r", paste0("Running iteration ",i," of ",iter,".        "))
                            flush.console()
                          }
                          tmp.markers <- sample(markers, round(length(markers) * markers.perc))
-                         map_by_cor(train.dat[tmp.markers,], 
-                                    train.cl, 
-                                    test.dat[tmp.markers,], 
-                                    method = method)
-                       }, simplify = F)
+                         test.cl.cor <- cor(as.matrix(test.dat[tmp.markers,]), train.cl.dat[tmp.markers,])
+                         test.cl.cor[is.na(test.cl.cor)] <- 0
+                         max.cl.cor <- apply(test.cl.cor, 1, which.max)
+                         pred.cl <- colnames(test.cl.cor)[max.cl.cor]
+                         pred.cl <- setNames(pred.cl, row.names(test.cl.cor))
+                         pred.score <- apply(test.cl.cor, 1, max)
+                         if (is.factor(train.cl)) {
+                           pred.cl <- setNames(factor(pred.cl, levels = levels(train.cl)), 
+                                               names(pred.cl))
+                         }
+                         pred.df <- data.frame(pred.cl = pred.cl, pred.score = pred.score)
+                       }, mc.cores=mc.cores)
   
   # Extract predicted cluster assignments from each iteration
   map.cl <- sapply(map.result, 
                    function(x) {
-                     x$pred.df$pred.cl
-                   }
-  )
+                     x$pred.cl
+                   })
+                   
   # Compute fraction of times each sample mapped to each cluster
   row.names(map.cl) <- colnames(test.dat)
   map <- as.data.frame(as.table(as.matrix(map.cl)))
@@ -608,3 +623,27 @@ match_cl <- function(cl,
               cl.df = cl.df, 
               cor = mat))
 }
+
+
+clean_group_id <- function(cl.df, col="subclass")
+  {
+    col_label = paste0(col, "_label")
+    col_id = paste0(col, "_id")
+
+    tmp = cl.df[[col_label]]
+    tmp1 = tmp[!duplicated(tmp)]
+    tmp = factor(tmp, levels=tmp1)
+    cl.df[[col_id]] = as.integer(tmp)
+    return(cl.df)
+  }
+
+clean_group_color <- function(cl.df, col="subclass")
+  {
+    col_id = paste0(col, "_id")
+    col_color = paste0(col, "_color")
+    tb = table(cl.df[[col_id]], cl.df[[col_color]])
+    group_color = setNames(colnames(tb)[apply(tb, 1, which.max)], row.names(tb))
+    cl.df[[col_color]] = group_color[as.character(cl.df[[col_id]])]
+    return(cl.df)
+  }
+
