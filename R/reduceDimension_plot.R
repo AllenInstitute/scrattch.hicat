@@ -83,7 +83,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
       else{
         g = g +  guides(colour = guide_legend(override.aes = list(shape = shape[levels(rd.dat$cl)],size = legend.size)),ncol=ncol)
       }
-      g = g + theme(legend.position="bottom")
+      g = g + theme(legend.position="right")
     }
     else{
       g = g + theme(legend.position="none")
@@ -479,43 +479,146 @@ plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missin
   
 
 
+#' plot_2d_umap_anno
+#' 
+#' @param umap.fn path to umap coordinates. CSV file containing sample_names and umap x/y coordinates
+#' @param anno.df Sample annotations. The first column should be sample_name, and each annotation should have \_id, \_label, and \_color columns. Requires cluster_id which needs to be sequential in order of the dendrogram.
+#' @param dest.d path to save plots.
+#' @param meta.fields  base name of variables to be represented as bargraphs below dendrogram. Annotation variables need to be represented as \_id, \_label, \_color in anno.
+#' @param show.label TRUE or FALSE. To show cluster label on top of plot.
+#' @param alpha level of transparency of dots. Value between 0 (fully transparent) and 1 (fully opaque)
+#' @param cex size of plotted points. Default = 0.25
+#' @param save.format figures can be saved as "png", "pdf" or "both"
+#' @param plot.height 
+#' @param plot.width
+#' @param show.legend TRUE or FALSE. Whether to show legend with plot.  
+#'   
+#'    
+#' @example_data:
+#'  
+#' load("data/rd_plot_example/example_umap.csv")
+#' load("data/rd_plot_example/anno.df.rda")
+#' 
+#' 
+#' @usage plots <- plot_2d_umap_anno(umap.fn="data/rd_plot_example/example_umap.csv",anno.df=anno.df, dest.d="./", meta.fields=c("platform","joint_region"),show.label=FALSE,alpha=0.5, cex=0.15,save.format="both", plot.height=7, plot.width=10, show.legend=TRUE)
+#' 
+#'  
+#'    
 
-plot_2d_umap_anno <- function(umap.fn, anno.df, dest.d="./",meta.fields=c("platform","joint_region"),alpha=0.5)
-  {
-    library(data.table)
-    library(dplyr)
-    library(ggplot2)
-    umap.df <- as.data.frame(fread(umap.fn,header=TRUE))
-    colnames(umap.df) = c("sample_name","Dim1","Dim2")
-    umap.df = umap.df[sample(1:nrow(umap.df)),]
-    umap.df = umap.df %>% left_join(anno.df) 
-    umap.2d = umap.df[,c("Dim1","Dim2")]
-    row.names(umap.2d)=umap.df$sample_name
-    umap.2d = umap.2d[sample(1:nrow(umap.2d)),]
-    umap.fn = basename(umap.fn)
-    cl = setNames(umap.df$cl, umap.df$sample_name)
-    cl.df = umap.df %>% select(cluster_id, cluster_label, cluster_color,cl) %>% unique
-    cl.color = setNames(cl.df$cluster_color, cl.df$cl)
-    cl.label = setNames(cl.df$cluster_label, cl.df$cl)
-    g= plot_RD_cl(umap.2d, cl, cl.color = cl.color, cl.label =cl.label,alpha=alpha)
-    ggsave(g, file=file.path(dest.d, gsub(".csv",".pdf",umap.fn)))
-    ggsave(g, file=file.path(dest.d, gsub(".csv",".png",umap.fn)))
-    g= plot_RD_cl(umap.2d, cl, cl.color = cl.color, cl.label =cl.label,alpha=alpha,label.center=FALSE)
-    ggsave(g, file=file.path(dest.d, gsub(".csv",".no.label.png",umap.fn)))
-    
+
+
+plot_2d_umap_anno <- function(umap.fn, 
+                              anno.df, 
+                              dest.d="./",
+                              meta.fields=NULL,
+                              show.label=FALSE,
+                              alpha=0.65, 
+                              cex=0.25,
+                              save.format=c("png","pdf","both"),
+                              plot.height=7,
+                              plot.width=7,
+                              show.legend=FALSE)
+{
+  library(data.table)
+  library(dplyr)
+  library(ggplot2)
+  
+  #load umap from csv
+  umap.df <- as.data.frame(fread(umap.fn,header=TRUE))
+  colnames(umap.df) <- c("sample_name","Dim1","Dim2")
+  umap.df <- umap.df[sample(1:nrow(umap.df)),]
+  umap.df <- umap.df %>% left_join(anno.df) 
+  umap.2d <- umap.df[,c("Dim1","Dim2")]
+  row.names(umap.2d)<-umap.df$sample_name
+  umap.2d <- umap.2d[sample(1:nrow(umap.2d)),]
+  # extract filename for saving
+  umap.fn <- basename(umap.fn)
+  umap.fn <- gsub(".csv", "",umap.fn)
+  
+  #setup cluster labels/colors for plotting
+  cl <- setNames(umap.df$cl, umap.df$sample_name)
+  cl.df <- umap.df %>% select(cluster_id, cluster_label, cluster_color,cl) %>% unique
+  cl.color <- setNames(cl.df$cluster_color, cl.df$cl)
+  cl.label <- setNames(cl.df$cluster_label, cl.df$cl)
+  
+  plot.list <- list()
+  #plot umap colored by cluster
+  if(show.label==TRUE) {
+    g <- plot_RD_cl(rd.dat=umap.2d, cl=cl, cl.color = cl.color, cl.label =cl.label,alpha.val=alpha, cex=cex, show.legend = FALSE)
+    plot.list$cluster <- g 
+  }  
+  else {
+    if(show.legend==TRUE){
+      print("legend")
+      g <- plot_RD_cl(rd.dat=umap.2d, cl=cl, cl.color = cl.color, cl.label =cl.label,alpha.val=alpha, cex=cex,label.center=FALSE, show.legend = TRUE)
+      g[["labels"]][["colour"]] <- "Cluster"
+      legend <- cowplot::get_legend(g)
+      
+      g <- plot_RD_cl(rd.dat=umap.2d, cl=cl, cl.color = cl.color, cl.label =cl.label,alpha.val=alpha, cex=cex,label.center=FALSE, show.legend = FALSE)
+      g <- cowplot::plot_grid(g, legend, ncol=2)
+      plot.list$cluster <- g 
+    } 
+    else{  
+      g <- plot_RD_cl(rd.dat=umap.2d, cl=cl, cl.color = cl.color, cl.label =cl.label,alpha.val=alpha, cex=cex,label.center=FALSE, show.legend = FALSE)
+      plot.list$cluster <- g 
+    }
+  }
+  
+  if(!is.null(meta.fields)) {
+    # plot umap colored by other metadata
     for(m in meta.fields){
       tmp.df = umap.df[,paste0(m, c("_id","_label","_color"))] %>% unique
       colnames(tmp.df)=c("id","label","color")
       tmp.df = tmp.df %>% arrange(id)
       tmp.color = setNames(as.character(tmp.df$color), tmp.df$label)
-      g= plot_RD_meta(umap.2d, factor(umap.df[,paste0(m, "_label")], levels=names(tmp.color)),meta.col = tmp.color,alpha=0.5)
-      ggsave(g, file=file.path(dest.d, gsub("csv",paste0(m,".pdf"),umap.fn)),height=7,width=8.5)
-      ggsave(g, file=file.path(dest.d, gsub("csv",paste0(m,".png"),umap.fn)),height=7,width=8.5)
+      
+      g= plot_RD_meta(umap.2d, 
+                      factor(umap.df[,paste0(m, "_label")], 
+                             levels=names(tmp.color)),
+                      meta.col = tmp.color,
+                      alpha=alpha)
+      
+      if(show.legend==TRUE){
+        print("legend")
+        g[["labels"]][["colour"]] <- m
+        legend <- cowplot::get_legend(g)   
+        g = g + theme(axis.title.x=element_blank(), axis.title.y=element_blank())+ 
+          theme_void() + 
+          theme(legend.position="none") +
+          coord_fixed(ratio=1)
+        g <- cowplot::plot_grid(g, legend, ncol=2)
+        plot.list[[m]] <- g
+      }     
+      else{
+        print("no leg")
+        g = g + theme(axis.title.x=element_blank(), axis.title.y=element_blank())+ 
+          theme_void() + 
+          theme(legend.position="none") +
+          coord_fixed(ratio=1)
+        plot.list[[m]] <- g
+      }
     }
-    return(umap.2d)
   }
-
-
+  
+  #save list of plots as pdf or png
+  if(save.format == "pdf") {
+    lapply(names(plot.list), function(nm)
+      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".pdf"), useDingbats=FALSE, height=plot.height, width=plot.width   ))
+  } else if(save.format == "png"){
+    lapply(names(plot.list), function(nm)
+      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".png"), height=plot.height, width=plot.width   ))
+  } else if(save.format == "both"){
+    lapply(names(plot.list), function(nm)
+      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".pdf"), useDingbats=FALSE, height=plot.height, width=plot.width ))
+    
+    lapply(names(plot.list), function(nm)
+      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".png"), height=plot.height, width=plot.width  ))
+  }
+  else{ print("Specify save.format")
+  }
+  
+  return(plot.list)
+}
 
 
 
