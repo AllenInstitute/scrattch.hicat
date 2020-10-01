@@ -72,6 +72,7 @@ get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac
 #' @param plot.width 
 #' @param label.size 
 #' @param max_size 
+#' @param repel_label
 #' 
 #' @example_data:
 #'  
@@ -79,10 +80,10 @@ get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac
 #' cl.center.df <- read.csv("data/Constellation_example/cl.center.df.csv", row.names=1)
 #' 
 #' 
-#' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2)) 
+#' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2), repel_label=TRUE) 
 
 
-plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=2, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=2, max_size=10) { 
+plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=2, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=5, max_size=10, repel_label=FALSE) { 
   
   library(gridExtra)
   library(sna)
@@ -428,12 +429,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
           scale_size_area(trans="sqrt",
                           max_size=max_size,
                           breaks = c(100,1000,10000,100000)) +
-          scale_color_identity() + 
-          geom_text(data=nodes,
-                    aes(x=x, 
-                        y=y, 
-                        label=labels),
-                    size = label.size) + 
+          scale_color_identity()  + 
           theme_void()+ 
           geom_mark_hull(data=nodes,
                          concavity = 8,
@@ -441,6 +437,24 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
                          aes(filter = nodes$clade_id %in% plot.hull,x, y, 
                              color=nodes$clade_color)) +
           theme(legend.position = "none")
+    
+      if(label_repel ==TRUE){
+        plot.all <- plot.all +
+          geom_text_repel(data=nodes,
+                          aes(x=x, 
+                              y=y, 
+                              label=labels),
+                          size = label.size,
+                          min.segment.length = Inf) 
+      }
+      else{
+        plot.all <- plot.all +
+            geom_text(data=nodes,
+                      aes(x=x, 
+                          y=y, 
+                          label=labels),
+                      size = label.size)  }
+
   #plot.all
     } else {
     #### plot all layers
@@ -458,17 +472,33 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
           scale_size_area(trans="sqrt",
                           max_size=max_size,
                           breaks = c(100,1000,10000,100000)) +
-          scale_color_identity() + 
-          geom_text(data=nodes,
-                    aes(x=x, 
-                        y=y, 
-                        label=labels),
-                    size = label.size) + 
-          theme_void() +
-          theme(legend.position="none") 
+          scale_color_identity() 
+      if(label_repel ==TRUE){
+        plot.all <- plot.all +
+                  geom_text_repel(data=nodes,
+                        aes(x=x, 
+                            y=y, 
+                            label=labels),
+                        size = label.size,
+                        min.segment.length = Inf) + 
+                  theme_void() +
+                  theme(legend.position="none")
+      }
+        else{
+          plot.all <- plot.all +
+                  geom_text(data=nodes,
+                            aes(x=x, 
+                                y=y, 
+                                label=labels),
+                            size = label.size) + 
+                  theme_void() +
+                  theme(legend.position="none") }
     #plot.all
   }
   
+  
+  
+  segment.color = NA
   
   if (plot.parts == TRUE) {
     ggsave(file.path(out.dir,paste0(st,"comb.constellation.pdf")), plot.all, width = plot.width, height = plot.height, units="cm",useDingbats=FALSE) }
