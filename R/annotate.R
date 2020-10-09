@@ -518,21 +518,23 @@ adjust_color <- function(colorset) {
   duplicated_colors <- which(duplicated(colorset))
   
   while(length(duplicated_colors) > 0) {
-    
+    print(length(duplicated_colors))
     rgb <- col2rgb(colorset)
     
     for(x in duplicated_colors) {
-      
-      if(x < length(duplicated_colors)) {
-        tmp <- round(rgb[,x - 1] * 0.8 + sample(20, 3) + rgb[,x + 1] * 0.2) 
-      } else{
-        tmp <- round(rgb[,x - 1] * 0.8 + sample(40, 3))
-      }
-      
+      print(x)
+      print(rgb[,x])
+      i = sample(1:3,1)
+      bg = rep(0,3)
+      bg[i] = (20+ sample(30,1)) * sample(c(1,-1) , 1)
+      k = which(colorset== colorset[x])[1]
+      tmp <- round(rgb[,k] * 0.8 + bg)      
       rgb[,x] <- tmp
+      print(rgb[,x])
     }
     
     rgb[rgb > 255] <- 255
+    rgb[rgb < 0] <- 0
     
     colorset <- rgb(rgb[1,],
                     rgb[2,],

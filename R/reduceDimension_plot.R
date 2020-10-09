@@ -39,7 +39,7 @@ get_RD_cl_center <- function(rd.dat, cl)
 #' @export
 #'
 #' @examples
-plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=NULL,show.legend=FALSE, legend.size=2, label.center=TRUE, bg="blank",fn.color="black",no.shape=TRUE,ncol=4)
+plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alpha.val=NULL,show.legend=FALSE, legend.size=2, label.center=TRUE, bg="blank",fn.color="black",no.shape=TRUE,ncol=4,shift.x=0, shift.y=0)
   {
     rd.dat=as.data.frame(rd.dat)
     colnames(rd.dat) = paste0("Dim", 1:ncol(rd.dat))
@@ -65,7 +65,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
     if(label.center){
       g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y), size=cex*1.5)
       for(i in 1:nrow(cl.center)){
-        g = g +  annotate("text", label=cl.label[row.names(cl.center)[i]], x=cl.center[i,1], y=cl.center[i,2],size=fn.size,color=fn.color)
+        g = g +  annotate("text", label=cl.label[row.names(cl.center)[i]], x=cl.center[i,1]+shift.x, y=cl.center[i,2] + shift.y,size=fn.size,color=fn.color)
       }
     }
     if(bg=="blank"){
@@ -486,12 +486,12 @@ plot_2d_umap_anno <- function(umap.fn, anno.df, dest.d="./",meta.fields=c("platf
     library(dplyr)
     library(ggplot2)
     umap.df <- as.data.frame(fread(umap.fn,header=TRUE))
+    umap.df = umap.df[sample(1:nrow(umap.df)),]
     colnames(umap.df) = c("sample_name","Dim1","Dim2")
     umap.df = umap.df[sample(1:nrow(umap.df)),]
     umap.df = umap.df %>% left_join(anno.df) 
     umap.2d = umap.df[,c("Dim1","Dim2")]
     row.names(umap.2d)=umap.df$sample_name
-    umap.2d = umap.2d[sample(1:nrow(umap.2d)),]
     umap.fn = basename(umap.fn)
     cl = setNames(umap.df$cl, umap.df$sample_name)
     cl.df = umap.df %>% select(cluster_id, cluster_label, cluster_color,cl) %>% unique

@@ -258,7 +258,8 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,cl.means, up
 #' @export
 #'
 #' @examples
-select_markers_pair_group <- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
+# Always directory
+select_markers_pair_group_top<- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
 {
   require(matrixStats)
   pairs = do.call("rbind",strsplit(names(de.genes), "_"))
@@ -275,25 +276,46 @@ select_markers_pair_group <- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.
   all.genes = row.names(up.gene.score)
   tmp.up.gene.score = cbind(up.gene.score[,up.pairs,drop=F], down.gene.score[,down.pairs,drop=F])
   tmp.down.gene.score = cbind(down.gene.score[,up.pairs,drop=F], up.gene.score[,down.pairs,drop=F])
+  tmp.up.gene.score.total = rowSums(tmp.up.gene.score)
+  tmp.down.gene.score.total = rowSums(tmp.down.gene.score)
   
-  up.genes = row.names(tmp.up.gene.score)[head(order(rowSums(tmp.up.gene.score), decreasing=T), n.markers)]
-  down.genes = row.names(tmp.down.gene.score)[head(order(rowSums(tmp.down.gene.score), decreasing=T), n.markers)]
-  
-  up.num = colSums(tmp.up.gene.score[up.genes,,drop=F] >0)
-  down.num = colSums(tmp.down.gene.score[down.genes,,drop=F] >0 )
-  total.num = up.num + down.num
-  add.genes = setNames(rep(n.markers, ncol(tmp.up.gene.score)), colnames(tmp.up.gene.score)) - total.num
-  add.genes = add.genes[add.genes > 0]
-  
-  up.genes = up.genes[rowMins(as.matrix(tmp.up.gene.score[up.genes,,drop=F])) > 0 ]
-  down.genes = down.genes[rowMins(as.matrix(tmp.down.gene.score[down.genes,,drop=F])) > 0 ]
+  tmp.up.gene.score.total = sort(tmp.up.gene.score.total[tmp.up.gene.score.total>0],decreasing=TRUE)
+  tmp.down.gene.score.total = sort(tmp.down.gene.score.total[tmp.down.gene.score.total>0],decreasing=TRUE)
+
+  up.genes = names(head(tmp.up.gene.score.total, n.markers))
+  down.genes = names(head(tmp.down.gene.score.total,n.markers))
+
+  up.num = colSums(tmp.up.gene.score[up.genes, , drop = F] > 0)  
+  down.num = colSums(tmp.down.gene.score[down.genes, , drop = F] > 0)   
   genes = union(up.genes, down.genes)
-  if(length(add.genes)>0){
-    tmp=select_markers_pair(add.genes= add.genes,de.genes= de.genes, gene.score=pmin(tmp.up.gene.score, tmp.down.gene.score), rm.genes=c(up.genes, down.genes),top.n=top.n)
-    genes=union(genes, unlist(tmp))
-  }
-  return(list(up.genes=up.genes, down.genes=down.genes, genes=genes))
+  select = !row.names(tmp.up.gene.score) %in% genes
+  tmp.up.gene.score = tmp.up.gene.score[select,,drop=F]
+  tmp.down.gene.score = tmp.down.gene.score[select,,drop=F]
+
+  return(list(up.genes=up.genes, down.genes=down.genes, up.num=up.num, down.num=down.num, up.gene.score=tmp.up.gene.score, down.gene.score=tmp.down.gene.score, up.gene.score.total=tmp.up.gene.score.total, down.gene.score.total = tmp.down.gene.score.total))
 }
+
+select_markers_pair_group<- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.num=1000,n.markers=20,up.gene.score=NULL, down.gene.score=NULL)
+  {
+    result=select_markers_pair_group_top(cl, g1,g2,de.genes,cl.means, top.n=50,max.num=1000,n.markers=n.markers,up.gene.score, down.gene.score)
+    up.gene.score= result$up.gene.score
+    down.gene.score=result$down.gene.score
+    up.num = result$up.num
+    down.num  = result$down.num
+    up.genes = result$up.genes
+    down.genes = result$down.genes
+    genes = c(up.genes, down.genes)
+    
+    add.up = setNames(rep(n.markers, length(up.num)),names(up.num)) - up.num
+    add.down = setNames(rep(n.markers, length(down.num)),names(down.num)) - up.num
+
+    if(sum(add.up) + sum(add.down) > 0){    
+      tmp = select_markers_pair_direction(add.up,add.down,de.genes=de.genes, cl.means=cl.means,up.gene.score=up.gene.score,down.gene.score=down.gene.score)
+      genes = c(genes, tmp$markers)      
+    }
+    return(list(genes=genes, up.genes=up.genes, down.genes=down.genes))
+  }
+
 
 
 #' Title
