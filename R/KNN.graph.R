@@ -83,7 +83,20 @@ get_knn_graph <- function(rd.dat, cl,cl.df, k=15, knn.outlier.th=2, outlier.frac
 #' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2), label_repel=TRUE) 
 
 
-plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=2, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=5, max_size=10, label_repel=FALSE) { 
+plot_constellation <- function(knn.cl.df, 
+                               cl.center.df, 
+                               out.dir, 
+                               node.label="cluster_id", 
+                               exxageration=2, 
+                               curved = TRUE, 
+                               plot.parts=FALSE, 
+                               plot.hull = NULL, 
+                               plot.height=25, 
+                               plot.width=25, 
+                               node.dodge=FALSE, 
+                               label.size=5, 
+                               max_size=10, 
+                               label_repel=FALSE) { 
   
   library(gridExtra)
   library(sna)
