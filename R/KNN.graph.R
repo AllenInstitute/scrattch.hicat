@@ -453,7 +453,7 @@ plot_constellation <- function(knn.cl.df,
     
       if(label_repel ==TRUE){
         plot.all <- plot.all +
-          geom_text_repel(data=nodes,
+          ggrepel::geom_text_repel(data=nodes,
                           aes(x=x, 
                               y=y, 
                               label=labels),
