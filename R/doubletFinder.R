@@ -89,7 +89,7 @@ doubletFinder <- function(data, select.genes, proportion.artificial = 0.20,
     
     plot.title <- gsub("^.*?-","",ds[1,2])
     
-    p=ggplot2::ggplot(ds, aes(x = doublet.score, fill=group, color=group)) +geom_density(alpha=0.4)+scale_color_manual(values=c("#F9627D","#2F3061"))+scale_fill_manual(values=c("#F9627D","#2F3061")) +labs(title=plot.title)
+    p=ggplot2::ggplot(ds, aes(x = ds, fill=group, color=group)) +geom_density(alpha=0.4)+scale_color_manual(values=c("#F9627D","#2F3061"))+scale_fill_manual(values=c("#F9627D","#2F3061")) +labs(title=plot.title)
     
     return(list(doublet.score,artificial.doublet.score, p))
     
