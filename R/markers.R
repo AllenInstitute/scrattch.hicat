@@ -276,8 +276,8 @@ select_markers_pair_group_top<- function(cl, g1,g2,de.genes,cl.means, top.n=50,m
   all.genes = row.names(up.gene.score)
   tmp.up.gene.score = cbind(up.gene.score[,up.pairs,drop=F], down.gene.score[,down.pairs,drop=F])
   tmp.down.gene.score = cbind(down.gene.score[,up.pairs,drop=F], up.gene.score[,down.pairs,drop=F])
-  tmp.up.gene.score.total = rowSums(tmp.up.gene.score)
-  tmp.down.gene.score.total = rowSums(tmp.down.gene.score)
+  tmp.up.gene.score.total = Matrix::rowSums(tmp.up.gene.score)
+  tmp.down.gene.score.total = Matrix::rowSums(tmp.down.gene.score)
   
   tmp.up.gene.score.total = sort(tmp.up.gene.score.total[tmp.up.gene.score.total>0],decreasing=TRUE)
   tmp.down.gene.score.total = sort(tmp.down.gene.score.total[tmp.down.gene.score.total>0],decreasing=TRUE)
@@ -390,37 +390,25 @@ select_pos_markers <- function(de.genes, cl, cl.means=NULL, n.markers=3, default
       up.gene.score=tmp$up.gene.score
       down.gene.score=tmp$down.gene.score
     }
-    cl.df$markers=""
-    if (mc.cores == 1) {
-      registerDoSEQ()
-    }
-    else {
-      Clu <- makeForkCluster(mc.cores)
-      doParallel::registerDoParallel(Clu)
-      on.exit(parallel::stopCluster(Clu), add = TRUE)
-    }                 
-       
     ###for each cluster, find markers that discriminate it from other types
-    cl.markers <- parallel::pvec(levels(cl), function(x){
-      sapply(x, function(tmp.cl){
-        cat("Cl\n",tmp.cl,"\n")
-        up.pairs = row.names(pairs.df)[pairs.df[,1] == tmp.cl]
-        down.pairs = row.names(pairs.df)[pairs.df[,2] == tmp.cl]
-        add.up = setNames(rep(n.markers, length(up.pairs)), up.pairs)
-        add.down = setNames(rep(n.markers, length(down.pairs)), down.pairs)
-        
-        up.default = sapply(up.pairs, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
-        down.default = sapply(down.pairs, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
-        if(length(up.default)>0){
-          add.up = pmax(add.up -  sapply(up.default, length),0)
-        }
-        if(length(down.default)>0){
-          add.down = pmax(add.down -  sapply(down.default, length),0)
-        }
-        tmp.result = select_markers_pair_direction(add.up=add.up, add.down=add.down,de.genes=de.genes, cl.means=cl.means, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers))
-        unique(c(tmp.result$markers, unlist(up.default), unlist(down.default)))
-      },simplify=F)
-    },mc.cores=mc.cores)
+    cl.markers <- parallel::mclapply(levels(cl), function(x){
+      up.pairs = row.names(pairs.df)[pairs.df[,1] == x]
+      down.pairs = row.names(pairs.df)[pairs.df[,2] == x]
+      add.up = setNames(rep(n.markers, length(up.pairs)), up.pairs)
+      add.down = setNames(rep(n.markers, length(down.pairs)), down.pairs)
+      
+      up.default = sapply(up.pairs, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
+      down.default = sapply(down.pairs, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
+      if(length(add.up) > 0 & length(up.default)>0){
+        add.up = pmax(add.up -  sapply(up.default, length),0)
+      }
+      if(length(add.down) > 0 & length(down.default)>0){
+        add.down = pmax(add.down -  sapply(down.default, length),0)
+      }
+      tmp.result = select_markers_pair_direction(add.up=add.up, add.down=add.down,de.genes=de.genes, cl.means=cl.means, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers))
+      unique(c(tmp.result$markers, unlist(up.default), unlist(down.default)))
+    }, mc.cores=mc.cores)
+    names(cl.markers) = levels(cl)
     return(cl.markers)
   }
 
@@ -442,11 +430,13 @@ select_top_pos_markers <- function(de.genes, cl, n.markers=3, up.gene.score, dow
     ###for each cluster, find markers that discriminate it from other types
     cl.markers <- parallel::pvec(levels(cl), function(x){
       sapply(x, function(tmp.cl){
-        print(tmp.cl)
         up.pairs = row.names(pairs.df)[pairs.df[,1] == tmp.cl]
         down.pairs = row.names(pairs.df)[pairs.df[,2] == tmp.cl]
-        if(length(up.pairs)){
+        if(length(up.pairs)>0){
           sc = get_row_sums(up.gene.score, select.col=up.pairs)
+        }
+        else{
+          sc = 0
         }
         if(length(down.pairs)>0){
           sc = sc+ get_row_sums(down.gene.score, select.col=down.pairs)

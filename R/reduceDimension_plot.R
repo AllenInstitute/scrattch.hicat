@@ -507,6 +507,7 @@ plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missin
 plot_2d_umap_anno <- function(umap.fn, 
                               anno.df, 
                               dest.d="./",
+                              umap.2d = NULL,
                               meta.fields=NULL,
                               show.label=FALSE,
                               alpha=0.65, 
@@ -519,15 +520,16 @@ plot_2d_umap_anno <- function(umap.fn,
   library(data.table)
   library(dplyr)
   library(ggplot2)
-  
+  if(is.null(umap.2d)){
   #load umap from csv
-  umap.df <- as.data.frame(fread(umap.fn,header=TRUE))
-  colnames(umap.df) <- c("sample_name","Dim1","Dim2")
-  umap.df <- umap.df[sample(1:nrow(umap.df)),]
-  umap.df <- umap.df %>% left_join(anno.df) 
-  umap.2d <- umap.df[,c("Dim1","Dim2")]
-  row.names(umap.2d)<-umap.df$sample_name
-  umap.2d <- umap.2d[sample(1:nrow(umap.2d)),]
+    umap.2d <- as.data.frame(fread(umap.fn,header=TRUE))
+    colnames(umap.2d) <- c("sample_name","Dim1","Dim2")
+    umap.2d <- umap.2d[sample(1:nrow(umap.2d)),]
+  }
+  umap.df = umap.2d %>% left_join(anno.df)
+  row.names(umap.2d)<-umap.2d$sample_name
+  umap.2d <- umap.2d[,c("Dim1","Dim2")]
+
   # extract filename for saving
   umap.fn <- basename(umap.fn)
   umap.fn <- gsub(".csv", "",umap.fn)
@@ -599,21 +601,20 @@ plot_2d_umap_anno <- function(umap.fn,
   #save list of plots as pdf or png
   if(save.format == "pdf") {
     lapply(names(plot.list), function(nm)
-      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".pdf"), useDingbats=FALSE, height=plot.height, width=plot.width   ))
+           ggsave(plot=plot.list[[nm]], file=file.path(dest.d, paste0(umap.fn,"_",nm, ".pdf")), useDingbats=FALSE, height=plot.height, width=plot.width   ))
   } else if(save.format == "png"){
     lapply(names(plot.list), function(nm)
-      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".png"), height=plot.height, width=plot.width   ))
+           ggsave(plot=plot.list[[nm]], file=file.path(dest.d, paste0(umap.fn,"_",nm, ".png")), height=plot.height, width=plot.width   ))
   } else if(save.format == "both"){
     lapply(names(plot.list), function(nm)
-      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".pdf"), useDingbats=FALSE, height=plot.height, width=plot.width ))
+           ggsave(plot=plot.list[[nm]], file=file.path(dest.d, paste0(umap.fn,"_",nm, ".pdf")), useDingbats=FALSE, height=plot.height, width=plot.width ))
     
     lapply(names(plot.list), function(nm)
-      ggsave(plot=plot.list[[nm]], file=paste0(umap.fn,"_",nm, ".png"), height=plot.height, width=plot.width  ))
+           ggsave(plot=plot.list[[nm]], file=file.path(dest.d, paste0(umap.fn,"_",nm, ".png")), height=plot.height, width=plot.width  ))
   }
   else{ print("Specify save.format")
   }
-  
-  return(plot.list)
+  return(list(umap.2d=umap.2d, plot.list=plot.list))
 }
 
 

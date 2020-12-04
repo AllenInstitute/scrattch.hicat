@@ -10,10 +10,12 @@
 #' @export
 #'
 #' @examples
-get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.5,clean.cells=row.names(rd.dat))
+get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.5,clean.cells=row.names(rd.dat), knn.result=NULL)
 {
-  knn.result = RANN::nn2(rd.dat,k=k)
-  row.names(knn.result[[1]]) = row.names(knn.result[[2]])=row.names(rd.dat)
+  if(is.null(knn.result)){
+    knn.result = RANN::nn2(rd.dat,k=k)
+    row.names(knn.result[[1]]) = row.names(knn.result[[2]])=row.names(rd.dat)
+  }
   knn  = knn.result[[1]]
   knn.dist = knn.result[[2]]
   knn.cl = matrix(cl[row.names(knn)[knn]],ncol=ncol(knn))
@@ -84,7 +86,7 @@ get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.
 #' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2)) 
 
 
-plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=2, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=2, max_size=10) { 
+plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="cluster_id", exxageration=2, curved = TRUE, plot.parts=FALSE, plot.hull = NULL, plot.height=25, plot.width=25, node.dodge=FALSE, label.size=2, max_size=10,   size.breaks = c(100,1000,10000,100000)) { 
   
   library(gridExtra)
   library(sna)
@@ -121,7 +123,7 @@ plot_constellation <- function(knn.cl.df, cl.center.df, out.dir, node.label="clu
                                  color=alpha(cluster_color, 0.8))) +
                   scale_size_area(trans="sqrt",
                                   max_size=max_size,
-                                  breaks = c(100,1000,10000,100000)) +
+                                  breaks = size.breaks) + 
                   scale_color_identity() +  
                   geom_text(data=cl.center.df,
                             aes(x=x, 
@@ -722,4 +724,20 @@ perpEnd <- function(x, y, len) {
 angle <- function(x, y) {
     atan2(y[2] - y[1], x[2] - x[1])
         }
+
+
+
+plot_umap_constellation <- function(umap.2d, cl, cl.df, select.knn.cl.df, dest.d=".", prefix="",...)
+  {
+    
+    cl.center.df = as.data.frame(get_RD_cl_center(umap.2d,cl))
+    cl.center.df$cl = row.names(cl.center.df)
+    cl.center.df$cluster_id <- cl.df$cluster_id[match(cl.center.df$cl, cl.df$cl)]
+    cl.center.df$cluster_color <- cl.df$cluster_color[match(cl.center.df$cl, cl.df$cl)]
+    cl.center.df$cluster_label <- cl.df$cluster_label[match(cl.center.df$cl, cl.df$cl)] 
+    cl.center.df$cluster_size <- cl.df$cluster_size[match(cl.center.df$cl, cl.df$cl)]
+    tmp.cl = row.names(cl.center.df)
+    tmp.knn.cl.df = select.knn.cl.df  %>% filter(cl.from %in% tmp.cl & cl.to %in% tmp.cl)
+    p=plot_constellation(tmp.knn.cl.df, cl.center.df, node.label="cluster_id", out.dir=file.path(dest.d,prefix),...)    
+  }
 
