@@ -285,8 +285,8 @@ select_markers_pair_group_top<- function(cl, g1,g2,de.genes,cl.means, top.n=50,m
   up.genes = names(head(tmp.up.gene.score.total, n.markers))
   down.genes = names(head(tmp.down.gene.score.total,n.markers))
 
-  up.num = colSums(tmp.up.gene.score[up.genes, , drop = F] > 0)  
-  down.num = colSums(tmp.down.gene.score[down.genes, , drop = F] > 0)   
+  up.num = Matrix::colSums(tmp.up.gene.score[up.genes, , drop = F] > 0)  
+  down.num = Matrix::colSums(tmp.down.gene.score[down.genes, , drop = F] > 0)   
   genes = union(up.genes, down.genes)
   select = !row.names(tmp.up.gene.score) %in% genes
   tmp.up.gene.score = tmp.up.gene.score[select,,drop=F]
