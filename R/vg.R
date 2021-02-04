@@ -249,8 +249,7 @@ gene_vars <- function(dat,
     means <- gene_means(dat)
   }
   
-  squared_dat <- dat^2
-  
+  squared_dat <- dat^2  
   if(is.matrix(dat)) {
     rowMeans(squared_dat) - means ^ 2
   } else {
@@ -356,8 +355,8 @@ gene_loess_fit <- function(dat,
   selected_dispersions <- dispersions[select]
   selected_means <- means[select]
   
-  fit <- loess(selected_dispersions ~ log10(selected_means))
-  
+  fit <- limma::loessFit(selected_dispersions, log10(selected_means))
+  fit$x = as.matrix(log10(selected_means))
   return(fit)
   
 }
@@ -377,7 +376,7 @@ gene_loess_fit_z <- function(loess_fit,
   select <- !is.na(dispersions) & dispersions > 0
   
   residual <- resid(loess_fit)
-  base <- min(predict(loess_fit))
+  base <- min(loess_fit$fitted)
   
   diff <- dispersions - base
   diff[select] <- residual

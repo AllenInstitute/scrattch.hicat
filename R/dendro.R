@@ -346,6 +346,18 @@ label_dend <- function(dend,n=1)
   }
 
 
+reset_dend_label <- function(dend)
+  {  
+    if(length(dend)>1){
+      attr(dend, "label") = NULL
+      for(i in 1:length(dend)){
+        dend[[i]] = reset_dend_label(dend[[i]])
+      }
+    }
+    return(dend)
+  }
+
+
 #' Get dendrogram parent
 #'
 #' @param dend 
