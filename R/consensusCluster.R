@@ -522,6 +522,7 @@ run_consensus_clust <- function(norm.dat,
     require(parallel)
     prefix = paste("iter",i,sep=".")
     print(prefix)
+    library(Matrix)
     outfile= file.path(output_dir, paste0("result.",i,".rda"))
     if(file.exists(outfile)& !override){
       return(NULL)
@@ -530,6 +531,7 @@ run_consensus_clust <- function(norm.dat,
     save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
 
     result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
+    result=scrattch.hicat::merge_cl(norm.dat, cl=cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)    
     save(result, file=outfile)
   }
   if(is.null(co.result)){
