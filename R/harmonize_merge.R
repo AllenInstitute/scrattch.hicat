@@ -2,6 +2,7 @@
 #'
 #' @param dat.list 
 #' @param de.param.list 
+#' @param common.genes
 #' @param cl 
 #' @param pairs 
 #' @param cl.means.list 
@@ -14,9 +15,15 @@
 #' @export
 #'
 #' @examples
-de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means.list=NULL, cl.present.list=NULL, cl.sqr.means.list=NULL, lfc.conservation.th=0.6, de.genes.list=NULL, max.cl.size=200, method="fast_limma")
+de_genes_pairs_multiple <- function(dat.list, de.param.list, common.genes=NULL, cl, pairs, cl.means.list=NULL, cl.present.list=NULL, cl.sqr.means.list=NULL, lfc.conservation.th=0.6, de.genes.list=NULL, max.cl.size=200, method="fast_limma")
   {
-      cl.size = table(cl)
+    if(is.null(common.genes)){
+      common.genes = row.names(dat.list[[1]])
+      for(x in 2:length(dat.list)){
+        common.genes= intersect(common.genes, row.names(dat.list[[x]]))
+      }
+    }
+    cl.size = table(cl)
       if(is.null(de.genes.list)){
         de.genes.list = sapply(names(dat.list), function(x)list())
       }
@@ -48,7 +55,7 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
       for(p in row.names(pairs)){
         lfc = sapply(names(cl.means.list), function(x){
           if(pairs[p,1] %in% colnames(cl.means.list[[x]]) & pairs[p,2] %in% colnames(cl.means.list[[x]])){
-            cl.means.list[[x]][comb.dat$common.genes,pairs[p,1]] - cl.means.list[[x]][comb.dat$common.genes,pairs[p,2]]
+            cl.means.list[[x]][common.genes,pairs[p,1]] - cl.means.list[[x]][common.genes,pairs[p,2]]
           }
           else{
             NULL
@@ -61,7 +68,7 @@ de_genes_pairs_multiple <- function(dat.list, de.param.list, cl, pairs, cl.means
         if(is.null(lfc)){
           return(NULL)
         }
-        row.names(lfc) = comb.dat$common.genes
+        row.names(lfc) = common.genes
         sign1 = rowSums(lfc > 1)
         sign2 = rowSums(lfc < -1)
         frac = pmax(sign1, sign2)/ncol(lfc)
@@ -168,6 +175,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
 {
   print("merge_cl_multiple")
   cl = setNames(as.character(cl),names(cl))
+
   merge_x_y <- function(x, y)
   {
     cat("merge", x, y, "\n")
@@ -262,12 +270,12 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     return(list(cl=cl, cl.rd.list=cl.rd.list, cl.sim = cl.sim, cl.means.list=cl.means.list, cl.present.list = cl.present.list))
   }
 
-  add_pairs_de_genes <- function(de.genes.list, cl, new.pairs)
+  add_pairs_de_genes <- function(de.genes.list, cl, new.pairs, common.genes)
     {
       if(verbose){
         print("Add de genes")
       }
-      de.genes.list <- de_genes_pairs_multiple(merge.dat.list, merge.de.param.list, cl, pairs=new.pairs, cl.means.list=cl.means.list, cl.present.list=cl.present.list, cl.sqr.means.list= cl.sqr.means.list,lfc.conservation.th=lfc.conservation.th, de.genes.list=de.genes.list,method=de.method)
+      de.genes.list <- de_genes_pairs_multiple(merge.dat.list, merge.de.param.list, common.genes=common.genes, cl=cl, pairs=new.pairs, cl.means.list=cl.means.list, cl.present.list=cl.present.list, cl.sqr.means.list= cl.sqr.means.list,lfc.conservation.th=lfc.conservation.th, de.genes.list=de.genes.list,method=de.method)
       if(verbose){
         print("Finish adding de genes")
       }
@@ -323,6 +331,8 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
   pairs=NULL
   ###Merge small clusters first
   cl.sim = get_cl_sim_multiple(cl.rd.list)
+  if (length(cl.sim)==0) return(NULL)
+
   while(length(cl.small)>0){
     knn = data.frame(cl=cl.small, nn=cl.big[sim_knn(cl.sim[cl.small, cl.big,drop=F],k=1)],stringsAsFactors=FALSE)
     knn$sim = get_pair_matrix(cl.sim, knn$cl, knn$nn)
@@ -345,7 +355,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     cl.small = cl.small[cl.small!=x]
   }
   merge.de.param.list = comb.dat$de.param.list[merge.sets]
-
+  common.genes   = comb.dat$common.genes
   cl.means.list = get_cl_means_list(merge.dat.list,  cl=cl, de.param.list=merge.de.param.list)
   cl.means.list = sapply(cl.means.list, as.data.frame, simplify=F)
 
@@ -382,7 +392,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
       }else{       
         de.pairs = rbind(merge.pairs[new.pairs,],de.pairs)
       }
-      de.genes.list = add_pairs_de_genes(de.genes.list, cl, merge.pairs[new.pairs,])
+      de.genes.list = add_pairs_de_genes(de.genes.list, cl, merge.pairs[new.pairs,], common.genes)
       if(is.null(de.genes.list) || sum(sapply(de.genes.list, length))==0){
         return(NULL)
       }

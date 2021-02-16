@@ -338,6 +338,7 @@ select_N_markers <- function(de.genes, cl.means, up.gene.score=NULL, down.gene.s
   {
    add.up = setNames(rep(add.up, length(pairs)), pairs)
    add.down= setNames(rep(add.down, length(pairs)), pairs)
+   up.default = down.default = c()
    if(!is.null(default.markers)){
      up.default = sapply(pairs, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
      down.default = sapply(pairs, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
@@ -603,7 +604,6 @@ within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
 
 
 ###Beta score from Trygve
-
 #' Title
 #'
 #' @param propExpr 
@@ -638,3 +638,25 @@ get_beta_score <- function(propExpr, spec.exp = 2, mcores=1){
 }
 
 
+
+###select_markers_groups 
+#' Title
+#'
+#' @param de.genes 
+#' @param cl.group Assignment of clusters to groups cluster as names, and group id as values.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+
+
+select_markers_groups <- function(de.genes, cl.group, cl.means, n.markers=1,...)
+  {
+    pairs = create_pairs(as.character(names(cl.group)))
+    pairs = pairs[cl.group[pairs[,1]]!= cl.group[pairs[,2]], ]
+    markers=select_N_markers(de.genes, cl.means=cl.means, pairs=row.names(pairs), ...)
+    return(markers)
+  }
+
+  

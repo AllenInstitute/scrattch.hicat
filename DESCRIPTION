@@ -1,14 +1,13 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
 Version: 1.0.1
-Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
+Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut","cre")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
   person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
   person("Cindy", "van Velthoven", email = "cindy.vanvelthoven@alleninstitute.org", role = c("aut")),
   person("Jeremy", "Miller", email = "jeremym@alleninstitute.org", role = c("aut")),	
   person("Adriana","Sedeno-Cortes", email ="adrianas@alleninstitute.org", role = c("aut")),
   person("Changkyu","Lee", email="Changkyul@alleninstitute.org", role = c("aut")),
-  person("Lawrence","Huang", email="lawrenceh@alleninstitute.org", role = c("aut")),
   person("Saroja","Somasundaram", email="sarojas@alleninstitute.org", role = c("aut")))
 Description: Iteractive clustering of single cell RNASeq dataset. 
 BugReports: https://github.com/AllenInstitute/scrattch.hicat/issues
@@ -18,25 +17,25 @@ Encoding: UTF-8
 LazyData: TRUE
 VignetteBuilder: knitr
 RoxygenNote: 7.0.2
-Requires: Matrix
+Requires: Matrix,Rphenograph,
 Imports: 
+  Rcpp,
+  RcppAnnoy,
   data.table,
   dendextend,
-  devtools,
   doParallel,
+  foreach,	
   dplyr,
-  foreach,
   ggplot2,
   grid,
   Matrix,
   matrixStats,
   pvclust,
-  qlcMatrix,
   Rtsne
+LinkingTo: Rcpp (>= 0.11.0)
 Suggests:
     WGCNA, 
     knitr,
     rmarkdown,
-    testthat,
-    Rphenograph,
+    testthat,     
     covr

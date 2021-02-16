@@ -1,62 +1,98 @@
-#' Adapt from Seurat package
-#' @importFrom reticulate py_module_available py_set_seed import
-#'
-#' @rdname RunUMAP
-#' @method RunUMAP default
-#' @export
-#'
-rd_Umap <- function(
-                    mat,                             
-                    n.neighbors = 30L,
-                    n.components = 2L,
-                    metric = "correlation",
-                    n.epochs = NULL,
-                    learning.rate = 1.0,
-                    min.dist = 0.3,
-                    spread = 1.0,
-                    set.op.mix.ratio = 1.0,
-                    local.connectivity = 1L,
-                    repulsion.strength = 1,
-                    negative.sample.rate = 5,
-                    a = NULL,
-                    b = NULL,
-                    seed.use = 42,
-                    metric.kwds = NULL,
-                    angular.rp.forest = FALSE,
-                    reduction.key = 'UMAP_',
-                    verbose = TRUE)
-{
-  library(reticulate)
-  if (!py_module_available(module = 'umap')) {
-    stop("Cannot find UMAP, please install through pip (e.g. pip install umap-learn).")
+# rd_Rumap (dat, param)
+#
+# dat (nsample x nfeat) : full dim. data
+# umap.param : umap parameter
+#
+# contact : changkyul@alleninstitute.org
+#
+#
+# Default umap configuration parameters
+#            n_neighbors: 15
+#           n_components: 2
+#                 metric: euclidean
+#               n_epochs: 200
+#                  input: data
+#                   init: spectral
+#               min_dist: 0.1
+#       set_op_mix_ratio: 1
+#     local_connectivity: 1
+#              bandwidth: 1
+#                  alpha: 1
+#                  gamma: 1
+#   negative_sample_rate: 5
+#                      a: NA
+#                      b: NA
+#                 spread: 1
+#           random_state: NA
+#        transform_state: NA
+#                    knn: NA
+#            knn_repeats: 1
+#                verbose: FALSE
+#        umap_learn_args: NA
+#
+rd_Rumap <- function (dat, umap.param,method="umap") {
+  if(method=="umap"){
+    library(umap)
+    # set up parameters                                        
+    custom.config = umap.defaults
+    if (length(umap.param) > 0) {
+      inparam = names(umap.param)
+      for (key in inparam) custom.config[[key]] = umap.param[[key]]
+    }
+    
+    # run ummap
+    if (custom.config$metric == "correlation") {
+      dat.dist = (1 - cor(t(dat)))/2
+      custom.config$metric = "euclidean"
+      tmp = umap(dat.dist, config=custom.config, random_state=umap.param$random_state, input="dist")
+    } else {
+      tmp = umap(dat, config=custom.config, random_state=umap.param$random_state)
+    }
+    rd.umap = tmp$layout
   }
-  if (!is.null(x = seed.use)) {
-    set.seed(seed = seed.use)
-    py_set_seed(seed = seed.use)
-  }
-  if (typeof(x = n.epochs) == "double") {
-    n.epochs_as.integer(x = n.epochs)
-  }
-  umap_import_import(module = "umap", delay_load = TRUE)
-  umap_umap_import$UMAP(
-                        n_neighbors = as.integer(x = n.neighbors),
-                        n_components = as.integer(x = n.components),
-                        metric = metric,
-                        n_epochs = n.epochs,
-                        learning_rate = learning.rate,
-                        min_dist = min.dist,
-                        spread = spread,
-                        set_op_mix_ratio = set.op.mix.ratio,
-                        local_connectivity = local.connectivity,
-                        repulsion_strength = repulsion.strength,
-                        negative_sample_rate = negative.sample.rate,
-                        a = a,
-                        b = b,
-                        metric_kwds = metric.kwds,
-                        angular_rp_forest = angular.rp.forest,
-                        verbose = verbose)
-  umap_output= umap$fit_transform(mat)
-  colnames(umap_output)=paste0(reduction.key, 1:ncol(x = umap_output))
-  rownames(umap_output)=rownames(object)
-  return(umap_output)
+
+  return(rd.umap)
 }
+
+umap_param <- function(n_neighbors=25, metric="correlation", min_dist=0.4, random_seed=123)
+  {
+    umap.param <- list()
+    umap.param$n_neighbors  = n_neighbors
+    umap.param$metric       = metric
+    umap.param$min_dist     = min_dist
+    umap.param$random_state = random_seed
+    return(umap.param)
+  }
+
+#
+# PCA_umap (rd.dat.list, cl, Comb.dat, ref.set, N.sampled.cells, umap.param)
+#
+# rd.dat.list[[ref.set]] : dimension reduction data for each platform
+# cl                     : cluster result
+# Comb.dat               : combined data set 
+# ref.set                : platform to be used for reference
+# N.sampled.cells        : max number of cells selected in each cluster
+# umap.param             : umap parameter
+#
+# contact : changkyul@alleninstitute.org
+#
+PCA_umap <- function(dat,
+                     cl, 
+                     rm.eigen=NULL,
+                     rm.th=0.6,
+                     umap.param = NULL,... )
+{
+  rd.dat = rd_PCA(dat, select.cells = names(cl),...)
+  if(!is.null(rm.eigen)){
+    rd.dat = filter_RD(rd.dat, rm.eigen, rm.th)
+  }  
+  ######################################
+  # UMAP
+  if (is.null(umap.param)) {
+    umap.param= umap_param()    
+  } 
+  umap = rd_Rumap(rd.dat[sampled.cells,], umap.param=umap.param)
+  return(umap)
+}
+
+

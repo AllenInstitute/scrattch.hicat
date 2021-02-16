@@ -531,7 +531,7 @@ run_consensus_clust <- function(norm.dat,
     save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
 
     result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
-    result=scrattch.hicat::merge_cl(norm.dat, cl=cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)    
+    result=merge_cl(norm.dat, cl=cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param)    
     save(result, file=outfile)
   }
   if(is.null(co.result)){
@@ -546,7 +546,7 @@ run_consensus_clust <- function(norm.dat,
 
       cl <- parallel::makeCluster(mc.cores)
       doParallel::registerDoParallel(cl)
-      foreach::foreach(i=1:niter, .combine='c') %dopar% { run(i) }
+      foreach::foreach(i=1:niter,.packages=c("scrattch.hicat","Matrix"), .combine='c') %dopar% { run(i) }
       parallel::stopCluster(cl)
     }
     result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))

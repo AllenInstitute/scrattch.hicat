@@ -572,10 +572,10 @@ plot_2d_umap_anno <- function(umap.fn,
       tmp.color = setNames(as.character(tmp.df$color), tmp.df$label)
       
       g= plot_RD_meta(umap.2d, 
-                      factor(umap.df[,paste0(m, "_label")], 
-                             levels=names(tmp.color)),
-                      meta.col = tmp.color,
-                      alpha=alpha)
+        factor(umap.df[,paste0(m, "_label")], 
+               levels=names(tmp.color)),
+        meta.col = tmp.color,
+        alpha=alpha)
       
       if(show.legend==TRUE){
         print("legend")
@@ -583,8 +583,8 @@ plot_2d_umap_anno <- function(umap.fn,
         legend <- cowplot::get_legend(g)   
         g = g + theme(axis.title.x=element_blank(), axis.title.y=element_blank())+ 
           theme_void() + 
-          theme(legend.position="none") +
-          coord_fixed(ratio=1)
+            theme(legend.position="none") +
+              coord_fixed(ratio=1)
         g <- cowplot::plot_grid(g, legend, ncol=2)
         plot.list[[m]] <- g
       }     

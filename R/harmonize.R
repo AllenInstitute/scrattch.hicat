@@ -178,14 +178,19 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
 #' @export
 #'
 #' @examples
-get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1)
+get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,...)
   {
     results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine="rbind", FUN=function(x){
-      get_knn(dat=dat[,x], ref.dat=ref.dat, k=k, method=method, dim=dim)
+      get_knn(dat=dat[,x], ref.dat=ref.dat, k=k, method=method, dim=dim,...)
     })
     return(results)
   }
 
+
+build_AnnoyTree <- function(ref.dat)
+  {
+    
+  }
 
 #' Get KNN
 #'
@@ -199,18 +204,19 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
 #' @export
 #'
 #' @examples
-get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL)
+get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,BINDEX=NULL, BNPARAM=NULL,...)
   {
     
     print(method)
     if(method=="cor"){
       knn.index = knn_cor(ref.dat, dat,k=k)  
     }
-    else if(method=="cosine"){
-      knn.index = knn_cosine(ref.dat, dat,k=k)  
-    }
     else if(method=="RANN"){
       knn.index = RANN::nn2(t(ref.dat), t(dat), k=k)[[1]]
+    }
+    else if(method=="Annoy"){
+      library(BiocNeighbors)
+      knn.result = queryKNN(t(red.dat), t(dat),k=k, BINDEX=BINDEX, BNPARAM= BNPARAM)[[1]]          
     }
     else if(method == "CCA"){
       mat3 = crossprod(ref.dat, dat)
@@ -472,6 +478,8 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   result$markers = select.genes
   result$select.genes= select.genes
   result$ref.de.param.list = ref.de.param.list
+  rm(merge.dat.list)
+  gc()
   return(result)
 })
 }

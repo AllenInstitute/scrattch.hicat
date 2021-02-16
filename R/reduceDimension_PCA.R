@@ -1,29 +1,4 @@
 
-                                        #' prcomp irlba
-#'
-#' @param x 
-#' @param max.rank 
-#' @param maxit 
-#' @param tol 
-#' @param center 
-#' @param ... 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-prcomp.irlba <- function(x, max.rank=500, maxit=1000, tol=1e-05, center=TRUE,...)
-  {
-    library(irlba)
-    s <- irlba::irlba(x, nv=max.rank, nu=max.rank, maxit = maxit, tol=tol, ...)
-    s$d <- s$d / sqrt(max(1, nrow(x) - 1))
-    dimnames(s$v) <- list(colnames(x), paste0("PC", seq_len(ncol(s$v))))
-    r <- list(sdev = s$d, rotation = s$v)
-    r$x <- x %*% s$v
-    class(r) <- "prcomp"
-    r
-  }
-
 
 #' Title
 #'
@@ -66,12 +41,21 @@ rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=coln
   return(list(rd.dat=rd.dat, pca=pca))
 }
 
-get_PCA <- function(dat, max.pca, verbose=FALSE, method="zscore",th=2)
+get_PCA <- function(dat, max.pca, verbose=FALSE, method="zscore",th=2,fun="prcomp", rot=TRUE, init.pca = 200)
   {
     library(Matrix)
     library(stats)
-    
-    pca = stats::prcomp(t(as.matrix(dat)),tol=0.01)
+    if(rot){
+      dat = t(dat)
+    }
+    dat = as.matrix(dat)
+    if(fun=="prcomp"){
+      pca = stats::prcomp(dat,tol=0.01)
+    }
+    else{
+      require("irlba")
+      pca = prcomp_irlba(dat, n = min(init.pca, nrow(dat)));
+    }
     if(method=="elbow"){
       dim.elbow = findElbowPoint(pca$sdev^2)
       if(verbose){

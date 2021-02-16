@@ -76,6 +76,7 @@ merge_cl<- function(norm.dat,
       pairs=do.call("rbind",strsplit(names(de.genes), "_"))
       row.names(pairs)=names(de.genes)
     }
+    print("get cl.rd")
      ###Merge small clusters with the closest neighbors first.
     if(!is.null(rd.dat)){
       cl.rd = as.data.frame(get_cl_means(rd.dat,cl[names(cl) %in% row.names(rd.dat)]))
@@ -240,3 +241,12 @@ merge_cl<- function(norm.dat,
     return(list(cl=cl, de.genes=de.genes,sc=sc, markers=markers))
   }
 
+
+
+iter_clust_merge <- function(norm.dat, select.cells, merge.type="undirectional", de.param = de_param(), max.cl.size = 300,...)
+{
+  result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells, de.param = de.param, merge.type=merge.type, ...)
+  result=merge_cl(norm.dat, cl=cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
+  return(result)
+}
+  

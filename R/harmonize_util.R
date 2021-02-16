@@ -381,7 +381,7 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
     de.counts = table(unlist(lapply(names(de.genes.list), function(set){
       de = de.genes.list[[set]][[p]]
       c(names(de$up.genes),names(de$down.genes))})))      
-    g = intersect(names(de.counts), comb.dat$common.genes)
+    g = intersect(names(de.counts), common.genes)
     pair = unlist(strsplit(p,"_"))
     lfc = lapply(sets, function(set){
       cl.means = cl.means.list[[set]]
