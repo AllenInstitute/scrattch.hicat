@@ -530,8 +530,7 @@ run_consensus_clust <- function(norm.dat,
     select.cells=sample(all.cells, round(length(all.cells)*sample.frac))
     save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
 
-    result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
-    result=merge_cl(norm.dat, cl=cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param)    
+    result <- scrattch.hicat::iter_clust_merge(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
     save(result, file=outfile)
   }
   if(is.null(co.result)){

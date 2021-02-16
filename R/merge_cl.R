@@ -246,7 +246,7 @@ merge_cl<- function(norm.dat,
 iter_clust_merge <- function(norm.dat, select.cells, merge.type="undirectional", de.param = de_param(), max.cl.size = 300,...)
 {
   result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells, de.param = de.param, merge.type=merge.type, ...)
-  result=merge_cl(norm.dat, cl=cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
+  result=merge_cl(norm.dat, cl=result$cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
   return(result)
 }
   
