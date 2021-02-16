@@ -45,10 +45,10 @@ get_PCA <- function(dat, max.pca, verbose=FALSE, method="zscore",th=2,fun="prcom
   {
     library(Matrix)
     library(stats)
+    dat = as.matrix(dat)
     if(rot){
       dat = t(dat)
     }
-    dat = as.matrix(dat)
     if(fun=="prcomp"){
       pca = stats::prcomp(dat,tol=0.01)
     }
