@@ -15,7 +15,7 @@ Dev: [![Travis build status](https://travis-ci.org/AllenInstitute/scrattch.hicat
 source("https://bioconductor.org/biocLite.R")
 biocLite("limma")
 
-devtools::install_github("JinmiaoChenLab/Rphenograph")
+devtools::install_github("i-cyto/Rphenograph")
 ```
 
 Once these dependencies are installed, `scrattch.hicat` can be installed with:
