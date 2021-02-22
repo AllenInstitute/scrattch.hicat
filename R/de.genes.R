@@ -654,19 +654,6 @@ de_pair_fast_limma <- function(pair,
   else if (method == "t.test"){
     cl.vars <- as.data.frame(get_cl_vars(norm.dat, cl, cl.means = cl.means))
   }
-  if(nrow(pairs)< 50){
-    mc.cores=1
-  }
-  if (mc.cores == 1) {
-    registerDoSEQ()
-  }
-  else {
-    require("doParallel")
-    Clu <- makeForkCluster(mc.cores)
-    doParallel::registerDoParallel(Clu)
-    on.exit(parallel::stopCluster(Clu), add = TRUE)
-  }                 
-  
   de_list = parallel::pvec(1:nrow(pairs), function(x){
     tmp=sapply(x, function(i){
       if(method == "limma") {

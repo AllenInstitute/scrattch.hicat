@@ -242,12 +242,10 @@ collect_subsample_cl_matrix <- function(norm.dat,result.files,all.cells,max.cl.s
     cl.list = cl.list[!sapply(cl.list,is.null)]
   }
   else{
+    require(doMC)
     require(foreach)
-    require(doParallel)
-    cl <- makeForkCluster(mc.cores)
-    registerDoParallel(cl)
+    registerDoMC(cores=mc.cores)
     cl.list= foreach(i=1:niter, .combine='c') %dopar% run(f)
-    stopCluster(cl)
   }
   if(!is.null(max.cl.size)){
     select.cells= sample_cl_list(cl.list, max.cl.size=max.cl.size)
@@ -518,8 +516,6 @@ run_consensus_clust <- function(norm.dat,
     all.cells= intersect(all.cells, names(init.result$cl))
   }
   run <- function(i,...){
-    require(foreach)
-    require(parallel)
     prefix = paste("iter",i,sep=".")
     print(prefix)
     library(Matrix)
@@ -537,16 +533,11 @@ run_consensus_clust <- function(norm.dat,
     if (mc.cores==1){
       sapply(1:niter, function(i){run(i,...)})
     }
-    else{
-     
-      require(doParallel)
-      require(parallel)
+    else{     
+      require(doMC)
       require(foreach)
-
-      cl <- parallel::makeCluster(mc.cores)
-      doParallel::registerDoParallel(cl)
+      registerDoMC(cores=mc.cores)
       foreach::foreach(i=1:niter,.packages=c("scrattch.hicat","Matrix"), .combine='c') %dopar% { run(i) }
-      parallel::stopCluster(cl)
     }
     result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))
     co.result <- collect_subsample_cl_matrix(norm.dat,result.files,all.cells)

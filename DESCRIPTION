@@ -1,6 +1,6 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
-Version: 1.0.2
+Version: 1.0.3
 Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
   person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
@@ -21,13 +21,14 @@ Requires: Matrix,Rphenograph,
 Imports: 
   Rcpp,
   RcppAnnoy,
-  data.table,
-  dendextend,
-  doParallel,
+  parallel,
+  doMC,
   foreach,	
+  data.table,
   dplyr,
   ggplot2,
   grid,
+  dendextend,
   Matrix,
   matrixStats,
   pvclust,

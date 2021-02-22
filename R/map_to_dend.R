@@ -332,29 +332,18 @@ map_dend_membership <-
            bs.num = 100,
            ...)
   {
-    if (mc.cores == 1) {
-      mem = sapply(1:bs.num, function(i) {
-        print(i)
-        ###determine which branch to t
-        
-        tmp = map_dend(dend, cl, cl.med, dat, map.dat, map.cells, ...)
-      }, simplify = F)
-      memb = unlist(mem)
+    library(doMC)
+    require(foreach)
+    if(mcores ==1){
+      registerDoSEQ()
     }
     else{
-      require(foreach)
-      require(doParallel)
-      #fcluster <-makeCluster(mc.cores)
-      fcluster <- makeForkCluster(mc.cores)
-      registerDoParallel(fcluster)
-      #on.exit(stopCluster(fcluster))
-      mem = foreach(i = 1:bs.num, .combine = 'cbind') %dopar% map_dend(dend, cl, cl.med, dat, map.dat, map.cells, ...)
-      
-      stopCluster(fcluster)
-      memb = as.character(mem)
-      names(memb) = rownames(mem)
+      registerDoMC(cores=mc.cores)
+      on.exit(parallel::stopCluster(), add = TRUE)
     }
-    
+    mem = foreach(i = 1:bs.num, .combine = 'cbind') %dopar% map_dend(dend, cl, cl.med, dat, map.dat, map.cells, ...)    
+    memb = as.character(mem)
+    names(memb) = rownames(mem)
     memb = data.frame(cell = names(memb), cl = memb)
     memb = table(memb$cell, memb$cl)
     memb = memb / bs.num

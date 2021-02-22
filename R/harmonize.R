@@ -149,14 +149,13 @@ sample_sets_list <- function(cells.list, cl.list, cl.sample.size=100, sample.siz
 batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
   {
     require(foreach)
-    require(doParallel)
+    require(doMC)
     if (mc.cores == 1) {
       registerDoSEQ()
     }
     else {
-      cl <- makeForkCluster(mc.cores)
-      doParallel::registerDoParallel(cl)
-      on.exit(parallel::stopCluster(cl), add = TRUE)
+      registerDoMC(cores=mc.cores)
+      on.exit(parallel::stopCluster(), add = TRUE)
     }
     bins = split(x, floor((1:length(x))/batch.size))
     results= foreach(i=1:length(bins), .combine=.combine) %dopar% FUN(bins[[i]],...)

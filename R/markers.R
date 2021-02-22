@@ -20,14 +20,6 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,
     }
     pairs.df = get_pairs(names(de.genes))
     select.pairs = row.names(pairs.df)[pairs.df[,1] %in% cl & pairs.df[,2]%in% cl]
-    if (mc.cores == 1) {
-      registerDoSEQ()
-    }
-    else {
-      Clu <- makeForkCluster(mc.cores)
-      doParallel::registerDoParallel(Clu)
-      on.exit(parallel::stopCluster(Clu), add = TRUE)
-    }                 
              
     de.markers = parallel::pvec(select.pairs, function(s){
       sapply(s, function(x){
@@ -59,17 +51,8 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,
 #' @examples
 get_gene_score <- function(de.genes,cl.means=NULL, all.genes=NULL, top.n=50, max.num=1000,bin.th=4, mc.cores=1)
   {
-    require(Matrix)
-    require(doParallel)
+    require(Matrix)    
     require(parallel)
-    if (mc.cores == 1) {
-      registerDoSEQ()
-    }
-    else {
-      Clu <- makeForkCluster(mc.cores)
-      doParallel::registerDoParallel(Clu)
-      on.exit(parallel::stopCluster(Clu), add = TRUE)
-    }                 
     
     if(is.null(all.genes)){
       all.genes <- parallel::pvec(names(de.genes), function(x){
@@ -377,7 +360,7 @@ select_N_markers <- function(de.genes, cl.means, up.gene.score=NULL, down.gene.s
 #' @examples
 select_pos_markers <- function(de.genes, cl, cl.means=NULL, n.markers=3, default.markers=NULL, rm.genes=NULL, up.gene.score=NULL, down.gene.score=NULL,mc.cores=1)
   {
-    require("doParallel")
+    library(parallel)
     if(!is.null(de.genes)){
       pairs.df = get_pairs(names(de.genes))
     }
@@ -418,16 +401,7 @@ select_top_pos_markers <- function(de.genes, cl, n.markers=3, up.gene.score, dow
   {
     library(parallel)
     pairs.df = get_pairs(names(de.genes))    
-    library(doParallel)
-    if (mc.cores == 1) {
-      registerDoSEQ()
-    }
-    else {
-      Clu <- makeForkCluster(mc.cores)
-      doParallel::registerDoParallel(Clu)
-      on.exit(parallel::stopCluster(Clu), add = TRUE)
-    }                 
-       
+    
     ###for each cluster, find markers that discriminate it from other types
     cl.markers <- parallel::pvec(levels(cl), function(x){
       sapply(x, function(tmp.cl){
@@ -615,13 +589,13 @@ within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
 #'
 #' @examples
 get_beta_score <- function(propExpr, spec.exp = 2, mcores=1){
+  library(doMC)
   if(mcores ==1){
     registerDoSEQ()
   }
   else{
-    cl <- parallel::makeForkCluster(mcores)
-    doParallel::registerDoParallel(cl)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
+    registerDoMC(cores=mc.cores)
+    on.exit(parallel::stopCluster(), add = TRUE)
   }
   calc_beta <- function(y, spec.exp = 2, eps1 = 1e-10) {
     d1 <- as.matrix(dist(y))

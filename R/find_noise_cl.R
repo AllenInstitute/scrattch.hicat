@@ -289,16 +289,6 @@ find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
     if(is.null(de.genes)){
       stop("Need to specify de.genes")
     }
-    require(foreach)
-    require(doParallel)
-    if (mc.cores == 1) {
-      registerDoSEQ()
-    }
-    else {
-      cores <- makeForkCluster(mc.cores)
-      doParallel::registerDoParallel(cores)
-      on.exit(parallel::stopCluster(cores), add = TRUE)
-    }
     result.list=  parallel::pvec(names(de.genes), function(pairs){
       result.list= sapply(pairs, function(p){
         de = de.genes[[p]]
