@@ -602,7 +602,6 @@ get_beta_score <- function(propExpr, spec.exp = 2, mcores=1){
     score1 <- sum(d1^spec.exp) / (sum(d1) + eps1)
     return(score1)
   }
-
   res <- foreach(i = 1:nrow(propExpr), .combine="c") %dopar% {
     print(i)
     calc_beta(propExpr[i,])

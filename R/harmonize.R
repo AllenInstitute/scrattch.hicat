@@ -439,7 +439,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   cl = setNames(result$cl.mat[,1], row.names(result$cl.mat))
   if(length(cl) < nrow(result$knn)){
     diff.cells = setdiff(row.names(result$knn), names(cl))
-    pred.df = predict_knn(result$knn[diff.cells,], all.cells, cl, mc.cores=ncores )$pred.df
+    pred.df = predict_knn(result$knn[diff.cells,], all.cells, cl )$pred.df
     pred.cl= setNames(as.character(pred.df$pred.cl), row.names(pred.df))
     cl = c(cl, pred.cl[setdiff(names(pred.cl), names(cl))])
      
