@@ -1,3 +1,4 @@
-import("Rcpp")
-exportPattern("^[[:alpha:]]+")
 useDynLib(scrattch.hicat)
+importFrom(Rcpp, sourceCpp)
+exportPattern("^[[:alpha:]]+")
+
