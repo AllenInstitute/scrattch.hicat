@@ -1,6 +1,6 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
-Version: 1.0.3
+Version: 1.0.4
 Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
   person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),

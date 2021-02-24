@@ -23,7 +23,7 @@ void ImputeKnn(IntegerMatrix knn_idx, IntegerVector cell_idx, IntegerVector ref_
       int knn_id = knn_idx(cell_id, j)-1;
       int ref_id = ref_idx[knn_id] -1;
       float w = 1.0/knn_idx.ncol();
-      //std::cout << cell_id <<"\t"<< knn_id <<"\t" << ref_id <<"\n";
+      //std::cout << cell_id <<"\t"<< j << "\t"<< knn_id <<"\t" << ref_id <<"\n";
       if(w_mat!=NULL){
 	w = (*w_mat)(i,j);
       }
