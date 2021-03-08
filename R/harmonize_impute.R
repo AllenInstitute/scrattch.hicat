@@ -56,15 +56,19 @@ predict_knn_small <- function(knn.idx, reference, cl)
 #' @export
 #'
 #' @examples
-predict_knn <- function(knn.idx, reference, cl, ...)
+predict_knn <- function(knn.idx, reference, target, k=15, train.dat=NULL, test.dat=NULL, ...)
   {
     library(matrixStats)
     library(dplyr)
-    dat = as.matrix(get_cl_mat(cl))
+    if(is.null(knn.idx)){
+      knn.idx = RANN::nn2(data=train.dat[reference,],query=test.dat,k=k)[[1]]        
+      row.names(knn.idx) = row.names(test.dat)
+    }
+    dat = as.matrix(get_cl_mat(target))
     result = impute_knn(knn.idx, reference, dat, transpose_input=TRUE, transpose_output=TRUE,...)
-    pred.cl = setNames(colnames(result)[apply(result, 1, which.max)], row.names(result))
+    pred.target = setNames(colnames(result)[apply(result, 1, which.max)], row.names(result))
     pred.score = setNames(rowMaxs(result), row.names(result))
-    pred.df = data.frame(pred.cl, pred.score)
+    pred.df = data.frame(pred.target, pred.score)
     return(list(pred.df=pred.df, pred.prob=result))
   }
 
@@ -135,7 +139,7 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         if(!is.null(rm.eigen)){
           rd.dat  = filter_RD(rd.result$rd.dat, rm.eigen, rm.th,verbose=verbose)
         }
-        print(ncol(rd.dat))        
+        #print(ncol(rd.dat))        
         knn = RANN::nn2(data=rd.dat[ref.cells,],query=rd.dat,k=k)[[1]]        
         row.names(knn) = row.names(rd.dat)
         cell.id = match(row.names(rd.dat), select.cells)

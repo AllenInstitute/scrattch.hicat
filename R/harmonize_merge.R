@@ -171,6 +171,22 @@ get_cl_sim_multiple <- function(cl.rd.list, FUN =pmax)
 #' @export
 #'
 #' @examples
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param comb.dat 
+##' @param merge.dat.list 
+##' @param cl 
+##' @param anchor.genes 
+##' @param verbose 
+##' @param pairBatch 
+##' @param de.genes.list 
+##' @param lfc.conservation.th 
+##' @param merge.type 
+##' @param de.method 
+##' @return 
+##' @author Zizhen Yao
 merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbose=TRUE, pairBatch=40, de.genes.list=NULL, lfc.conservation.th=0.7, merge.type="undirectional", de.method="fast_limma")
 {
   print("merge_cl_multiple")
@@ -321,15 +337,33 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
   cl.big= cl.platform.counts >= cl.min.cells[rownames(cl.platform.counts)]
   cl.small = colnames(cl.big)[colSums(cl.big) == 0]
   cl.big =  colnames(cl.big)[colSums(cl.big) > 0]
-  
+
   if(length(cl.big)==0){
     return(NULL)
   }
-  #cl.rd.list = get_cl_means_list(merge.dat.list, merge.de.param.list, select.genes=anchor.genes, cl=cl)
-  cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, select.genes=anchor.genes)
+
+  ###Merge small cells based on KNN prediction
+  cl.small.cells= names(cl)[cl %in% cl.small]
+  cl.big.cells= names(cl)[cl %in% cl.big]  
+  if(length(cl.small)>0){
+    cl.small.cells.byplatform = split(cl.small.cells, as.character(comb.dat$meta.df[cl.small.cells, "platform"]))
+    cl.big.cells.byplatform = split(cl.big.cells, comb.dat$meta.df[cl.big.cells, "platform"])    
+    for(set in names(cl.small.cells.byplatform)){
+      query.cells =cl.small.cells.byplatform[[set]]
+      if(length(query.cells)==0){next}
+      ref.cells =cl.big.cells.byplatform[[set]]
+      ref.cells = sample_cells(cl[ref.cells],300)
+      dat = t(merge.dat.list[[set]][anchor.genes, c(ref.cells, query.cells),drop=F])
+      pred.result = predict_knn(knn.idx=NULL, reference = ref.cells, target=cl, k=min(15, ceiling(length(ref.cells)/2)), train.dat = dat[ref.cells,,drop=F], test.dat = dat[query.cells,,drop=F])
+      tmp.cl = with(pred.result$pred.df, setNames(pred.target, row.names(pred.result$pred.df)))
+      print(tmp.cl)
+      cl[names(tmp.cl)] = tmp.cl
+    }
+  }
+  
+  cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list, select.genes=anchor.genes)  
   
   pairs=NULL
-  ###Merge small clusters first
   cl.sim = get_cl_sim_multiple(cl.rd.list)
   if (length(cl.sim)==0) return(NULL)
 
@@ -344,27 +378,6 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
   cl.present.list = get_cl_present_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list)
   cl.present.list = sapply(cl.present.list, as.data.frame, simplify=F)
   
-  while(length(cl.small)>0){
-    knn = data.frame(cl=cl.small, nn=cl.big[sim_knn(cl.sim[cl.small, cl.big,drop=F],k=1)],stringsAsFactors=FALSE)
-    knn$sim = get_pair_matrix(cl.sim, knn$cl, knn$nn)
-    closest.pair = which.max(knn$sim)
-    x = knn[closest.pair,1]
-    y=  knn[closest.pair,2]
-    if(verbose > 0){
-        cat("Merge: ", x,y, "sim:", knn[closest.pair,3],"\n")
-      }
-    update.result=merge_x_y(x, y)
-    if(is.null(update.result)){
-      return(NULL)
-    }
-    cl = update.result$cl
-    cl.rd.list = update.result$cl.rd.list
-    cl.sim = update.result$cl.sim
-    cl.means.list = update.result$cl.means.list
-    cl.present.list = update.result$cl.present.list
-    cl.sqr.means.list = update.result$cl.sqr.means.list
-    cl.small = cl.small[cl.small!=x]
-  }
   
   de.pairs = NULL
   de.genes.list = sapply(names(merge.dat.list), function(x)list(),simplify=F)

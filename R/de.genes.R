@@ -703,7 +703,7 @@ de_pair_fast_limma <- function(pair,
         cl.size2,
         return.df = return.df)    
     },simplify=F)
-    cat(length(tmp), length(x),"\n")
+    #cat(length(tmp), length(x),"\n")
     if(length(tmp)!=length(x)){
       save(x, file="Error.pairs.rda")
       stop('length of de_list does not match pairs')      
