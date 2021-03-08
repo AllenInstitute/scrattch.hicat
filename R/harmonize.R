@@ -251,7 +251,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
   {
     select.genes.list = list()
     for(ref.set in names(ref.list)){
-      print(ref.set)
+      #print(ref.set)
       ref.cells = intersect(ref.list[[ref.set]], select.cells)
       ref.dat = comb.dat$dat.list[[ref.set]][,ref.cells]
       ###if cluster membership is available, use cluster DE genes
@@ -263,7 +263,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
           return(NULL)
         }
         de.genes = comb.dat$de.genes.list[[ref.set]]
-        print(length(de.genes.list[[ref.set]]))
+        #print(length(de.genes.list[[ref.set]]))
         select.genes = display_cl(cl, norm.dat=ref.dat, max.cl.size = 200, n.markers=20, de.genes= de.genes)$markers
         select.genes = intersect(select.genes, comb.dat$common.genes)
       }
@@ -294,10 +294,10 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
           if(sum(select)==0){
             return(NULL)
           }
-          print(rm.cor)
-          if(sum(!select)>0){
-            print(rm.cor[!select,,drop=F])
-          }
+          #print(rm.cor)
+          #if(sum(!select)>0){
+          #  print(rm.cor[!select,,drop=F])
+          #}
           rot = rot[,select,drop=FALSE]
         }
         if(is.null(rot)){
@@ -378,6 +378,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
         }
         if(!is.null(comb.dat$cl.list)){
           test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])
+          
           if(!is.null(test.knn)){
             cat("Knn", set, ref.set, method, "cl.score", test.knn$cl.score, "cell.score", test.knn$cell.score,"\n")
           }

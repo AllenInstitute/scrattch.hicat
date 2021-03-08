@@ -523,9 +523,11 @@ sample_cells <- function(cl,
 #' 
 #' @export
 #' 
-cpm <- function(counts) {
-  
-  sf <- Matrix::colSums(counts) / 1e6
+cpm <- function(counts, sf=NULL, demon=1e6) {
+  if(is.null(sf)){
+    sf <- Matrix::colSums(counts)
+  }
+  sf = sf/ denom
   
   if(is.matrix(counts)){    
     return(t(t(counts) / sf))
