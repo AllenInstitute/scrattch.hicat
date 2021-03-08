@@ -206,7 +206,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         tmp.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F])
         if(include.y){
           if(!is.null(cl.means.list[[set]])){
-            cl.means.list[[set]][[y]] = tmp.means
+            cl.means.list[[set]][[y]] = tmp.means[row.names(cl.means.list[[set]])]
           }
           else{
             cl.means.list[[set]] = data.frame(tmp.means)
@@ -222,7 +222,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         tmp.sqr.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F]^2)        
         if(include.y){
           if(!is.null(cl.sqr.means.list[[set]])){
-            cl.sqr.means.list[[set]][[y]] = tmp.sqr.means
+            cl.sqr.means.list[[set]][[y]] = tmp.sqr.means[row.names(cl.sqr.means.list[[set]])]
           }
           else{
             cl.sqr.means.list[[set]] = data.frame(tmp.means)
@@ -238,7 +238,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         tmp.means = Matrix::rowMeans(merge.dat.list[[set]][,tmp.cells2,drop=F] >= merge.de.param.list[[set]]$low.th)
         if(include.y){
           if(!is.null(cl.present.list[[set]])){
-            cl.present.list[[set]][[y]] =  tmp.means
+            cl.present.list[[set]][[y]] =  tmp.means[row.names(cl.present.list[[set]])]
           }
           else{
             cl.present.list[[set]] = data.frame(tmp.means)
@@ -326,13 +326,24 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     return(NULL)
   }
   #cl.rd.list = get_cl_means_list(merge.dat.list, merge.de.param.list, select.genes=anchor.genes, cl=cl)
-  cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, select.genes=anchor.genes, de.param.list = merge.de.param.list)
+  cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, select.genes=anchor.genes)
   
   pairs=NULL
   ###Merge small clusters first
   cl.sim = get_cl_sim_multiple(cl.rd.list)
   if (length(cl.sim)==0) return(NULL)
 
+  merge.de.param.list = comb.dat$de.param.list[merge.sets]
+  common.genes   = comb.dat$common.genes
+  cl.means.list = get_cl_means_list(merge.dat.list,  cl=cl, de.param.list=merge.de.param.list)
+  cl.means.list = sapply(cl.means.list, as.data.frame, simplify=F)
+
+  cl.sqr.means.list = get_cl_sqr_means_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list)
+  cl.sqr.means.list = sapply(cl.sqr.means.list, as.data.frame, simplify=F)
+  
+  cl.present.list = get_cl_present_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list)
+  cl.present.list = sapply(cl.present.list, as.data.frame, simplify=F)
+  
   while(length(cl.small)>0){
     knn = data.frame(cl=cl.small, nn=cl.big[sim_knn(cl.sim[cl.small, cl.big,drop=F],k=1)],stringsAsFactors=FALSE)
     knn$sim = get_pair_matrix(cl.sim, knn$cl, knn$nn)
@@ -354,17 +365,6 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     cl.sqr.means.list = update.result$cl.sqr.means.list
     cl.small = cl.small[cl.small!=x]
   }
-  merge.de.param.list = comb.dat$de.param.list[merge.sets]
-  common.genes   = comb.dat$common.genes
-  cl.means.list = get_cl_means_list(merge.dat.list,  cl=cl, de.param.list=merge.de.param.list)
-  cl.means.list = sapply(cl.means.list, as.data.frame, simplify=F)
-
-  cl.sqr.means.list = get_cl_sqr_means_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list)
-  cl.sqr.means.list = sapply(cl.sqr.means.list, as.data.frame, simplify=F)
-  
-  cl.present.list = get_cl_present_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list)
-  cl.present.list = sapply(cl.present.list, as.data.frame, simplify=F)
-
   
   de.pairs = NULL
   de.genes.list = sapply(names(merge.dat.list), function(x)list(),simplify=F)
