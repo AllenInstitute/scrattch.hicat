@@ -482,3 +482,11 @@ combine_finer_split <- function(cl, finer.cl)
   cl[names(finer.cl)] = finer.cl
   return(cl)
 }
+
+
+iter_clust_merge <- function(norm.dat, select.cells, merge.type="undirectional", de.param = de_param(), max.cl.size = 300,...)
+{
+  result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells, de.param = de.param, merge.type=merge.type, ...)
+  result=merge_cl(norm.dat, cl=result$cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
+  return(result)
+}
