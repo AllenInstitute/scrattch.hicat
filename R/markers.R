@@ -34,7 +34,12 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,
         select.genes
       },simplify=F)
     },mc.cores=mc.cores)
-    markers = intersect(unlist(de.markers),row.names(norm.dat))
+    if(!is.null(norm.dat)){
+      markers = intersect(unlist(de.markers),row.names(norm.dat))
+    }
+    else{
+      markers = unique(unlist(de.markers))
+    }
     return(list(markers=markers, de.genes=de.genes))
   }
 

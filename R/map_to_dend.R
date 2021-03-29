@@ -10,14 +10,13 @@
 #' @param low.th 
 #'
 #' @return
-#' @export
+#' @Export
 #'
 #' @examples
 resolve_cl <-
   function(cl.g,
-           cl.med,
+           cl.dat,
            markers,
-           dat,
            map.dat,
            select.cells,
            p = 0.7,
@@ -29,7 +28,7 @@ resolve_cl <-
     
     ###For each branch point, find the highest expression cluster.
     tmp.med = sapply(cl.g, function(g)
-      rowMaxs(cl.med[genes, g, drop = F]))
+      rowMaxs(cl.dat[genes, g, drop = F]))
     row.names(tmp.med) = genes
     ###Make sure the genes are discriminative between all the branches.
     genes = genes[rowMaxs(tmp.med) - rowMins(tmp.med) > 1]
@@ -40,7 +39,7 @@ resolve_cl <-
     
     ###Compute the correlation with the median cluster profile.
     ###add drop=F
-    cl.cor = cor(as.matrix(map.dat[genes, select.cells, drop = F]), cl.med[genes, tmp.cl, drop =
+    cl.cor = cor(as.matrix(map.dat[genes, select.cells, drop = F]), cl.dat[genes, tmp.cl, drop =
                                                                              F])
     cl.cor[is.na(cl.cor)] = 0
     ###Compute the best match in each branch.
@@ -87,9 +86,8 @@ resolve_cl <-
           mapped.cl,
           resolve_cl(
             cl.g[tmp.cl],
-            cl.med,
+            cl.dat,
             markers,
-            dat,
             map.dat,
             select.cells,
             p = p,
@@ -106,7 +104,7 @@ resolve_cl <-
 #'
 #' @param dend 
 #' @param cl 
-#' @param cl.med 
+#' @param cl.dat 
 #' @param dat 
 #' @param map.dat 
 #' @param select.cells 
@@ -120,11 +118,9 @@ resolve_cl <-
 #' @examples
 map_dend <-
   function(dend,
-           cl,
-           cl.med,
-           dat,
+           cl.dat,
            map.dat,
-           select.cells,
+           select.cells=colnames(map.dat),
            p = 0.8,
            low.th = 0.2,
            default.markers = NULL)
@@ -139,22 +135,15 @@ map_dend <-
     markers = markers[names(markers) %in% row.names(map.dat)]
     cl.g = sapply(dend, labels, simplify = F)
     names(cl.g) = 1:length(cl.g)
-    select.cl = cl[cl %in% unlist(cl.g)]
-    ###Sampling the cells from the reference cluster
-    cells = unlist(tapply(names(select.cl), select.cl, function(x)
-      sample(x, round(length(
-        x
-      ) * p))))
     genes = names(markers)
     genes = union(genes, default.markers)
     mapped.cl = resolve_cl(cl.g,
-                           cl.med,
-                           markers,
-                           dat,
-                           map.dat,
-                           select.cells,
-                           p = p,
-                           low.th = low.th)
+      cl.dat,
+      markers,
+      map.dat,
+      select.cells,
+      p = p,
+      low.th = low.th)
     if (length(mapped.cl) > 0) {
       for (i in unique(mapped.cl)) {
         select.cells = names(mapped.cl)[mapped.cl == i]
@@ -162,16 +151,14 @@ map_dend <-
           final.cl = c(
             final.cl,
             map_dend(
-              dend[[as.integer(i)]],
-              cl,
-              cl.med,
-              dat,
-              map.dat,
-              select.cells,
-              p = p,
-              low.th = low.th
+                     dend[[as.integer(i)]],
+                     cl.dat,
+                     map.dat,
+                     select.cells,
+                     p = p,
+                     low.th = low.th
+                     )
             )
-          )
         }
       }
       return(cl = final.cl)
@@ -237,40 +224,41 @@ summarize_cl <-
     markers.cl.list = do.call("c", markers.cl.list)
     
     all.markers = unique(unlist(markers.cl.list))
+    gene.anno=""
     memb.th = lapply(row.names(memb), function(cell) {
       ###Check all the node with confidence > conf.th
       x = memb[cell,]
       mapped.node = colnames(memb)[which(x > conf.th)]
-      
+      if(!is.null(min.genes)){
       ###Check for detected markers at the given cell
-      det.genes = all.markers[map.dat[all.markers, cell] >= exp.th]
+        det.genes = all.markers[map.dat[all.markers, cell] >= exp.th]
       
-      ##compute detected markers at every branch point.
-      gene.olap = sapply(mapped.node, function(i)
-        intersect(markers.cl.list[[i]], det.genes), simplify = F)
-      gene.olap.num = sapply(gene.olap, length)
-      #TO DO: weight markers instead of using absolute counts/ratio.
-      
-      ####set the root, so that root always succeed.
-      gene.olap.num[attr(dend, "label")] = min.genes
-      gene.olap[attr(dend, "label")] = ""
-      gene.olap.ratio = gene.olap.num / sapply(markers.cl.list[names(gene.olap.num)], length)
-      gene.olap.ratio[is.na(gene.olap.ratio)] = 1
-      
-      ###mapped nodes not met the minimal gene number/ratio constraints
-      fail.node = mapped.node[gene.olap.ratio < min.genes.ratio |
-                                gene.olap.num < min.genes]
-      if (length(fail.node) > 0) {
-        ###choose the mapped nodes above any failed nodes
-        mapped.node = mapped.node[node.height[mapped.node] > max(node.height[fail.node])]
+        ##compute detected markers at every branch point.
+        gene.olap = sapply(mapped.node, function(i)
+          intersect(markers.cl.list[[i]], det.genes), simplify = F)
+        gene.olap.num = sapply(gene.olap, length)
+        #TO DO: weight markers instead of using absolute counts/ratio.        
+        ####set the root, so that root always succeed.
+        gene.olap.num[attr(dend, "label")] = min.genes
+        gene.olap[attr(dend, "label")] = ""
+        gene.olap.ratio = gene.olap.num / sapply(markers.cl.list[names(gene.olap.num)], length)
+        gene.olap.ratio[is.na(gene.olap.ratio)] = 1        
+        ###mapped nodes not met the minimal gene number/ratio constraints
+        fail.node = mapped.node[gene.olap.ratio < min.genes.ratio |
+          gene.olap.num < min.genes]
+        if (length(fail.node) > 0) {
+          ###choose the mapped nodes above any failed nodes
+          mapped.node = mapped.node[node.height[mapped.node] > max(node.height[fail.node])]
+        }
+        gene.anno = sapply(mapped.node, function(x) {
+          paste0(x, ":", paste0(gene.olap[[x]], collapse = " "))
+        })
       }
+
       ###Choose the deepest nodes that pass all the criteria.
       mapped.node = mapped.node[order(node.height[mapped.node])]
       best.node = mapped.node[1]
-      ###Get the markers on every mapped nodes.
-      gene.anno = sapply(mapped.node, function(x) {
-        paste0(x, ":", paste0(gene.olap[[x]], collapse = " "))
-      })
+      ###Get the markers on every mapped nodes.      
       c(
         cl = best.node,
         score = x[best.node],
@@ -309,7 +297,7 @@ summarize_cl <-
 #'
 #' @param dend 
 #' @param cl 
-#' @param cl.med 
+#' @param cl.dat 
 #' @param dat 
 #' @param map.dat 
 #' @param map.cells 
@@ -323,9 +311,7 @@ summarize_cl <-
 #' @examples
 map_dend_membership <-
   function(dend,
-           cl,
-           cl.med,
-           dat,
+           cl.dat,
            map.dat,
            map.cells,
            mc.cores = 1,
@@ -334,17 +320,17 @@ map_dend_membership <-
   {
     library(doMC)
     require(foreach)
-    if(mcores ==1){
+    if(mc.cores ==1){
       registerDoSEQ()
     }
     else{
       registerDoMC(cores=mc.cores)
-      on.exit(parallel::stopCluster(), add = TRUE)
     }
-    mem = foreach(i = 1:bs.num, .combine = 'cbind') %dopar% map_dend(dend, cl, cl.med, dat, map.dat, map.cells, ...)    
-    memb = as.character(mem)
-    names(memb) = rownames(mem)
-    memb = data.frame(cell = names(memb), cl = memb)
+    mem = foreach(i = 1:bs.num, .combine = 'c') %dopar% {
+      print(i)
+      map_dend(dend, cl.dat, map.dat, map.cells, ...)
+    }
+    memb = data.frame(cell = names(mem), cl = mem)
     memb = table(memb$cell, memb$cl)
     memb = memb / bs.num
     tmp = get_nodes_attr(dend, "label")
@@ -353,63 +339,42 @@ map_dend_membership <-
     return(memb)
   }
 
-#' Title
-#'
-#' @param dend 
-#' @param cl.df 
-#' @param cl 
-#' @param norm.dat 
-#' @param query.dat 
-#' @param bp.collapse.th 
-#' @param mc.cores 
-#' @param bs.num 
-#' @param p 
-#' @param low.th 
-#' @param conf.th 
-#' @param min.genes 
-#' @param min.genes.ratio 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-mapping <-
-  function(dend,
-           cl.df,
-           cl,
-           norm.dat,
-           query.dat,
-           bp.collapse.th = NULL,mc.cores=1, bs.num=100, p=0.7, low.th=0.15, conf.th=0.7, min.genes=1, min.genes.ratio=0.3
-           )
-  { 
-    rownames(cl.df)=cl.df$cluster_id
-    cltmp=cl.df[as.character(cl),"cluster_label"]
-    names(cltmp)=names(cl)
-    cl=factor(cltmp)
-    
-        
-    query.dat.norm = log2(as.matrix(query.dat+1))
-    idx=match(rownames(norm.dat), rownames(query.dat.norm))
-    query.dat.norm=query.dat.norm[idx,]
-    
-    ### Some more initializations
-    query.dat.cells = colnames(query.dat.norm)
-    cl.med = get_cl_means(norm.dat, cl)
-    rownames(cl.med)=rownames(norm.dat)
-    
-    # The key algorithm : Run 100 iterations, in each one sample 70% of the cells.
-    # low.th is the minimum differnce in Pearson correlation required to decide on which branch to map to. If the difference 
-    # is lower than this threshold, a random branch is chosen.
-    # The resulted memb object is a matrix where every row is a cell, and columns are the nodes of the dendrogram. The values are the bootstrap support for that node.
-    memb = map_dend_membership(dend, cl,cl.med, norm.dat, query.dat.norm, query.dat.cells, mc.cores=mc.cores, bs.num=bs.num, p=p, low.th=low.th)
-    # analyze the results to generate the final output, i.e. for every cell the deepest node with th=0.8 confidence.
-    # Also apply constraints on the minimum number of genes (or genes ratio)
-    mapping.df = summarize_cl(dend, memb, query.dat.norm, conf.th=conf.th, min.genes=min.genes, min.genes.ratio=min.genes.ratio)
-    
-    # save results
-    save(mapping.df, file=file.path(paste0("mapping.df.rda")))
-    save(memb, file=file.path(paste0("mapping.memb.rda")))
-    write.csv(mapping.df, file=file.path(paste0("mapping.df.csv")))
-    write.csv(memb, file=file.path( paste0("mapping.memb.csv")))
-    return (list(memb, mapping.df))
+
+build_reference <- function(cl, norm.dat, dend, de.genes, cl.label=NULL, up.gene.score=NULL, down.gene.score=NULL, n.markers=30)
+  {
+    cl.dat = get_cl_means(norm.dat, cl)
+    if(is.null(up.gene.score)){
+      de.gene.score = get_gene_score(de.genes)
+      up.gene.score = de.gene.score[[1]]
+      down.gene.score = de.gene.score[[2]]
+    }    
+    select.genes = intersect(row.names(norm.dat), row.names(up.gene.score))
+    dend = select_dend_markers(dend, norm.dat=norm.dat, cl=cl, de.genes=de.genes,
+      up.gene.score=up.gene.score[select.genes,], 
+      down.gene.score=down.gene.score[select.genes,], n.markers=n.markers)
+    dend = select_pos_dend_markers(dend= dend, norm.dat = norm.dat, cl = cl)
+    if(!is.null(cl.label)){
+      colnames(cl.dat) = cl.label[colnames(cl.dat)]
+      labels(dend) = cl.label[labels(dend)]
+    }
+    dend = label_dend(dend)[[1]]
+    return(list(cl.dat=cl.dat, dend=dend))
   }
+
+
+map_reference_tree <- function(cl.dat, dend, map.dat, map.cells=colnames(map.dat), mc.cores=10, bs.num=100, p=0.7, low.th=0.15)
+  {
+###Assume map.dat is logCPM already
+    memb = map_dend_membership(dend, cl.dat, map.dat=map.dat, map.cells, mc.cores=mc.cores, bs.num=100, p=0.7, low.th=0.15)
+    map.df = summarize_cl(dend, memb, map.dat, conf.th=0.7, min.genes=1, min.genes.ratio=0.3)
+    
+    Tree_mapping_probability = compute_mapping_probability(memb = FACS.memb,
+      select.cells = FACS.cells,
+      select.cl = select.cl,
+      ref.cl= cl)
+    
+    
+    return(list(memb, map.df))
+  }
+
+
