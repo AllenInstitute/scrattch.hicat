@@ -155,7 +155,7 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
     }
     else {
       registerDoMC(cores=mc.cores)
-      on.exit(parallel::stopCluster(), add = TRUE)
+      #on.exit(parallel::stopCluster(), add = TRUE)
     }
     bins = split(x, floor((1:length(x))/batch.size))
     results= foreach(i=1:length(bins), .combine=.combine) %dopar% FUN(bins[[i]],...)
@@ -248,7 +248,7 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,BINDEX=NULL, BNPARA
 #'
 #' @examples
 select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20,use.markers=TRUE, top.n=100,rm.eigen=NULL, rm.th=rep(0.7, ncol(rm.eigen)))
-  {
+  {    
     select.genes.list = list()
     for(ref.set in names(ref.list)){
       #print(ref.set)
@@ -258,7 +258,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
       if(use.markers & !is.null(comb.dat$de.genes.list[[ref.set]])){
         cl = droplevels(comb.dat$cl.list[[ref.set]][ref.cells])
         cl.size = table(cl)
-        cl = droplevels(cl[cl %in% names(cl.size)[cl.size > de.param.list[[ref.set]]$min.cells]])
+        cl = droplevels(cl[cl %in% names(cl.size)[cl.size > comb.dat$de.param.list[[ref.set]]$min.cells]])
         if(length(levels(cl)) <= 1){
           return(NULL)
         }
@@ -441,9 +441,8 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   if(length(cl) < nrow(result$knn)){
     diff.cells = setdiff(row.names(result$knn), names(cl))
     pred.df = predict_knn(result$knn[diff.cells,], all.cells, cl )$pred.df
-    pred.cl= setNames(as.character(pred.df$pred.cl), row.names(pred.df))
-    cl = c(cl, pred.cl[setdiff(names(pred.cl), names(cl))])
-     
+    pred.cl= setNames(as.character(pred.df$pred.target), row.names(pred.df))
+    cl = c(cl, pred.cl[setdiff(names(pred.cl), names(cl))])     
   }
   cl.platform.counts = table(meta.df[names(cl), "platform"],cl)
   print(cl.platform.counts)
@@ -459,7 +458,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
     tmp.cells = names(cl)[cl %in% bad.cl]
     ##########FIX BUG
     pred.df = predict_knn(result$knn[tmp.cells,,drop=F], all.cells, cl)$pred.df
-    pred.cl= setNames(as.character(pred.df$pred.cl), row.names(pred.df))
+    pred.cl= setNames(as.character(pred.df$pred.target), row.names(pred.df))
     cl[names(pred.cl)]= pred.cl
   }
   merge.dat.list = comb.dat$dat.list[merge.sets]
