@@ -1,3 +1,35 @@
+run_iter_clust_merge <- function(norm.dat, iter, output_dir="subsample_result", all.cells=colnames(norm.dat), prefix="all", de.param=de_param(), merge.type="undirectional", sample.frac = 0.8, init.result=NULL, mc.cores=1, override=FALSE)
+  {
+    run <- function(i,...){
+      prefix = paste("iter",i,sep=".")
+      print(prefix)
+      library(Matrix)
+      outfile= file.path(output_dir, paste0("result.",i,".rda"))
+      if(file.exists(outfile)& !override){
+        return(NULL)
+      }
+      select.cells=sample(all.cells, round(length(all.cells)*sample.frac))
+      save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
+      
+      result <- scrattch.hicat::iter_clust_merge(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
+      save(result, file=outfile)
+    }
+    if(!dir.exists(output_dir)){
+      dir.create(output_dir)
+    }    
+    if (mc.cores==1){
+      sapply(iter, function(i){run(i,...)})
+    }
+    else{     
+      require(doMC)
+      require(foreach)
+      registerDoMC(cores=mc.cores)
+      foreach::foreach(i=iter,.packages=c("scrattch.hicat","Matrix"), .combine='c') %dopar% { run(i) }
+    }
+  }
+    
+
+
 #' Collect co-clustering matrix from results files
 #'
 #' @param result.files A directory containing results files
@@ -515,30 +547,8 @@ run_consensus_clust <- function(norm.dat,
   if(!is.null(init.result)){
     all.cells= intersect(all.cells, names(init.result$cl))
   }
-  run <- function(i,...){
-    prefix = paste("iter",i,sep=".")
-    print(prefix)
-    library(Matrix)
-    outfile= file.path(output_dir, paste0("result.",i,".rda"))
-    if(file.exists(outfile)& !override){
-      return(NULL)
-    }
-    select.cells=sample(all.cells, round(length(all.cells)*sample.frac))
-    save(select.cells, file=file.path(output_dir, paste0("cells.",i,".rda")))
-
-    result <- scrattch.hicat::iter_clust_merge(norm.dat=norm.dat, select.cells=select.cells,prefix=prefix, de.param = de.param, merge.type=merge.type, result=init.result, ...)
-    save(result, file=outfile)
-  }
   if(is.null(co.result)){
-    if (mc.cores==1){
-      sapply(1:niter, function(i){run(i,...)})
-    }
-    else{     
-      require(doMC)
-      require(foreach)
-      registerDoMC(cores=mc.cores)
-      foreach::foreach(i=1:niter,.packages=c("scrattch.hicat","Matrix"), .combine='c') %dopar% { run(i) }
-    }
+    tmp=run_iter_clust_merge(norm.dat=norm.dat, iter=1:niter, output_dir=output_dir, all.cells=all.cells, prefix=prefix, de.param=de.param, merge.type=merge.type, sample.frac=0.8, init.result=init.result, mc.cores=mc.cores)    
     result.files=file.path(output_dir, dir(output_dir, "result.*.rda"))
     co.result <- collect_subsample_cl_matrix(norm.dat,result.files,all.cells)
   }

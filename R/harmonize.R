@@ -180,16 +180,12 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
 get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,...)
   {
     results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine="rbind", FUN=function(x){
-      get_knn(dat=dat[,x], ref.dat=ref.dat, k=k, method=method, dim=dim,...)
+      get_knn(dat=dat[,x,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,...)
     })
     return(results)
   }
 
 
-build_AnnoyTree <- function(ref.dat)
-  {
-    
-  }
 
 #' Get KNN
 #'
@@ -203,19 +199,39 @@ build_AnnoyTree <- function(ref.dat)
 #' @export
 #'
 #' @examples
-get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,BINDEX=NULL, BNPARAM=NULL,...)
+get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transposed=TRUE)
   {
     
     print(method)
     if(method=="cor"){
-      knn.index = knn_cor(ref.dat, dat,k=k)  
+      if(transposed){
+        knn.index = knn_cor(ref.dat, dat,k=k)
+      }
+      else{
+        ref.dat = Matrix::t(ref.dat)
+        dat = Matrix::t(dat)
+        knn.index = knn_cor(ref.dat, dat,k=k)
+      }
     }
     else if(method=="RANN"){
-      knn.index = RANN::nn2(t(ref.dat), t(dat), k=k)[[1]]
+      if(transposed){
+        ref.dat = Matrix::t(ref.dat)
+        dat = Matrix::t(dat)
+      }
+      knn.index = RANN::nn2(ref.dat, dat, k=k)[[1]]
     }
-    else if(method=="Annoy"){
-      library(BiocNeighbors)
-      knn.result = queryKNN(t(red.dat), t(dat),k=k, BINDEX=BINDEX, BNPARAM= BNPARAM)[[1]]          
+    else if(method %in% c("Annoy.Euclidean", "Annoy.Angular")){
+      library(BiocNeighbors)      
+      if(is.null(index)){
+        if (method=="Annoy.Euclidean"){
+          distance="Euclidean"
+        }
+        else{
+          distance="Angular"
+        }
+        index= buildAnnoy(ref.dat,distance=distance, transposed=transposed)
+      }
+      knn.index = queryAnnoy(X= ref.dat, query=dat, k=k, precomputed = index, transposed=transposed)[[1]]      
     }
     else if(method == "CCA"){
       mat3 = crossprod(ref.dat, dat)
@@ -225,7 +241,12 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,BINDEX=NULL, BNPARA
     else{
       stop(paste(method, "method unknown"))
     }
-    row.names(knn.index) = colnames(dat)
+    if(!transposed){
+      row.names(knn.index) = row.names(dat)
+    }
+    else{
+      row.names(knn.index) = colnames(dat)
+    }
     return(knn.index)
   }
 
@@ -319,6 +340,13 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
   }
 
 
+cleanAnnoyIndex <- function(index)
+  {
+    unlink(index@path)
+    rm(index)
+    gc()
+  }
+
 
 #' compute knn
 #'
@@ -337,58 +365,86 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
 #' @export
 #'
 #' @examples
-compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb.dat$dat.list), select.cells=comb.dat$all.cells, k=15, method="cor", self.method="RANN", batch.size=10000, mc.cores=1)
+compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb.dat$dat.list), select.cells=comb.dat$all.cells, k=15, method=c("cor","Annoy.Angular"), self.method=c("RANN","Annoy.Euclidean"), batch.size=10000, mc.cores=1)
   {
+    
     cat("Number of select genes", length(select.genes), "\n")
     cat("Get knn\n")
     dat.list = comb.dat$dat.list
 ###index is the index of knn from all the cells
-    knn.comb = do.call("cbind",lapply(names(ref.list), function(ref.set){
+    knn.list = list()
+    for(ref.set in names(ref.list)){
       cat("Ref ", ref.set, "\n")
       if(length(ref.list[[ref.set]]) <= k) {
         ##Not enough reference points to compute k
-        return(NULL)
+        next
       }
       k.tmp = k
       if(length(ref.list[[ref.set]]) <= k*2) {
         k.tmp = round(k/2)
       }
-      ref.dat = comb.dat$dat.list[[ref.set]][select.genes, ref.list[[ref.set]],drop=F]
-      knn =do.call("rbind", lapply(select.sets, function(set){
+      dat = dat.list[[ref.set]]
+      ref.cells = ref.list[[ref.set]]
+      map.cells=  intersect(select.cells, colnames(dat))
+      if(length(map.cells)==0){
+        next
+      }
+      tmp.cores = mc.cores
+      if(ncol(dat)< batch.size) tmp.cores = 1
+      rd.dat = rd_PCA(dat,select.genes=select.genes, select.cells=map.cells, max.pca = 50, sampled.cells=ref.cells, th=1, mc.cores=tmp.cores)$rd.dat
+      ref.rd.dat = rd.dat[ref.cells,,drop=F]
+      idx = match(ref.cells, comb.dat$all.cells)
+      if(self.method== "RANN"){
+        require(RANN)
+        knn = RANN::nn2(ref.rd.dat , rd.dat, k=k.tmp)[[1]]
+        row.names(knn) = row.names(rd.dat)            
+      }
+      else{
+        require(BiocNeighbors)
+        index = buildAnnoy(ref.rd.dat, distance ="Euclidean", transposed = FALSE)            
+        knn=get_knn_batch(dat=rd.dat, ref.dat = ref.rd.dat, k=k.tmp, method = self.method, batch.size = batch.size, mc.cores=tmp.cores, index=index, transposed=FALSE)
+        cleanAnnoyIndex(index)
+      }      
+      knn = matrix(idx[knn], nrow=nrow(knn), dimnames=list(row.names(knn), NULL))
+      self.knn = knn
+      index = NULL
+      ref.dat = dat[select.genes,ref.cells]
+      if(method  %in% c("Annoy.Euclidean", "Annoy.Angular")){
+        if(method=="Annoy.Angular"){
+          distance = "Angular"
+        }
+        else{
+          distance = "Euclidean"
+        }
+        index = buildAnnoy(ref.dat, distance =distance, transposed = TRUE)            
+      }
+      knn =do.call("rbind", lapply(setdiff(select.sets,ref.set), function(set){
         cat("Set ", set, "\n")
         map.cells=  intersect(select.cells, colnames(dat.list[[set]]))
         if(length(map.cells)==0){
           return(NULL)
         }
         dat = dat.list[[set]][select.genes,map.cells,drop=F]      
-        if(set == ref.set & self.method =="RANN"){
-          rd.dat = rd_PCA(dat,select.genes=row.names(dat), select.cells=colnames(dat), max.pca = 50, sampled.cells=colnames(ref.dat), th=1)$rd.dat
-          if(is.null(rd.dat)){
-            return(NULL)
-          }
-          knn = RANN::nn2(rd.dat[colnames(ref.dat),,drop=F] , rd.dat[colnames(dat),,drop=F], k=k.tmp)[[1]]
-          row.names(knn) = colnames(dat)
-        }
-        else{
-          tmp.cores = mc.cores
-          if(ncol(dat)< batch.size){
-            tmp.cores = 1
-          }
-          knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = method, batch.size = batch.size, mc.cores=tmp.cores) 
-        }
+        tmp.cores = mc.cores
+        if(ncol(dat)< batch.size){
+          tmp.cores = 1
+        }          
+        knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = method, batch.size = batch.size, mc.cores=tmp.cores, index=index, transposed=TRUE)
         if(!is.null(comb.dat$cl.list)){
-          test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])
-          
+          test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])          
           if(!is.null(test.knn)){
             cat("Knn", set, ref.set, method, "cl.score", test.knn$cl.score, "cell.score", test.knn$cell.score,"\n")
           }
         }
-        idx = match(colnames(ref.dat), comb.dat$all.cells)
-        knn = matrix(idx[knn], nrow=nrow(knn))
-        row.names(knn) = map.cells
-        knn
-      }))    
-    }))
+        knn = matrix(idx[knn], nrow=nrow(knn), dimnames=list(row.names(knn), NULL))        
+      }))
+      if(!is.null(index)){
+        cleanAnnoyIndex(index)
+      }
+      knn = rbind(self.knn, knn)
+      knn.list[[ref.set]] = knn[select.cells,]      
+    }
+    knn.comb = do.call("cbind",knn.list)
     return(knn.comb)
   }
 
@@ -431,7 +487,9 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   }
   
   knn.comb= compute_knn(comb.dat, select.genes=select.genes, ref.list=ref.list, select.sets=select.sets, select.cells=select.cells, k=k, method=method, self.method=self.method, batch.size=batch.size, mc.cores=mc.cores)
-  
+  if(is.null(knn.comb)){
+    return(NULL)
+  }
   sampled.cells = unlist(cells.list)
   result = knn_jaccard_louvain(knn.comb[sampled.cells,])
   result$cl.mat = as.matrix(t(result$memberships))
@@ -632,7 +690,7 @@ harmonize <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
 #' @export
 #'
 #' @examples
-i_harmonize <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=names(comb.dat$dat.list), prefix="", result=NULL, overwrite=TRUE, ...)
+i_harmonize <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=names(comb.dat$dat.list), prefix="", result=NULL, overwrite=TRUE, split.size = 50,...)
   {
     
     #attach(comb.dat)

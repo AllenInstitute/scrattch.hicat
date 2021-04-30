@@ -425,7 +425,12 @@ compare_annotate <- function(cl,
   if(reorder){
     tmp <- apply(tb, 1, which.max)
     cl_names <- names(cl)
-    cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)], absent.cl))
+    if(do.droplevels){
+      cl <- factor(as.character(cl), levels = c(row.names(tb)[order(tmp)], absent.cl))
+    }
+    else{
+      cl <- factor(as.character(cl), levels = row.names(tb)[order(tmp)])
+    }
     cl <- setNames(cl, cl_names)
     if(rename){
       cl.id.map <- data.frame(new = 1:length(levels(cl)),

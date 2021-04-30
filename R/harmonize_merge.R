@@ -214,6 +214,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
         next
       }
       include.y = length(tmp.cells2) >= merge.de.param.list[[set]]$min.cells
+      #update cl.means.list
       if(!is.null(cl.means.list)){
         if(!is.null(cl.means.list[[set]])){
           tmp = colnames(cl.means.list[[set]])!=x
@@ -230,6 +231,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
           }
         }  
       }
+      #update cl.sqr.means.list
       if(!is.null(cl.sqr.means.list) & !is.null(cl.sqr.means.list[[set]]) & de.method=="fast_limma"){
         if(!is.null(cl.sqr.means.list[[set]])){
           tmp = colnames(cl.sqr.means.list[[set]])!=x
@@ -246,6 +248,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
           }
         }        
       }
+      #update cl.present.list
       if(!is.null(cl.present.list) & !is.null(cl.present.list[[set]])){
         if(!is.null(cl.present.list[[set]])){
           tmp = colnames(cl.present.list[[set]])!=x
@@ -262,6 +265,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
           }   
         }
       }
+      #update cluster similary matrix
       if(include.y){         
         tmp= Matrix::rowMeans(merge.dat.list[[set]][anchor.genes ,tmp.cells2,drop=FALSE])
         if(y %in% colnames(cl.rd)){

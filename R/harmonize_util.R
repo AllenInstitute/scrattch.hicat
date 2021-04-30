@@ -103,7 +103,7 @@ plot_confusion <- function(consensus.cl, prefix, comb.dat,consensus.cl.df = NULL
   g.list=list()
   for(x in names(comb.dat$cl.list)){
     if(sum(names(comb.dat$cl.list[[x]]) %in% names(consensus.cl)) > 0){
-      if(is.null(cl.df)){
+      if(is.null(consensus.cl.df)){
         g = compare_annotate(consensus.cl, comb.dat$cl.list[[x]], comb.dat$cl.df.list[[x]], rename = FALSE, do.droplevels=do.droplevels)$g
         g = g + xlab("consensus cluster") + ylab(x)
       }
