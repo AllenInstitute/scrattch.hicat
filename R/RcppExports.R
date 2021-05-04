@@ -2,7 +2,8 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 
-ImputeKnn <- function(knn_idx, cell_idx, ref_idx, dat, gene_idx_, w_mat_, impute_dat, transpose_input, transpose_output) {
-    invisible(.Call('_scrattch_hicat_ImputeKnn', PACKAGE = 'scrattch.hicat', knn_idx, cell_idx, ref_idx, dat, gene_idx_, w_mat_, impute_dat, transpose_input, transpose_output))
+ImputeKnn <- function(knn_idx, ref_idx, cell_idx, gene_idx, dat, impute_dat, w_mat_,  transpose_input, transpose_output) {
+  invisible(.Call('_scrattch_hicat_ImputeKnn', PACKAGE = 'scrattch.hicat',
+                  knn_idx, ref_idx, cell_idx, gene_idx, dat, impute_dat, w_mat_,  transpose_input, transpose_output))
 }
 
