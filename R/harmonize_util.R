@@ -556,7 +556,7 @@ gene_gene_cor_conservation <- function(dat.list, select.genes, select.cells,pair
 #' @export
 #'
 #' @examples
-plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb.de.genes=NULL, cl.means.list=NULL, col.list=NULL, cl.col=NULL, select.genes=NULL, save.matrix=FALSE,n.markers = 20,...)
+plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb.de.genes=NULL, ref.set=names(dat.list)[[1]], cl.means.list=NULL, col.list=NULL, cl.col=NULL, select.genes=NULL, save.matrix=FALSE,n.markers = 20,...)
   {
     sets=names(dat.list)
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -583,7 +583,7 @@ plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb
       }
       select.genes = select_markers(dat.list[[1]], cl, n.markers=n.markers, de.genes=comb.de.genes)$markers
     }
-    gene.hc = hclust(dist(cl.means.list[[1]][select.genes,]), method="ward.D")
+    gene.hc = hclust(dist(cl.means.list[[ref.set]][select.genes,]), method="ward.D")
     if(is.null(cl.col)){
       cl.col = jet.colors(length(unique(cl)))
     }
@@ -615,4 +615,31 @@ plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb
     }
     return(list(select.genes=select.genes, dat.matrix = dat.matrix, comb.de.genes= comb.de.genes,gene.hc=gene.hc))
   }
+
+
+
+get_incident_matrix <- function(cl1, cl2, consensus.cl,pseudo=0.01)
+{
+  tb1 = table(cl1, consensus.cl[names(cl1)]) + pseudo
+  freq1 = as.matrix(tb1/rowSums(tb1))
+  tb2 = table(cl2, consensus.cl[names(cl2)]) + pseudo
+  freq2 = as.matrix(tb2/rowSums(tb2))
+  kl = matrix(0, nrow=nrow(freq1), ncol=nrow(freq2))
+  row.names(kl) = row.names(freq1)
+  colnames(kl) = row.names(freq2)
+  library(entropy)
+  for(i in 1:nrow(freq1))
+    for(j in 1:nrow(freq2)){
+      kl[i,j] = KL.plugin(freq1[i,], freq2[j,]) 
+    }
+
+  kl.exp = exp(-kl)
+  kl.sim = kl.exp/rowSums(kl.exp)
+  
+  pairs.df = melt(kl)
+  colnames(pairs.df)=c("cl1","cl2","KL")
+  pairs.df$sim = as.vector(kl.sim)
+  return(list(kl, kl.sim,pairs.df))
+}
+
 

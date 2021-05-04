@@ -87,9 +87,9 @@ predict_knn <- function(knn.idx, reference, target, k=15, train.dat=NULL, test.d
 #' @export
 #'
 #' @examples
-impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, transpose_input=FALSE, transpose_output= FALSE)
+impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, transpose_input=FALSE, transpose_output= FALSE, mc.cores=1)
   {
-    cell.id = 1:nrow(knn.idx)
+    
     if(transpose_input){
       reference.id = match(reference, row.names(dat))
       genes = colnames(dat)
@@ -100,18 +100,27 @@ impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, transpose
     }
     
     if(transpose_output){
-      impute.dat = matrix(0,length(cell.id), length(genes))
+      impute.dat = matrix(0,nrow(knn.idx), length(genes))
       row.names(impute.dat) = row.names(knn.idx)
       colnames(impute.dat) = genes
     }
     else{
-      impute.dat = matrix(0, length(genes),length(cell.id))    
+      impute.dat = matrix(0, length(genes),nrow(knn.idx))
       row.names(impute.dat) = genes
       colnames(impute.dat) =  row.names(knn.idx)
     }
-    ImputeKnn(knn.idx,cell.id, reference.id, dat, gene_idx_=NULL, w_mat_= w, impute.dat, transpose_input=transpose_input, transpose_output=transpose_output)
+    cell.id = 1:nrow(knn.idx)
+    gene.id = 1:length(genes)
+    library(parallel)
+    tmp = parallel::pvec(cell.id, function(x){
+      ImputeKnn(knn.idx, reference.id, x, gene.id,
+                dat=dat,impute.dat, w_mat_=NULL,
+                transpose_input=transpose_input, transpose_output=transpose_output)
+    },mc.cores=mc.cores)
+    #ImputeKnnWhole(knn.idx, reference.id, dat, impute.dat, w_mat_= NULL,
+    #               transpose_input=transpose_input, transpose_output=transpose_output)
     impute.dat
-}
+  }
 
 
 
@@ -128,9 +137,6 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
     for(x in names(ref.list))
       {
         print(x)
-        impute.dat = matrix(0, nrow=length(select.genes), ncol=length(select.cells))
-        dimnames(impute.dat) = list(select.genes, select.cells)
-        impute.dat.list[[x]] = impute.dat        
         tmp.cells= select.cells[comb.dat$meta.df[select.cells,"platform"]==x]
         ref.cells = ref.list[[x]]
         rd.result <- rd_PCA(comb.dat$dat.list[[x]], select.genes, select.cells=tmp.cells, sampled.cells = ref.cells, max.pca =max.dim, th=th, method=method,mc.cores=mc.cores,verbose=verbose)
@@ -142,13 +148,17 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         #print(ncol(rd.dat))        
         knn = RANN::nn2(data=rd.dat[ref.cells,],query=rd.dat,k=k)[[1]]        
         row.names(knn) = row.names(rd.dat)
-        cell.id = match(row.names(rd.dat), select.cells)
         dat = as.matrix(comb.dat$dat.list[[x]][select.genes,ref.cells])
         reference.id = 1:length(ref.cells)
+        cell.id = match(row.names(rd.dat), select.cells)                
         gene.id = 1:length(select.genes)
-        ImputeKnn(knn, cell.id, reference.id, dat=dat, gene_idx_=gene.id, w_mat_= NULL, impute_dat=impute.dat.list[[x]], transpose_input=FALSE, transpose_output=FALSE)
+        impute.dat = matrix(0, nrow=length(select.genes), ncol=length(select.cells))
+        dimnames(impute.dat) = list(select.genes, select.cells)
+        ImputeKnn(knn, reference.id, cell.id, gene.id, dat=dat, impute.dat, w_mat_ = NULL,
+                  transpose_input=FALSE, transpose_output=FALSE);
+        impute.dat.list[[x]] = impute.dat            
       }
-
+    
     ###cross-modality Imputation based on nearest neighbors in each iteraction of clustering using anchoring genes or genes shown to be differentiall expressed. 
     for(x in names(split.results)){
       print(x)
@@ -179,7 +189,9 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
         gene.id = match(impute.genes, row.names(dat))
         cell.id = match(query.cells, colnames(dat))
         reference.id = match(comb.dat$all.cells, colnames(dat))
-        ImputeKnn(select.knn,cell.id, reference.id, dat=dat, gene_idx_=gene.id, w_mat_= NULL, impute_dat=dat, transpose_input=FALSE, transpose_output=FALSE)
+        ImputeKnn(select.knn, reference.id, cell.id, gene_idx=gene.id, 
+                  dat=dat,impute_dat=dat, w_mat_= NULL,
+                  transpose_input=FALSE, transpose_output=FALSE)        
       }
     }
     return(list(knn.list =knn.list, org.rd.dat.list = org.rd.dat.list,impute.dat.list=impute.dat.list, ref.list=ref.list))

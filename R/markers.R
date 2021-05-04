@@ -322,14 +322,21 @@ select_markers_pair_group<- function(cl, g1,g2,de.genes,cl.means, top.n=50,max.n
 #' @export
 #'
 #' @examples
-select_N_markers <- function(de.genes, cl.means, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num =1, add.up=pair.num, add.down=pair.num, rm.genes=NULL, pairs=names(de.genes))
+select_N_markers <- function(de.genes, cl.means, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num =1, add.up=pair.num, add.down=pair.num, rm.genes=NULL, pairs=names(de.genes), mc.cores=20)
   {
    add.up = setNames(rep(add.up, length(pairs)), pairs)
    add.down= setNames(rep(add.down, length(pairs)), pairs)
    up.default = down.default = c()
    if(!is.null(default.markers)){
-     up.default = sapply(pairs, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
-     down.default = sapply(pairs, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
+     library(parallel)
+     up.default =   parallel::pvec(pairs, function(x){
+       g.list=sapply(x, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
+     },mc.cores=mc.cores)
+
+     down.default =   parallel::pvec(pairs, function(x){
+       g.list=sapply(x, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
+     },mc.cores=mc.cores)     
+     
      add.up = pmax(add.up -  sapply(up.default, length),0)
      add.down = pmax(add.down -  sapply(down.default, length),0)
    }
