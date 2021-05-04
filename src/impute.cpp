@@ -53,37 +53,3 @@ void ImputeKnn(IntegerMatrix knn_idx, IntegerVector ref_idx, IntegerVector cell_
   }
 }
 
-//Assume dat and impute_dat have the same number of features. 
-// [[Rcpp::export]]
-void ImputeKnnWhole(IntegerMatrix knn_idx, IntegerVector ref_idx, NumericMatrix  dat, NumericMatrix impute_dat,Nullable<NumericMatrix> w_mat_, bool transpose_input, bool transpose_output)
-{
-  float w = 1.0/knn_idx.ncol();
-  NumericMatrix* w_mat = NULL;
-  if(w_mat_.isNotNull()){
-    w_mat = new NumericMatrix(w_mat_);
-  }
-  knn_idx = knn_idx - 1;
-  ref_idx = ref_idx - 1;
-  for(int j=0; j < knn_idx.ncol();j++){
-    IntegerVector ref_id=ref_idx[knn_idx(_, j)];
-    for(int i =0; i < ref_id.length(); i++){
-      NumericVector knn_val;
-      int k = ref_id[i];
-      if(transpose_input){
-	knn_val  = dat(k, _);
-      }
-      else{
-	knn_val  = dat(_, k);
-      }
-      if(w_mat!=NULL){
-	w = (*w_mat)(i,j);
-      }
-      if(transpose_output){
-	impute_dat(i,_) = impute_dat(i,_) + knn_val * w;
-      }
-      else{
-	impute_dat(_,i) = impute_dat(_,i) + knn_val * w;
-      }      
-    }
-  }  
-}
