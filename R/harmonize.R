@@ -179,8 +179,8 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
 #' @examples
 get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,...)
   {
-    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine="rbind", FUN=function(x){
-      get_knn(dat=dat[,x,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,...)
+    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine="rbind", FUN=function(bin){
+      get_knn(dat=dat[,bin,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,...)
     })
     return(results)
   }
@@ -390,7 +390,9 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
         next
       }
       tmp.cores = mc.cores
-      if(ncol(dat)< batch.size) tmp.cores = 1
+      if(length(map.cells)< batch.size){
+        tmp.cores = 1
+      }                
       rd.dat = rd_PCA(dat,select.genes=select.genes, select.cells=map.cells, max.pca = 50, sampled.cells=ref.cells, th=1, mc.cores=tmp.cores)$rd.dat
       ref.rd.dat = rd.dat[ref.cells,,drop=F]
       idx = match(ref.cells, comb.dat$all.cells)
@@ -478,6 +480,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   cells.list = split(select.cells, meta.df[select.cells, "platform"])[select.sets]
   cells.list =  sample_sets_list(cells.list, cl.list[names(cl.list) %in% select.sets], sample.size=sample.size, cl.sample.size = cl.sample.size)
   ref.list = cells.list[ref.sets]
+  
 ###Select genes for joint analysis
   if(is.null(select.genes)){
     select.genes = select_joint_genes(comb.dat, ref.list = ref.list,select.cells=select.cells, ...)
@@ -1005,3 +1008,4 @@ build_dend_harmonize <- function(impute.dat.list, cl, cl.df, ncores=1)
     l.color = setNames(as.character(cl.df$cluster_color), row.names(cl.df))
     dend.result = build_dend(cl.means, l.rank = l.rank, l.color = l.color, nboot=100,ncores=ncores)
   }
+
