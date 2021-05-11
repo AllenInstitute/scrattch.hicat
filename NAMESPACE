@@ -1,4 +1,5 @@
 useDynLib(scrattch.hicat)
 importFrom(Rcpp, sourceCpp)
+importFrom(Rcpp, evalCpp)
 exportPattern("^[[:alpha:]]+")
 

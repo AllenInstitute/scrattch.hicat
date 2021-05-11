@@ -18,58 +18,40 @@ get_knn_weight <- function(knn.dist, scale=0.2, exclude.th = 0.0001)
     return(w)
   }
 
-#' Title
-#'
-#' @param knn.idx 
-#' @param reference 
-#' @param cl 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-predict_knn_small <- function(knn.idx, reference, cl)
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param knn.idx 
+##' @param reference 
+##' @param cl 
+##' @return 
+##' @author Zizhen Yao
+predict_knn <- function(knn.idx, reference, cl, mc.cores=1)
   {
+    
     library(matrixStats)
+    library(data.table)
     library(dplyr)
+    library(parallel)
     query = row.names(knn.idx)
-    df = data.frame(nn=as.vector(knn.idx), query=rep(row.names(knn.idx), ncol(knn.idx)))
-    df = df[!is.na(df$nn),]
-    df$nn.cl = cl[reference[df$nn]]
-    tb=with(df, table(query, nn.cl))
-    nn.size = table(df$query)
-    tb = tb/as.vector(nn.size)
-    pred.cl = setNames(colnames(tb)[apply(tb, 1, which.max)], row.names(tb))
-    pred.score = setNames(rowMaxs(tb), row.names(tb))
-    pred.df = data.frame(pred.cl, pred.score)
-    return(list(pred.df=pred.df, pred.prob = tb))
-  }
-
-#' Title
-#'
-#' @param knn.idx 
-#' @param reference 
-#' @param cl 
-#' @param ... 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-predict_knn <- function(knn.idx, reference, target, k=15, train.dat=NULL, test.dat=NULL, ...)
-  {
-    library(matrixStats)
-    library(dplyr)
-    if(is.null(knn.idx)){
-      knn.idx = RANN::nn2(data=train.dat[reference,],query=test.dat,k=k)[[1]]        
-      row.names(knn.idx) = row.names(test.dat)
+    results = parallel::pvec(query,function(x){
+      df = data.table(nn=as.vector(knn.idx[x,,drop=F]), query=rep(x, ncol(knn.idx)))
+      df = df %>% filter(!is.na(nn))
+      df$nn.cl = cl[reference[df$nn]]
+      tb = df %>% group_by(query, nn.cl) %>% summarise(n=n())%>% mutate(freq = n/sum(n))
+      pred.df = tb %>% group_by(query) %>% summarize(pred.cl = nn.cl[which.max(freq)], pred.score = max(freq))
+      list(pred.df = pred.df, tb=tb)
+    },mc.cores=mc.cores)
+    if(mc.cores==1){
+      results = list(results)
     }
-    dat = as.matrix(get_cl_mat(target))
-    result = impute_knn(knn.idx, reference, dat, transpose_input=TRUE, transpose_output=TRUE,...)
-    pred.target = setNames(colnames(result)[apply(result, 1, which.max)], row.names(result))
-    pred.score = setNames(rowMaxs(result), row.names(result))
-    pred.df = data.frame(pred.target, pred.score)
-    return(list(pred.df=pred.df, pred.prob=result))
+    pred.df = do.call("rbind",lapply(results, function(x)x[[1]]))
+    pred.prob =  do.call("rbind",lapply(results, function(x)x[[2]]))    
+    pred.df = as.data.frame(pred.df)
+    row.names(pred.df) = pred.df$query
+    pred.df$query=NULL
+    return(list(pred.df=pred.df, pred.prob = pred.prob))
   }
 
 
@@ -87,7 +69,7 @@ predict_knn <- function(knn.idx, reference, target, k=15, train.dat=NULL, test.d
 #' @export
 #'
 #' @examples
-impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, transpose_input=FALSE, transpose_output= FALSE, mc.cores=1)
+impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, transpose_input=FALSE, transpose_output= FALSE)
   {
     
     if(transpose_input){
@@ -99,26 +81,21 @@ impute_knn <- function(knn.idx, reference, dat, knn.dist=NULL, w=NULL, transpose
       genes=row.names(dat)
     }
     
-    if(transpose_output){
-      impute.dat = matrix(0,nrow(knn.idx), length(genes))
+    cell.id = 1:nrow(knn.idx)
+    gene.id = 1:length(genes)
+    if(transpose_output){        
+      impute.dat = matrix(0,length(cell.id), length(genes))
       row.names(impute.dat) = row.names(knn.idx)
       colnames(impute.dat) = genes
     }
     else{
-      impute.dat = matrix(0, length(genes),nrow(knn.idx))
+      impute.dat = matrix(0, length(genes),length(cell.id))
       row.names(impute.dat) = genes
       colnames(impute.dat) =  row.names(knn.idx)
     }
-    cell.id = 1:nrow(knn.idx)
-    gene.id = 1:length(genes)
-    library(parallel)
-    tmp = parallel::pvec(cell.id, function(x){
-      ImputeKnn(knn.idx, reference.id, x, gene.id,
-                dat=dat,impute.dat, w_mat_=NULL,
-                transpose_input=transpose_input, transpose_output=transpose_output)
-    },mc.cores=mc.cores)
-    #ImputeKnnWhole(knn.idx, reference.id, dat, impute.dat, w_mat_= NULL,
-    #               transpose_input=transpose_input, transpose_output=transpose_output)
+    ImputeKnn(knn.idx[x,,drop=F], reference.id, x, gene.id,
+              dat=dat,impute.dat, w_mat_=NULL,
+              transpose_input=transpose_input, transpose_output=transpose_output)    
     impute.dat
   }
 
