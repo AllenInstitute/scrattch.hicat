@@ -35,17 +35,17 @@ predict_knn <- function(knn.idx, reference, cl, mc.cores=1)
     library(dplyr)
     library(parallel)
     query = row.names(knn.idx)
+    if(nrow(knn.idx) < 10000){
+      mc.cores=1
+    }
     results = parallel::pvec(query,function(x){
       df = data.table(nn=as.vector(knn.idx[x,,drop=F]), query=rep(x, ncol(knn.idx)))
       df = df %>% filter(!is.na(nn))
       df$nn.cl = cl[reference[df$nn]]
       tb = df %>% group_by(query, nn.cl) %>% summarise(n=n())%>% mutate(freq = n/sum(n))
       pred.df = tb %>% group_by(query) %>% summarize(pred.cl = nn.cl[which.max(freq)], pred.score = max(freq))
-      list(pred.df = pred.df, tb=tb)
+      list(list(pred.df = pred.df, tb=tb))
     },mc.cores=mc.cores)
-    if(mc.cores==1){
-      results = list(results)
-    }
     pred.df = do.call("rbind",lapply(results, function(x)x[[1]]))
     pred.prob =  do.call("rbind",lapply(results, function(x)x[[2]]))    
     pred.df = as.data.frame(pred.df)
