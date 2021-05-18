@@ -52,7 +52,7 @@ prepare_harmonize<- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = 
 #' @export
 #'
 #' @examples
-test_knn <- function(knn, cl, reference, ref.cl)
+test_knn <- function(knn, cl, reference, ref.cl, plot=FALSE)
   {
     library(reshape)
     library(ggplot2)
@@ -68,36 +68,32 @@ test_knn <- function(knn, cl, reference, ref.cl)
       return(NULL)
     }
     pred.result = predict_knn(knn, reference, ref.cl)
-    pred.prob = as.matrix(pred.result$pred.prob)
-    if(ncol(pred.prob) <= 1){
+    pred.prob = pred.result$pred.prob    
+    if(length(unique(pred.prob$nn.cl))){
       return(NULL)
     }
-    cl.pred.prob=as.matrix(do.call("rbind",tapply(names(cl), cl, function(x){
-      colMeans(pred.prob[x,,drop=F])
-    })),ncol=ncol(pred.prob))
+    pred.prob$cl = cl[pred.prob$query]
+    pred.prob$n = NULL
+    cl.pred.prob=pred.prob %>% group_by(cl,nn.cl) %>% summarize(n=sum(freq))
+    cl.size = as.data.frame(table(cl))
+    cl.pred.prob = cl.pred.prob %>% left_join(cl.size) %>% mutate(prob=n/Freq)
+    match.df = cl.pred.prob %>% group_by(cl) %>% summarize(match.cl = nn.cl[which.max(prob)], 
+      match.score = max(prob), Freq=max(Freq))
     
-    tmp <- apply(cl.pred.prob, 1, which.max)
-    cl.pred.prob = cl.pred.prob[order(tmp),]
-    
-    match.cl = setNames(tmp[as.character(cl)], names(cl))
-    match_score = get_pair_matrix(pred.prob, names(match.cl), match.cl)
-    
-    cl.score = sum(apply(cl.pred.prob, 1, max))/sum(cl.pred.prob)
-    cell.score =  mean(match_score)
-    tb.df = melt(cl.pred.prob)
-    tb.df[[1]] = factor(as.character(tb.df[[1]]), levels=row.names(cl.pred.prob))
-    tb.df[[2]] = factor(as.character(tb.df[[2]]), levels=colnames(cl.pred.prob))
-    colnames(tb.df) = c("cl","ref.cl", "freq")
-    g <- ggplot(tb.df, 
-                aes(x = cl, y = ref.cl)) + 
-                  geom_point(aes(color = freq)) + 
+    cl.score = mean(match.df$match.score)
+    cell.score = with(match.df, sum(match.score * Freq)/sum(Freq))
+        
+    g <- ggplot(cl.pred.prob, 
+                aes(x = cl, y = nn.cl)) + 
+                  geom_point(aes(color = prob)) + 
                     theme(axis.text.x = element_text(vjust = 0.1,
                             hjust = 0.2, 
                             angle = 90,
                             size = 7),
                           axis.text.y = element_text(size = 6)) + 
                             scale_color_gradient(low = "white", high = "darkblue") + scale_size(range=c(0,3))
-    return(list(cl.score=cl.score, cell.score= cell.score, cell.pred.prob = pred.prob, cl.pred.prob = cl.pred.prob, g=g))
+    result=list(cl.score=cl.score, cell.score= cell.score, cell.pred.prob = pred.prob, cl.pred.prob = cl.pred.prob, g=g)
+    return(result)
   }
 
 
@@ -610,11 +606,13 @@ knn_cosine <- function(ref.dat, query.dat, k = 15)
 #' @export
 #'
 #' @examples
-knn_jaccard_louvain <- function(knn.index)
+knn_jaccard_louvain <- function(knn.index, ...)
   {
     require(igraph)
     cat("Get jaccard\n")
-    sim=knn_jaccard(knn.index)
+    #sim=knn_jaccard(knn.index,...)
+    sim = ComputeSNN(knn.index,...)
+    rownames(sim) = colnames(sim) = row.names(knn.index)
     cat("Louvain clustering\n")
     gr <- igraph::graph.adjacency(sim, mode = "undirected", 
                                   weighted = TRUE)

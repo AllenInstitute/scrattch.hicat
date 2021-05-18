@@ -357,9 +357,10 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
       if(length(query.cells)==0){next}
       ref.cells =cl.big.cells.byplatform[[set]]
       ref.cells = sample_cells(cl[ref.cells],300)
-      dat = Matrix::t(merge.dat.list[[set]][anchor.genes, c(ref.cells, query.cells),drop=F])
-      pred.result = predict_knn(knn.idx=NULL, reference = ref.cells, target=cl, k=min(15, ceiling(length(ref.cells)/2)), train.dat = dat[ref.cells,,drop=F], test.dat = dat[query.cells,,drop=F])
-      tmp.cl = with(pred.result$pred.df, setNames(pred.target, row.names(pred.result$pred.df)))
+      dat = merge.dat.list[[set]][anchor.genes, c(ref.cells, query.cells),drop=F]
+      knn.idx = get_knn(dat[,query.cells,drop=F], dat[,ref.cells,drop=F], method="Annoy.Euclidean", k=min(15, ceiling(length(ref.cells)/2)))
+      pred.result = predict_knn(knn.idx=knn.idx, reference = ref.cells, cl=cl)
+      tmp.cl = with(pred.result$pred.df, setNames(pred.cl, row.names(pred.result$pred.df)))
       print(tmp.cl)
       cl[names(tmp.cl)] = tmp.cl
     }

@@ -22,6 +22,8 @@ Imports:
   Rcpp,
   BiocNeighbors,	
   RcppAnnoy,
+  RcppEigen,
+  RcppProgress,
   parallel,
   doMC,
   foreach,	
@@ -34,7 +36,7 @@ Imports:
   matrixStats,
   pvclust,
   Rtsne
-LinkingTo: Rcpp (>= 0.11.0)
+LinkingTo: Rcpp (>= 0.11.0), RcppEigen, RcppProgress
 Suggests:
     WGCNA, 
     knitr,
