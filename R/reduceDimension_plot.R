@@ -350,7 +350,6 @@ plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7,
 {
   n.win = length(cols)
   library(rgl)
-  print("start plotting")
   mfrow3d(1,n.win)
   next3d()
   
@@ -548,7 +547,6 @@ plot_2d_umap_anno <- function(umap.fn,
   }  
   else {
     if(show.legend==TRUE){
-      print("legend")
       g <- plot_RD_cl(rd.dat=umap.2d, cl=cl, cl.color = cl.color, cl.label =cl.label,alpha.val=alpha, cex=cex,label.center=FALSE, show.legend = TRUE)
       g[["labels"]][["colour"]] <- "Cluster"
       legend <- cowplot::get_legend(g)
@@ -578,7 +576,6 @@ plot_2d_umap_anno <- function(umap.fn,
         alpha=alpha)
       
       if(show.legend==TRUE){
-        print("legend")
         g[["labels"]][["colour"]] <- m
         legend <- cowplot::get_legend(g)   
         g = g + theme(axis.title.x=element_blank(), axis.title.y=element_blank())+ 
@@ -589,7 +586,6 @@ plot_2d_umap_anno <- function(umap.fn,
         plot.list[[m]] <- g
       }     
       else{
-        print("no leg")
         g = g + theme(axis.title.x=element_blank(), axis.title.y=element_blank())+ 
           theme_void() + 
           theme(legend.position="none") +

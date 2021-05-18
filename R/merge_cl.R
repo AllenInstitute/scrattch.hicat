@@ -76,7 +76,6 @@ merge_cl<- function(norm.dat,
       pairs=do.call("rbind",strsplit(names(de.genes), "_"))
       row.names(pairs)=names(de.genes)
     }
-    print("get cl.rd")
      ###Merge small clusters with the closest neighbors first.
     if(!is.null(rd.dat)){
       cl.rd = as.data.frame(get_cl_means(rd.dat,cl[names(cl) %in% row.names(rd.dat)]))

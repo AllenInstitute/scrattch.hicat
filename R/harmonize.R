@@ -197,8 +197,6 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
 #' @examples
 get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transposed=TRUE)
   {
-    
-    print(method)
     if(method=="cor"){
       if(transposed){
         knn.index = knn_cor(ref.dat, dat,k=k)
@@ -502,7 +500,6 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
     cl = c(cl, pred.cl[setdiff(names(pred.cl), names(cl))])     
   }
   cl.platform.counts = table(meta.df[names(cl), "platform"],cl)
-  print(cl.platform.counts)
   ###If a cluster is not present in reference sets, split the cells based on imputed cluster based on cells in reference set.
 
   ref.de.param.list = de.param.list[ref.sets]
@@ -510,10 +507,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   cl.big= cl.platform.counts[ref.sets,,drop=F] >= cl.min.cells
   bad.cl = colnames(cl.big)[colSums(cl.big) ==0]
   if(length(bad.cl) > 0){
-    print("Bad.cl")
-    print(bad.cl)
     tmp.cells = names(cl)[cl %in% bad.cl]
-    ##########FIX BUG
     pred.df = predict_knn(result$knn[tmp.cells,,drop=F], all.cells, cl)$pred.df
     pred.cl= setNames(as.character(pred.df$pred.target), row.names(pred.df))
     cl[names(pred.cl)]= pred.cl
@@ -528,7 +522,9 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   if(length(unique(cl))<=1){
     return(NULL)
   }
-  print(table(cl))
+  if(verbose){
+    print(table(cl))
+  }
   result$ref.list = ref.list
   result$cl = cl
   result$markers = select.genes
@@ -653,7 +649,6 @@ harmonize <- function(comb.dat, prefix, overwrite=TRUE, dir=".",...)
       dir.create(dir)
     }
     fn = file.path(dir, paste0(prefix, ".rda"))
-    print(fn)
     if(!overwrite){
       if(file.exists(fn)){
         load(fn)
@@ -709,10 +704,9 @@ i_harmonize <- function(comb.dat, select.cells=comb.dat$all.cells, ref.sets=name
         tmp.prefix=paste(prefix, i,sep=".")
         print(tmp.prefix)
         select.cells= names(cl)[cl == i]
-        platform.size = table(meta.df[select.cells, "platform"])
-        
+        platform.size = table(meta.df[select.cells, "platform"])        
         print(platform.size)
-        
+     
         sets = names(platform.size)
         
         pass.th = sapply(ref.sets, function(set)platform.size[[set]] >= de.param.list[[set]]$min.cells)

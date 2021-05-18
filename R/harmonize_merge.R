@@ -189,7 +189,7 @@ get_cl_sim_multiple <- function(cl.rd.list, FUN =pmax)
 ##' @author Zizhen Yao
 merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbose=TRUE, pairBatch=40, de.genes.list=NULL, lfc.conservation.th=0.7, merge.type="undirectional", de.method="fast_limma")
 {
-  print("merge_cl_multiple")
+  #print("merge_cl_multiple")
   cl = setNames(as.character(cl),names(cl))
 
   merge_x_y <- function(x, y)
@@ -292,13 +292,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
 
   add_pairs_de_genes <- function(de.genes.list, cl, new.pairs, common.genes)
     {
-      if(verbose){
-        print("Add de genes")
-      }
       de.genes.list <- de_genes_pairs_multiple(merge.dat.list, merge.de.param.list, common.genes=common.genes, cl=cl, pairs=new.pairs, cl.means.list=cl.means.list, cl.present.list=cl.present.list, cl.sqr.means.list= cl.sqr.means.list,lfc.conservation.th=lfc.conservation.th, de.genes.list=de.genes.list,method=de.method)
-      if(verbose){
-        print("Finish adding de genes")
-      }
       return(de.genes.list)
     }
   
@@ -361,7 +355,6 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
       knn.idx = get_knn(dat[,query.cells,drop=F], dat[,ref.cells,drop=F], method="Annoy.Euclidean", k=min(15, ceiling(length(ref.cells)/2)))
       pred.result = predict_knn(knn.idx=knn.idx, reference = ref.cells, cl=cl)
       tmp.cl = with(pred.result$pred.df, setNames(pred.cl, row.names(pred.result$pred.df)))
-      print(tmp.cl)
       cl[names(tmp.cl)] = tmp.cl
     }
   }
@@ -456,9 +449,6 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
   }
   if (length(unique(cl)) < 2) {
     return(NULL)
-  }
-  if (verbose > 0) {
-    print(table(cl))
   }
   return(cl)
 }

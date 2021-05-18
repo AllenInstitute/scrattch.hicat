@@ -63,7 +63,6 @@ filter_gene_mod <- function(norm.dat, select.cells, gene.mod, minModuleSize=10, 
       rm.cor=cor(eigen, rm.eigen[select.cells,])
       rm.cor[is.na(rm.cor)]=0
       rm.score = setNames(rowMaxs(abs(rm.cor)), colnames(eigen))
-      print(rm.score)
       select =  rm.score < rm.th
       if(sum(!select)){
         print("Remove module")

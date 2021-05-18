@@ -26,12 +26,8 @@ rd_PCA <- function(norm.dat, select.genes=row.names(norm.dat), select.cells=coln
   rd.dat = tmp$rd.dat
   pca  = tmp$pca
   if(length(sampled.cells)< length(select.cells)){
-    if(verbose){
-      print("Project")
-    }
     require(parallel)
     rd.dat = parallel::pvec(select.cells, function(x){
-      print(length(x))
       tmp.dat = norm.dat[row.names(rot), x,drop=F]
       rd.dat = as.matrix(Matrix::crossprod(tmp.dat, rot))
       return(list(rd.dat))

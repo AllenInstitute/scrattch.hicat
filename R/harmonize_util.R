@@ -304,7 +304,6 @@ get_de_lfc_list <- function(cl.means.list)
     sets=names(cl.means.list)
     de.gene.sign = NULL
     de.lfc.list = sapply(sets, function(set){
-      print(set)
       cl.means = cl.means.list[[set]]
       cn = colnames(cl.means)
       cl.n = length(cn)
@@ -514,7 +513,6 @@ gene_gene_cor_conservation <- function(dat.list, select.genes, select.cells,pair
   {
     sets = names(dat.list)
     gene.cor.list = sapply(sets, function(set){
-      print(set)
       dat = dat.list[[set]]
       gene.cor = cor(t(as.matrix(dat[select.genes,intersect(colnames(dat),select.cells)])))
       gene.cor[is.na(gene.cor)] = 0
@@ -527,7 +525,6 @@ gene_gene_cor_conservation <- function(dat.list, select.genes, select.cells,pair
     }
     gene.cor.mat= sapply(1:nrow(pairs), function(i){
       p = pairs[i,]
-      print(p)
       pair_cor(gene.cor.list[[p[1]]], gene.cor.list[[p[2]]])
     })
     colnames(gene.cor.mat) = paste0(pairs[,1],":",pairs[,2])
@@ -576,7 +573,6 @@ plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb
           if(is.factor(tmp.cl)){
             tmp.cl = droplevels(tmp.cl)
           }
-          print(table(tmp.cl))
           tmp=display_cl(cl=tmp.cl, norm.dat=dat, max.cl.size = 200, de.param=de.param.list[[set]], n.markers=n.markers)$de.genes
         },simplify=F)
         comb.de.genes = comb_de_result(de.genes.list, cl.means.list, common.genes=common.genes)
