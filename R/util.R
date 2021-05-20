@@ -528,9 +528,8 @@ cpm <- function(counts, sf=NULL, denom=1e6) {
     sf <- Matrix::colSums(counts)
   }
   sf = sf/denom
-  
-  if(is.matrix(counts)){    
-    return(t(t(counts) / sf))
+  if(is.matrix(counts)){
+    return(sweep(counts, 2, sf, "/", check.margin=FALSE))
   } else if(class(counts) == "dgCMatrix") {
     sep <- counts@p
     sep <- sep[-1] - sep[-length(sep)]
@@ -630,3 +629,19 @@ filter_by_size <- function(cat, min.size)
     }
   }
 
+l2norm <- function(X, transposed=TRUE)
+{
+  if (transposed) {
+    l2norm <- sqrt(colSums(X^2))
+    if (any(l2norm==0)) {
+      stop("L2 norms of zero detected for distance='Cosine'")
+    }
+    sweep(X, 2, l2norm, "/", check.margin=FALSE)
+  } else {
+    l2norm <- sqrt(rowSums(X^2))
+    if (any(l2norm==0)) {
+      stop("L2 norms of zero detected for distance='Cosine'")
+    }
+    X/l2norm
+  }
+}
