@@ -35,8 +35,9 @@ Imports:
   Matrix,
   matrixStats,
   pvclust,
-  Rtsne
-LinkingTo: Rcpp (>= 0.11.0), RcppEigen, RcppProgress
+  Rtsne,
+  RcppParallel
+LinkingTo: Rcpp (>= 0.11.0), RcppEigen, RcppProgress, beachmat, RcppParallel
 Suggests:
     WGCNA, 
     knitr,

@@ -1,3 +1,6 @@
 ## Use the R_HOME indirection to support ## installations of multiple R version ##
 ## NB: No longer needed, see below
 PKG_LIBS = `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"`
+
+CXX_STD = CXX11
+PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
