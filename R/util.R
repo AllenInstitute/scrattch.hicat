@@ -629,19 +629,38 @@ filter_by_size <- function(cat, min.size)
     }
   }
 
-l2norm <- function(X, transposed=TRUE)
+l2norm <- function(X, by="column")
 {
-  if (transposed) {
-    l2norm <- sqrt(colSums(X^2))
+  if (by=="column") {
+    l2norm <- sqrt(Matrix::colSums(X^2))
     if (any(l2norm==0)) {
       stop("L2 norms of zero detected for distance='Cosine'")
     }
-    sweep(X, 2, l2norm, "/", check.margin=FALSE)
+    X=sweep(X, 2, l2norm, "/", check.margin=FALSE)
+    X = X 
   } else {
-    l2norm <- sqrt(rowSums(X^2))
+    l2norm <- sqrt(Matrix::rowSums(X^2))
     if (any(l2norm==0)) {
       stop("L2 norms of zero detected for distance='Cosine'")
     }
-    X/l2norm
+    X= X/l2norm 
   }
 }
+
+
+standardize <- function(X, by="column")
+{  
+  if(by=="column"){
+    mean = Matrix::colMeans(X)
+    X=sweep(X, 2, mean, "-")
+    sd = sqrt(Matrix::colSums(X^2)/nrow(X))
+    X = sweep(X, 2, sd, "/")
+  }
+  else{
+    mean = Matrix::rowMeans(X)
+    X=sweep(X, 1, mean, "-")
+    sd = sqrt(Matrix::rowSums(X^2)/ncol(X))
+    X = sweep(X, 1, sd, "/")    
+  }
+}
+

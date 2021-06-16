@@ -402,6 +402,8 @@ compare_annotate <- function(cl,
     }
    else{
      ref.cl <- setNames(factor(ref.cl), names(ref.cl))
+     ref.cl.df = data.frame(cluster_id = levels(ref.cl), cluster_label=levels(ref.cl))
+     row.names(ref.cl.df) = levels(ref.cl)
    }
   }
   

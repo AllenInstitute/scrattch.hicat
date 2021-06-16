@@ -120,7 +120,8 @@ sample_sets_list <- function(cells.list, cl.list, cl.sample.size=100, sample.siz
           if(is.factor(tmp.cl)){
             tmp.cl = droplevels(tmp.cl)
           }
-          cells.list[[x]] = sample_cells(tmp.cl, max(cl.sample.size,round(sample.size/length(unique(tmp.cl)))))
+          cl.size = table(tmp.cl)
+          cells.list[[x]] = sample_cells(tmp.cl, max(cl.sample.size,round(sample.size/sum(cl.size >= 4))))
         }
       }
     }
@@ -157,7 +158,49 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
     results= foreach(i=1:length(bins), .combine=.combine) %dopar% FUN(bins[[i]],...)
     return(results)
   }
+ 
+pvec_no_combine <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE, 
+    mc.cores = getOption("mc.cores", 2L), mc.cleanup = TRUE) 
+{
+    if (!is.vector(v)) 
+        stop("'v' must be a vector")
+    cores <- as.integer(mc.cores)
+    if (cores < 1L) 
+        stop("'mc.cores' must be >= 1")
+    if (cores == 1L) 
+        return(FUN(v, ...))
+    if (mc.set.seed) 
+        mc.reset.stream()
+    n <- length(v)
+    l <- if (n <= cores) 
+        as.list(v)
+    else {
+        il <- as.integer(n/cores)
+        xc <- n - il * cores
+        sl <- rep(il, cores)
+        if (xc) 
+            sl[1:xc] <- il + 1L
+        si <- cumsum(c(1L, sl))
+        se <- si + c(sl, 0L) - 1L
+        lapply(seq_len(cores), function(ix) v[si[ix]:se[ix]])
+    }
+    jobs <- NULL
+    prepareCleanup()
+    on.exit(cleanup())
+    FUN <- match.fun(FUN)
+    jobs <- lapply(seq_len(min(n, cores)), function(i) mcparallel(FUN(l[[i]], 
+        ...), name = i, mc.set.seed = mc.set.seed, silent = mc.silent))
+    res <- mccollect(jobs)
+    names(res) <- NULL
+    return(res)
+  }
 
+knn_combine <- function(results)
+{
+  knn.index = do.call("rbind", lapply(results, function(x)x[[1]]))
+  knn.distance = do.call("rbind", lapply(results, function(x)x[[2]]))
+  return(list(knn.index, knn.distance))
+}
 
 #' get knn batch
 #'
@@ -173,13 +216,20 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
 #' @export
 #'
 #' @examples
-get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,...)
+get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,return.distance=FALSE,...)
   {
-    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine="rbind", FUN=function(bin){
-      get_knn(dat=dat[,bin,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,...)
+    if(return.distance){
+      fun = "knn_combine"
+    }
+    else{
+      fun = "rbind"
+    }
+    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine=fun, FUN=function(bin){
+      get_knn(dat=dat[,bin,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, ...)
     })
     return(results)
   }
+    
 
 
 
@@ -195,16 +245,23 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
 #' @export
 #'
 #' @examples
-get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transposed=TRUE)
+get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transposed=TRUE, return.distance=FALSE)
   {
+    if(transposed){
+      cell.id = colnames(dat)
+    }
+    else{
+      cell.id= row.names(dat)
+    }
+    
     if(method=="cor"){
       if(transposed){
-        knn.index = knn_cor(ref.dat, dat,k=k)
+        knn.result = knn_cor(ref.dat, dat,k=k)
       }
       else{
         ref.dat = Matrix::t(ref.dat)
         dat = Matrix::t(dat)
-        knn.index = knn_cor(ref.dat, dat,k=k)
+        knn.result = knn_cor(ref.dat, dat,k=k)
       }
     }
     else{
@@ -215,30 +272,39 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transpo
         dat = Matrix::t(dat)
       }                  
       if(method=="RANN"){
-        knn.index = RANN::nn2(ref.dat, dat, k=k)[[1]]
+        knn.result = RANN::nn2(ref.dat, dat, k=k)
       }
       if(method %in% c("Annoy.Euclidean", "Annoy.Cosine")){
         library(BiocNeighbors)      
         if(is.null(index)){
           if (method=="Annoy.Cosine"){
-            ref.dat = l2norm(ref.dat,transposed=FALSE)
-            dat = l2norm(dat,transposed=FALSE)
+            ref.dat = l2norm(ref.dat,by = "row")
           }
           index= buildAnnoy(ref.dat)
         }
-        knn.index = queryAnnoy(X= ref.dat, query=dat, k=k, precomputed = index)[[1]]
+        if (method=="Annoy.Cosine"){       
+          dat = l2norm(dat,by="row")
+        }
+        knn.result = queryAnnoy(X= ref.dat, query=dat, k=k, precomputed = index)
       }
       else if(method == "CCA"){
         mat3 = crossprod(ref.dat, dat)
         cca.svd <- irlba(mat3, dim=dim)
-        knn.index = knn_cor(cca.svd$u, cca.svd$v,  k=k)
+        knn.result = knn_cor(cca.svd$u, cca.svd$v,  k=k)
       }
       else{
         stop(paste(method, "method unknown"))
       }
     }
-    row.names(knn.index) = row.names(dat)    
-    return(knn.index)
+    knn.index= knn.result[[1]]
+    knn.distance = knn.result[[2]]
+    row.names(knn.index) = row.names(knn.distance)=cell.id
+    if(!return.distance){
+      return(knn.index)
+    }
+    else{
+      list(index=knn.index, distance=knn.distance)
+    }
   }
 
 
@@ -485,6 +551,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
     return(NULL)
   }
   sampled.cells = unlist(cells.list)
+  
   result = knn_jaccard_clust(knn.comb[sampled.cells,], method=method)
   result$knn = knn.comb
   ###preliminary clusters from louvain or leiden
@@ -546,8 +613,9 @@ sim_knn <- function(sim, k=15)
   require(matrixStats)
   th =  rowOrderStats(as.matrix(sim), which=ncol(sim)-k+1)
   select = sim >= th
-  knn.idx = t(apply(select, 1, function(x)head(which(x),k)))
-  return(knn.idx)
+  knn.index = t(apply(select, 1, function(x)head(which(x),k)))  
+  knn.distance = do.call("rbind",lapply(1:nrow(sim), function(i) (1- sim[i,,drop=F])[knn.index[i,,drop=F]]))
+  return(list(knn.index, knn.distance))
 }
 
 #' KNN cor
@@ -565,8 +633,7 @@ knn_cor <- function(ref.dat, query.dat, k = 15)
   #sim = cor(as.matrix(query.dat), as.matrix(ref.dat), use="pairwise.complete.obs")
   sim = cor(as.matrix(query.dat), as.matrix(ref.dat))
   sim[is.na(sim)] = 0
-  knn.idx = sim_knn(sim, k=k)
-  return(knn.idx)
+  return(sim_knn(sim, k=k))
 }
 
 #' KNN cosine
@@ -607,7 +674,7 @@ knn_cosine <- function(ref.dat, query.dat, k = 15)
 ##' @param prune 
 ##' @return 
 ##' @author Zizhen Yao
-knn_jaccard_clust <- function(knn.index, method=c("louvain","leiden"),prune=0.05)
+knn_jaccard_clust <- function(knn.index, method=c("louvain","leiden"),prune=0.05,...)
   {
     require(igraph)
     cat("Get jaccard\n")
@@ -623,7 +690,7 @@ knn_jaccard_clust <- function(knn.index, method=c("louvain","leiden"),prune=0.05
     else{
       cat("Leiden clustering\n")
       library(leidenAlg)
-      result <- leiden.community(gr)      
+      result <- leiden.community(gr,...)      
     }
     result$cl=membership(result)
     return(result)

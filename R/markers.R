@@ -224,7 +224,7 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,cl.means, up
       }
       final.genes=c(final.genes, g)
       select.genes = setdiff(select.genes, final.genes)
-      cat(g, length(add.up), length(add.down),"\n")
+      cat(g, length(add.up), length(add.down),length(select.genes),"\n")
     }
     markers= final.genes
     return(list(markers=markers, up.genes=up.genes, down.genes=down.genes))
