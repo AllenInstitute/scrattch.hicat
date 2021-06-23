@@ -619,7 +619,7 @@ plot_2d_umap_anno <- function(umap.fn,
 #for(umap.fn in dir(dest.d, pattern="umap.2d.sampled.csv")){
 #  plot_2d_umap(umap.fn, dest.d)
 #}
-plot_3d_umap_anno <- function(umap.fn, dest.d, anno.df, cols= c("region_color","cluster_color"), label_cols=list(NULL, "cluster_label"), win.dim=c(20,40,1500, 800), cex=0.7, html.fn = NULL)
+plot_3d_umap_anno <- function(umap.fn,anno.df, cols= c("region","cluster"), label_cols=list(NULL, "cluster_label"), win.dim=c(20,40,1500, 800), cex=0.7, html.fn = NULL,dest.d="./")
   {
     umap.3d <- as.data.frame(fread(file.path(dest.d,umap.fn),header=TRUE))
     colnames(umap.3d) = c("sample_name", paste0("Dim", 1:(ncol(umap.3d)-1)))
