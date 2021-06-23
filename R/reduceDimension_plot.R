@@ -622,7 +622,7 @@ plot_2d_umap_anno <- function(umap.fn,
 plot_3d_umap_anno <- function(umap.fn,anno.df, cols= c("region","cluster"), label_cols=list(NULL, "cluster_label"), win.dim=c(20,40,1500, 800), cex=0.7, html.fn = NULL,dest.d="./")
   {
     umap.3d <- as.data.frame(fread(file.path(dest.d,umap.fn),header=TRUE))
-    colnames(umap.3d) = c("sample_name", paste0("Dim", 1:(ncol(umap.3d)-1)))
+    colnames(umap.3d) = c("sample_id", paste0("Dim", 1:(ncol(umap.3d)-1)))
     umap.3d <- umap.3d %>% left_join(anno.df)
     plot_3d_label_multiple(umap.3d, cols=cols, label_cols=label_cols, cex=cex, win.dim=win.dim, fn = html.fn, dir=dest.d)
   }
