@@ -134,16 +134,16 @@ struct ColumnMeanSparse : public Worker
 	// source matrix and maps
 	beachmat::lin_sparse_matrix *matrix_ptr;
 
-	std::vector<int> mat_cluster_vector;
+	const RVector<int> mat_cluster_vector;
 
-	std::vector<int> cl;
+	const RVector<int> cl;
 	// destination matrix
 	RMatrix<double> output;
 
 	// initialize with source and destination
 	ColumnMeanSparse(beachmat::lin_sparse_matrix *matrix_ptr,
-					 std::vector<int> mat_cluster_vector,
-					 std::vector<int> cl,
+					 const IntegerVector mat_cluster_vector,
+					 const IntegerVector cl,
 					 NumericMatrix output)
 		: matrix_ptr(matrix_ptr), mat_cluster_vector(mat_cluster_vector), cl(cl), output(output) {}
 
@@ -195,7 +195,7 @@ Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel(Rcpp::RObject mat, Rcpp::Inte
 		cluster_col_name_id_map[std::string(clAll_name[i])] = clAll[i];
 		cluster_col_name_lev_map[std::string(clAll_name[i])] = std::string(levs_all[clAll[i] - 1]);
 	}
-	std::vector<int> cl(mat_name.length(), 0);
+	IntegerVector cl(mat_name.length(), 0);
 	CharacterVector cl_colnames_vec(mat_name.length());
 	for (int i = 0; i < cl_pos.length(); i++)
 	{
@@ -208,7 +208,7 @@ Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel(Rcpp::RObject mat, Rcpp::Inte
 	   levs is the level of the cluster id: "1" "2" "3" "4" "5" "6" "7" "8" "9" "23"
 	   colnames_vec is the ordered cluster id: "1" "23" "2" "3" "9" "5" "6" "4" "7" "8"*/
 
-	std::vector<int> mat_cluster_vector(cl.size(), 0);
+	IntegerVector mat_cluster_vector(cl.size(), 0);
 	std::unordered_map<int, int> cluster_col_map;
 	int col_id = 0;
 	CharacterVector colnames_vec;
@@ -397,9 +397,9 @@ struct ColumnPresentSparse : public Worker
 	// source matrix and maps
 	beachmat::lin_sparse_matrix *matrix_ptr;
 
-	std::vector<int> mat_cluster_vector;
+	RVector<int> mat_cluster_vector;
 
-	std::vector<int> cl;
+	RVector<int> cl;
 
 	double lowth;
 	// destination matrix
@@ -407,8 +407,8 @@ struct ColumnPresentSparse : public Worker
 
 	// initialize with source, cl_id and destination
 	ColumnPresentSparse(beachmat::lin_sparse_matrix *matrix_ptr,
-						std::vector<int> mat_cluster_vector,
-						std::vector<int> cl,
+						IntegerVector mat_cluster_vector,
+						IntegerVector cl,
 						double lowth,
 						NumericMatrix output)
 		: matrix_ptr(matrix_ptr), mat_cluster_vector(mat_cluster_vector), cl(cl), lowth(lowth), output(output) {}
@@ -466,7 +466,7 @@ Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::In
 		cluster_col_name_id_map[std::string(cl_all_cl_name[i])] = clAll[i];
 		cluster_col_name_lev_map[std::string(cl_all_cl_name[i])] = std::string(levs_all[clAll[i] - 1]);
 	}
-	std::vector<int> cl(mat_name.length(), 0);
+	IntegerVector cl(mat_name.length(), 0);
 	CharacterVector cl_colnames_vec(mat_name.length());
 	for (int i = 0; i < cl_pos.length(); i++)
 	{
@@ -479,7 +479,7 @@ Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::In
 	   levs is the level of the cluster id: "1" "2" "3" "4" "5" "6" "7" "8" "9" "23"
 	   colnames_vec is the ordered cluster id: "1" "23" "2" "3" "9" "5" "6" "4" "7" "8"*/
 
-	std::vector<int> mat_cluster_vector(cl.size(), 0);
+	IntegerVector mat_cluster_vector(cl.size(), 0);
 	std::unordered_map<int, int> cluster_col_map;
 	int col_id = 0;
 	CharacterVector colnames_vec;
@@ -662,16 +662,16 @@ struct ColumnSqrMeansSparse : public Worker
 	// source matrix and maps
 	beachmat::lin_sparse_matrix *matrix_ptr;
 
-	std::vector<int> mat_cluster_vector;
+	RVector<int> mat_cluster_vector;
 
-	std::vector<int> cl;
+	RVector<int> cl;
 	// destination matrix
 	RMatrix<double> output;
 
 	// initialize with source, cl_id and destination
 	ColumnSqrMeansSparse(beachmat::lin_sparse_matrix *matrix_ptr,
-						 std::vector<int> mat_cluster_vector,
-						 std::vector<int> cl,
+						 IntegerVector mat_cluster_vector,
+						 IntegerVector cl,
 						 NumericMatrix output)
 		: matrix_ptr(matrix_ptr), mat_cluster_vector(mat_cluster_vector), cl(cl), output(output) {}
 
@@ -725,7 +725,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel(Rcpp::RObject mat, Rcpp::
 		cluster_col_name_id_map[std::string(cl_all_cl_name[i])] = clAll[i];
 		cluster_col_name_lev_map[std::string(cl_all_cl_name[i])] = std::string(levs_all[clAll[i] - 1]);
 	}
-	std::vector<int> cl(mat_name.length(), 0);
+	IntegerVector cl(mat_name.length(), 0);
 	CharacterVector cl_colnames_vec(mat_name.length());
 	for (int i = 0; i < cl_pos.length(); i++)
 	{
@@ -738,7 +738,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel(Rcpp::RObject mat, Rcpp::
 	   levs is the level of the cluster id: "1" "2" "3" "4" "5" "6" "7" "8" "9" "23"
 	   colnames_vec is the ordered cluster id: "1" "23" "2" "3" "9" "5" "6" "4" "7" "8"*/
 
-	std::vector<int> mat_cluster_vector(cl.size(), 0);
+	IntegerVector mat_cluster_vector(cl.size(), 0);
 	std::unordered_map<int, int> cluster_col_map;
 	int col_id = 0;
 	CharacterVector colnames_vec;
@@ -826,7 +826,7 @@ Rcpp::NumericMatrix rcpp_get_cl_medians(Rcpp::RObject mat, Rcpp::IntegerVector c
 		cluster_col_name_id_map[std::string(cl_all_cl_name[i])] = clAll[i];
 		cluster_col_name_lev_map[std::string(cl_all_cl_name[i])] = std::string(levs_all[clAll[i] - 1]);
 	}
-	std::vector<int> cl(mat_name.length(), 0);
+	IntegerVector cl(mat_name.length(), 0);
 	CharacterVector cl_colnames_vec(mat_name.length());
 	for (int i = 0; i < cl_pos.length(); i++)
 	{
