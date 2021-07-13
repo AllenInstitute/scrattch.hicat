@@ -10,9 +10,7 @@
 #' @export
 #'
 #' @examples
-
-
-select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,bin.lfc.th=NULL,...)                  
+select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,...)
   {
     require(parallel)
     if(is.null(de.genes)){
@@ -25,13 +23,6 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,
       sapply(s, function(x){
         tmp = de.genes[[x]]
         select.genes = c(head(names(tmp$up.genes),n.markers), head(names(tmp$down.genes),n.markers))
-        ###Choose binary genes even if not the top genes
-        if(!is.null(bin.lfc.th)){
-          de.df = tmp$de.df
-          bin.genes = tmp$genes[abs(de.df[tmp$genes, "lfc"]) > bin.lfc.th]
-          select.genes = union(select.genes, bin.genes)
-        }
-        select.genes
       },simplify=F)
     },mc.cores=mc.cores)
     if(!is.null(norm.dat)){

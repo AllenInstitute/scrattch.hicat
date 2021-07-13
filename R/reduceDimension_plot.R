@@ -517,8 +517,8 @@ plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missin
 
 #' plot_2d_umap_anno
 #' 
-#' @param umap.fn path to umap coordinates. CSV file containing sample_names and umap x/y coordinates
-#' @param anno.df Sample annotations. The first column should be sample_name, and each annotation should have \_id, \_label, and \_color columns. Requires cluster_id which needs to be sequential in order of the dendrogram.
+#' @param umap.fn path to umap coordinates. CSV file containing sample_id and umap x/y coordinates
+#' @param anno.df Sample annotations. The first column should be sample_id, and each annotation should have \_id, \_label, and \_color columns. Requires cluster_id which needs to be sequential in order of the dendrogram.
 #' @param dest.d path to save plots.
 #' @param meta.fields  base name of variables to be represented as bargraphs below dendrogram. Annotation variables need to be represented as \_id, \_label, \_color in anno.
 #' @param show.label TRUE or FALSE. To show cluster label on top of plot.
@@ -559,11 +559,11 @@ plot_2d_umap_anno <- function(umap.fn,
   if(is.null(umap.2d)){
   #load umap from csv
     umap.2d <- as.data.frame(fread(umap.fn,header=TRUE))
-    colnames(umap.2d) <- c("sample_name","Dim1","Dim2")
+    colnames(umap.2d) <- c("sample_id","Dim1","Dim2")
     umap.2d <- umap.2d[sample(1:nrow(umap.2d)),]
   }
   umap.df = umap.2d %>% left_join(anno.df)
-  row.names(umap.2d)<-umap.2d$sample_name
+  row.names(umap.2d)<-umap.2d$sample_id
   umap.2d <- umap.2d[,c("Dim1","Dim2")]
 
   # extract filename for saving
@@ -571,7 +571,7 @@ plot_2d_umap_anno <- function(umap.fn,
   umap.fn <- gsub(".csv", "",umap.fn)
   
   #setup cluster labels/colors for plotting
-  cl <- setNames(umap.df$cl, umap.df$sample_name)
+  cl <- setNames(umap.df$cl, umap.df$sample_id)
   cl.df <- umap.df %>% select(cluster_id, cluster_label, cluster_color,cl) %>% unique
   cl.color <- setNames(cl.df$cluster_color, cl.df$cl)
   cl.label <- setNames(cl.df$cluster_label, cl.df$cl)
@@ -654,7 +654,7 @@ plot_2d_umap_anno <- function(umap.fn,
 
 #' plot_3d_umap_anno
 #' 
-#' @param umap.fn path to umap coordinates. CSV file containing sample_names and umap x/y/z coordinates
+#' @param umap.fn path to umap coordinates. CSV file containing sample_id and umap x/y/z coordinates
 #' @param anno.df Sample annotations. The first column should be sample_id, and each annotation should have \_id, \_label, and \_color columns. Requires cluster_id which needs to be sequential in order of the dendrogram.
 #' @param dest.d path to load data from and save plots to.
 #' @param cols  base name of variables to be represented as bargraphs below dendrogram. Annotation variables need to be represented as \_id, \_label, \_color in anno.
