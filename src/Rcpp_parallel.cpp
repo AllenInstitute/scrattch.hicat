@@ -636,7 +636,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector
 		for (int row_i = 0; row_i < nnzero; row_i++)
 		{
 
-			res(*(iptr + row_i), mat_cluster_vector[col_i]) += std::sqrt(*(xptr + row_i));
+			res(*(iptr + row_i), mat_cluster_vector[col_i]) += std::pow(*(xptr + row_i),2.0);
 		}
 	}
 
@@ -695,7 +695,7 @@ struct ColumnSqrMeansSparse : public Worker
 			for (int row_i = 0; row_i < nnzero; row_i++)
 			{
 
-				output(*(iptr + row_i), mat_cluster_vector[col_i]) += std::sqrt(*(xptr + row_i));
+				output(*(iptr + row_i), mat_cluster_vector[col_i]) += std::pow(*(xptr + row_i), 2.0);
 			}
 		}
 	}
@@ -784,7 +784,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel(Rcpp::RObject mat, Rcpp::
 	ColumnSqrMeansSparse column_sqr_means_sparse(matrix_ptr, mat_cluster_vector, cl, res);
 
 	// call parallelFor to do the work
-	parallelFor(0, ptr->get_ncol(), column_sqr_means_sparse, 20);
+	parallelFor(0, ptr->get_ncol(), column_sqr_means_sparse);
 
 	// loop over columns of res matrix, and divide by number of cells in each cluster
 	for (int i = 0; i < res.ncol(); i++)
