@@ -264,7 +264,7 @@ get_cl_mat <- function(cl, all.cells=NULL) {
 #' @return a matrix of genes (rows) x clusters (columns) with sums for each cluster
 #' @export
 #' 
-get_cl_sums <- function(mat, 
+get_cl_sums_R<- function(mat, 
                         cl)
 {  
   if(all(names(cl) %in% colnames(mat))){
@@ -304,7 +304,7 @@ get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
 #' @return a matrix of genes (rows) x clusters (columns) with means for each cluster
 #' @export
 #' 
-get_cl_means <- function(mat, 
+get_cl_means_R<- function(mat, 
                          cl) {
   
   cl.sums <- get_cl_sums(mat, cl)
@@ -316,7 +316,15 @@ get_cl_means <- function(mat,
   return(cl.means)
 }
 
-get_cl_present <- function(mat, cl, low.th)
+get_cl_means<- function(mat,cl) {
+  if(!is.factor(cl)){
+    cl = setNames(factor(cl),names(cl))
+  }
+  result=rcpp_get_cl_means(mat, cl)
+  result[,levels(cl),drop=F]
+}
+  
+get_cl_present_R<- function(mat, cl, low.th)
   {
     tmp = mat
     if(is.matrix(tmp)){
@@ -326,8 +334,20 @@ get_cl_present <- function(mat, cl, low.th)
       tmp@x = as.numeric(tmp@x > low.th)
     }
     cl.present = get_cl_means(tmp,cl)
+   
   }
 
+get_cl_present<- function(mat, cl, low.th)
+{
+  if(!is.factor(cl)){
+    cl = setNames(factor(cl),names(cl))
+  }
+  
+  result=rcpp_get_cl_present(mat, cl, low.th)
+  result[,levels(cl),drop=F]
+}
+
+  
 get_cl_sqr_means<- function(mat, cl)
   {
     tmp = mat
@@ -340,10 +360,18 @@ get_cl_sqr_means<- function(mat, cl)
     cl.sqr = get_cl_means(tmp,cl)
   }
 
+get_cl_sqr_means_new <- function(mat, cl)
+  {
+    if(!is.factor(cl)){
+      cl = setNames(factor(cl),names(cl))
+    }
+    result=rcpp_get_cl_sqr_means(mat, cl)
+    result[,levels(cl),drop=F]
+  }
 
-get_cl_vars <- function(mat, 
-                        cl, cl.means=NULL, cl.sqr.means = NULL) {
-  
+
+get_cl_vars <- function(mat, cl, cl.means=NULL, cl.sqr.means = NULL)
+{  
   if(is.null(cl.means)){
     cl.means = get_cl_means(mat,cl)
   }
@@ -364,7 +392,7 @@ get_cl_vars <- function(mat,
 #' @return a matrix of genes (rows) x clusters (columns) with medians for each cluster
 #' @export
 #' 
-get_cl_medians <- function(mat, cl)
+get_cl_medians_R <- function(mat, cl)
 {
   library(Matrix)
   library(matrixStats)
@@ -383,6 +411,13 @@ get_cl_medians <- function(mat, cl)
   return(cl.med)
 }
 
+get_cl_medians <- function(mat, cl)
+  {
+    if(!is.factor(cl)){
+      cl = setNames(factor(cl),names(cl))
+    }
+    rcpp_get_cl_medians(mat, cl)
+  }
 
 #' Compute cluster proportions for each row in a matrix
 #'

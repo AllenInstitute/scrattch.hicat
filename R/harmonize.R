@@ -443,7 +443,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
       dat = dat.list[[ref.set]]
       ref.cells = ref.list[[ref.set]]
       ref.dat = dat[select.genes,ref.cells]
-      ref.cells = colnames(ref.dat)[colSums(ref.dat) > 0]
+      ref.cells = colnames(ref.dat)[Matrix::colSums(ref.dat) > 0]
       ref.dat = ref.dat[,ref.cells]
       map.cells=  intersect(select.cells, colnames(dat))
       if(length(map.cells)==0){
@@ -559,7 +559,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   if(length(cl) < nrow(result$knn)){
     diff.cells = setdiff(row.names(result$knn), names(cl))
     pred.df = predict_knn(result$knn[diff.cells,], all.cells, cl )$pred.df
-    pred.cl= setNames(as.character(pred.df$pred.target), row.names(pred.df))
+    pred.cl= setNames(as.character(pred.df$pred.cl), row.names(pred.df))
     cl = c(cl, pred.cl[setdiff(names(pred.cl), names(cl))])     
   }
   cl.platform.counts = table(meta.df[names(cl), "platform"],cl)
@@ -572,7 +572,7 @@ knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= 
   if(length(bad.cl) > 0){
     tmp.cells = names(cl)[cl %in% bad.cl]
     pred.df = predict_knn(result$knn[tmp.cells,,drop=F], all.cells, cl)$pred.df
-    pred.cl= setNames(as.character(pred.df$pred.target), row.names(pred.df))
+    pred.cl= setNames(as.character(pred.df$pred.cl), row.names(pred.df))
     cl[names(pred.cl)]= pred.cl
   }
   merge.dat.list = comb.dat$dat.list[merge.sets]
