@@ -422,7 +422,7 @@ cleanAnnoyIndex <- function(index)
 #' @export
 #'
 #' @examples
-compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb.dat$dat.list), select.cells=comb.dat$all.cells, k=15, cross.knn.method=c("cor","Annoy.Cosine"), self.knn.method=c("RANN","Annoy.Euclidean"), batch.size=10000, mc.cores=1)
+compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb.dat$dat.list), select.cells=comb.dat$all.cells, k=15, cross.knn.method=c("Annoy.Cosine","cor"), self.knn.method=c("Annoy.Euclidean","RANN"), batch.size=10000, mc.cores=1)
   {
     
     cat("Number of select genes", length(select.genes), "\n")
