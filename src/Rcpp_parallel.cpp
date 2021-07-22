@@ -24,6 +24,7 @@ Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clA
 	Function colnames_f("colnames");
 	CharacterVector mat_name = colnames_f(mat);
 
+
 	Function names_f("names");
 	CharacterVector clAll_name = names_f(clAll);
 
