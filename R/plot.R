@@ -37,7 +37,9 @@ plot_cl_heatmap <- function(norm.dat,
                             min.sep = 4,
                             main = "", 
                             height = 13, 
-                            width = 9, key=FALSE)
+                            width = 9,
+                            format="pdf",
+                            key=FALSE)
   {
     library(matrixStats)
     blue.red <-colorRampPalette(c("blue", "white", "red"))
@@ -63,9 +65,14 @@ plot_cl_heatmap <- function(norm.dat,
     if(is.null(hc) & !sorted & length(select.cells)< 2000){
       hc = hclust(dist(t(tmp.dat)), method="ward.D")
     }
-    col = blue.red(150)[51:150]
+    col = blue.red(150)[51:150]    
     if(!is.null(prefix)){
-      pdf(paste(prefix,"pdf",sep="."), height=height, width=width)
+      if(format=="png"){
+        png(paste(prefix,"png",sep="."), height=height, width=width)
+      }
+      else{
+        pdf(paste(prefix,"pdf",sep="."), height=height, width=width)
+      }
     }
     if(by.cl){
       if(sorted){
@@ -128,7 +135,8 @@ display_cl_one_vs_others <- function(select.cl,
                                      main = "",
                                      height = 13, 
                                      width = 9, 
-                                     min.sep = 4, 
+                                     min.sep = 4,
+                                     format = "pdf",
                                      ...)
   {
     select.cells=names(cl)        
@@ -158,7 +166,7 @@ display_cl_one_vs_others <- function(select.cl,
     }, simplify = F)))
     cells_order=NULL
     if(plot){
-      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width)
+      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width,format=format)
     }
     return(list(markers=markers,cells_order= cells_order))
   }
@@ -181,7 +189,7 @@ display_cl_one_vs_others <- function(select.cl,
 #' 
 #' @author Zizhen Yao
 #' 
-display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9, min.sep=10, ...)
+display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL, max.cl.size=NULL,markers=NULL,de.genes=NULL, main="",height=13, width=9, min.sep=10, format="pdf", ...)
   {
     select.cells=names(cl)        
     jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -204,7 +212,7 @@ display_cl<- function(cl, norm.dat,prefix=NULL, plot=!is.null(prefix), col=NULL,
     cells_order=NULL
     if(plot & !is.null(markers) & length(markers)>0){
       tmp.dat = as.matrix(norm.dat[markers, names(cl),drop=F])
-      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width)
+      cells_order=plot_cl_heatmap(tmp.dat, cl, markers, ColSideColors=tmp.col, prefix=prefix, labels=NULL, by.cl=TRUE,min.sep=min.sep,main=main, height=height, width=width,format=format)
     }
     return(list(markers=markers,de.genes=de.genes, cells_order= cells_order))
   }
@@ -246,7 +254,7 @@ display_cl_markers_co.ratio <- function(select.cl, cl, norm.dat, co.ratio, prefi
   
   tmp=plot_cl_heatmap(norm.dat, cl, markers, prefix, sorted=TRUE,by.cl=TRUE,ColSideColors=all.col[,names(cl)])
   sep=which(cl[-1]!=cl[-length(cl)])
-  pdf(paste0(prefix, ".co.pdf"))
+  pdf(paste(prefix,"pdf",sep="."))
   heatmap.3(as.matrix(co.ratio[cells, cells]), col = blue.red(100), trace="none", ColSideColors=all.col[,cells], Rowv=NULL, Colv=NULL,colsep=sep,sepcolor="black")
   dev.off()
   return(markers)

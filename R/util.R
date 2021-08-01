@@ -668,17 +668,21 @@ l2norm <- function(X, by="column")
 {
   if (by=="column") {
     l2norm <- sqrt(Matrix::colSums(X^2))
-    if (any(l2norm==0)) {
-      stop("L2 norms of zero detected for distance='Cosine'")
+    if (!any(l2norm==0)) {
+      X=sweep(X, 2, l2norm, "/", check.margin=FALSE)
     }
-    X=sweep(X, 2, l2norm, "/", check.margin=FALSE)
+    else{
+      warning("L2 norms of zero detected for distance='Cosine, no transformation")
+    }
     X = X 
   } else {
     l2norm <- sqrt(Matrix::rowSums(X^2))
-    if (any(l2norm==0)) {
-      stop("L2 norms of zero detected for distance='Cosine'")
+    if (!any(l2norm==0)) {      
+      X= X/l2norm
     }
-    X= X/l2norm 
+    else{
+      warning("L2 norms of zero detected for distance='Cosine, no transformation")
+    }
   }
 }
 

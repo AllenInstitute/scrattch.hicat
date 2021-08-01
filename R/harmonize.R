@@ -326,7 +326,8 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transpo
 #'
 #' @examples
 select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all.cells, maxGenes=2000, vg.padj.th=0.5, max.dim=20,use.markers=TRUE, top.n=100,rm.eigen=NULL, rm.th=rep(0.7, ncol(rm.eigen)))
-  {    
+  {
+    library(matrixStats)
     select.genes.list = list()
     for(ref.set in names(ref.list)){
       #print(ref.set)
@@ -529,7 +530,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
 #' @export
 #'
 #' @examples
-knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, cross.knn.method="cor", self.knn.method = "RANN", method = "louvain", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,mc.cores=1,...)
+knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, cross.knn.method="Annoy.Cosine", self.knn.method = "Annoy.Euclidean", method = "louvain", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,mc.cores=1,...)
 {
   #attach(comb.dat)
   with(comb.dat,{
