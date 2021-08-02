@@ -33,6 +33,14 @@ rcpp_get_cl_medians_RcppParallel <- function(mat, clAll) {
     .Call('_scrattch_hicat_rcpp_get_cl_medians_RcppParallel', PACKAGE = 'scrattch.hicat', mat, clAll)
 }
 
+rcpp_get_cl_sums <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sums_RcppParallel <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums_RcppParallel', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
 RowMergeMatrices <- function(mat1, mat2, mat1_rownames, mat2_rownames, all_rownames) {
     .Call('_scrattch_hicat_RowMergeMatrices', PACKAGE = 'scrattch.hicat', mat1, mat2, mat1_rownames, mat2_rownames, all_rownames)
 }

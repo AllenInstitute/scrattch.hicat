@@ -104,6 +104,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_get_cl_sums
+Rcpp::NumericMatrix rcpp_get_cl_sums(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_RcppParallel
+Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_RcppParallel(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_RcppParallel(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
 // RowMergeMatrices
 Eigen::SparseMatrix<double> RowMergeMatrices(Eigen::SparseMatrix<double, Eigen::RowMajor> mat1, Eigen::SparseMatrix<double, Eigen::RowMajor> mat2, std::vector< std::string > mat1_rownames, std::vector< std::string > mat2_rownames, std::vector< std::string > all_rownames);
 RcppExport SEXP _scrattch_hicat_RowMergeMatrices(SEXP mat1SEXP, SEXP mat2SEXP, SEXP mat1_rownamesSEXP, SEXP mat2_rownamesSEXP, SEXP all_rownamesSEXP) {
@@ -374,6 +398,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel, 2},
     {"_scrattch_hicat_rcpp_get_cl_medians", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians, 2},
     {"_scrattch_hicat_rcpp_get_cl_medians_RcppParallel", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_RcppParallel, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_RcppParallel", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_RcppParallel, 2},
     {"_scrattch_hicat_RowMergeMatrices", (DL_FUNC) &_scrattch_hicat_RowMergeMatrices, 5},
     {"_scrattch_hicat_RowMergeMatricesList", (DL_FUNC) &_scrattch_hicat_RowMergeMatricesList, 3},
     {"_scrattch_hicat_LogNorm", (DL_FUNC) &_scrattch_hicat_LogNorm, 3},
