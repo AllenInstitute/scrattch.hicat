@@ -285,15 +285,19 @@ get_row_sums <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
     if(!is.integer(select.col)){
       select.col = match(select.col, colnames(mat))
     }
-    tmp.mat = Matrix::sparseMatrix(x = 1, j= select.col, i = rep(1,length(select.col)),dims=c(1, ncol(mat)))
-    sums = Matrix::tcrossprod(mat,tmp.mat)
-    sums[select.row,]
+    cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
+    means = get_cl_means(mat, cl)
+    sums = means[select.row,]*length(select.col)    
   }
 
 get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
   {
-    sums = get_row_sums(mat, select.row, select.col)
-    sums/ length(select.col)
+    if(!is.integer(select.col)){
+      select.col = match(select.col, colnames(mat))
+    }
+    cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
+    means = get_cl_means(mat, cl)
+    means[select.rows,]
   }
 
 #' Compute cluster means for each row in a matrix
