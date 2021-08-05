@@ -311,7 +311,7 @@ get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
 get_cl_means_R<- function(mat, 
                          cl) {
   
-  cl.sums <- get_cl_sums(mat, cl)
+  cl.sums <- get_cl_sums_R(mat, cl)
   
   cl.size <- table(cl)
   
@@ -323,6 +323,9 @@ get_cl_means_R<- function(mat,
 get_cl_means<- function(mat,cl) {
   if(!is.factor(cl)){
     cl = setNames(factor(cl),names(cl))
+  }
+  if(is.matrix(mat)){
+    mat = Matrix(mat, sparse=T)
   }
   result=rcpp_get_cl_means(mat, cl)
   result[,levels(cl),drop=F]

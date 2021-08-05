@@ -694,6 +694,8 @@ knn_jaccard_clust <- function(knn.index, method=c("louvain","leiden"),prune=0.05
       result <- leiden.community(gr,...)      
     }
     result$cl=membership(result)
+    rm(sim)
+    gc()
     return(result)
   }
 
