@@ -1,4 +1,3 @@
-
 #' Title
 #'
 #' @param de.pair 
@@ -120,7 +119,7 @@ merge_cl<- function(norm.dat,
       x = merge.pairs[1,1]
       y=  merge.pairs[1,2]
       if(verbose > 0){
-        cat("Merge: ", x,y, "sim:", tmp[closest.pair,3],"\n")
+        cat("Merge: ", x,y, "sim:", merge.pairs[1,"sim"],"\n")
       }
       cl[cl==y]= x
       p = as.character(c(x,y))
