@@ -352,7 +352,12 @@ get_cl_present<- function(mat, cl, low.th)
   if(!is.factor(cl)){
     cl = setNames(factor(cl),names(cl))
   }
-  
+  if(is.matrix(mat)){
+    mat = Matrix(mat, sparse=T)
+  }
+  if(!all(names(cl) %in% colnames(mat))){
+    mat = Matrix::t(mat)
+  }  
   result=rcpp_get_cl_present(mat, cl, low.th)
   result[,levels(cl),drop=F]
 }
