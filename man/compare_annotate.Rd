@@ -2,10 +2,10 @@
 % Please edit documentation in R/annotate.R
 \name{compare_annotate}
 \alias{compare_annotate}
-\title{Compare two sets of cluster assignments}
+\title{Compare two sets of cluster assignments for the same set of cells}
 \usage{
-compare_annotate(cl, ref.cl, ref.cl.df, reorder = TRUE,
-  rename = reorder)
+compare_annotate(cl, ref.cl, ref.cl.df = NULL, reorder = TRUE,
+  rename = TRUE)
 }
 \arguments{
 \item{cl}{A cluster factor object to compare to a reference}
@@ -15,6 +15,8 @@ compare_annotate(cl, ref.cl, ref.cl.df, reorder = TRUE,
 \item{ref.cl.df}{A data.frame with reference cluster annotations that includes a "cluster_label" column}
 
 \item{reorder}{Whether or not to reorder the overlaps by overlap size. Default = TRUE}
+
+\item{rename}{a logical indicating whether or not to rename the results.}
 }
 \value{
 a list with 5 objects:  
@@ -27,5 +29,5 @@ a list with 5 objects:
 }
 }
 \description{
-Compare two sets of cluster assignments
+Compare two sets of cluster assignments for the same set of cells
 }

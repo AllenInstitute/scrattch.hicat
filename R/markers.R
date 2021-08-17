@@ -1,18 +1,46 @@
-select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, ...)                           
-  {
+#' Select a set of marker genes based on differential gene expression results.
+#' 
+#' @param norm.dat a normalized data matrix for data.
+#' @param cl a cluster factor object.
+#' @param n.markers Maximum of markers to return for each cluster (Default = 20)
+#' @param de.genes Optional, pre-computed DE Genes using de_stats_all_pairs()
+#' @param ... Additional parameters passed to de_stats_all_pairs()
+#' 
+#' @return a list with two objects: markers, a character vector of marker genes; 
+#' de.genes, a list object with differential expression results.
+#' @export
+#' 
+select_markers <- function(norm.dat, 
+                           cl, 
+                           n.markers = 20,
+                           de.genes = NULL, 
+                           ...) {
+  
     if(is.null(de.genes)){
-      de.genes=de_score(norm.dat, cl, ...)
+      de.genes <- de_stats_all_pairs(norm.dat = norm.dat, 
+                                     cl = cl, 
+                                     ...)$de.genes
     }
-    pairs = names(de.genes)
-    pairs.df = gsub("cl","", do.call("rbind",strsplit(pairs, "_")))
-    row.names(pairs.df)=pairs
-    select.pairs = pairs[pairs.df[,1] %in% cl & pairs.df[,2]%in% cl]
-    de.markers = sapply(select.pairs, function(s){
-      tmp = de.genes[[s]]
-      c(head(tmp$up.genes,n.markers), head(tmp$down.genes,n.markers))
-    },simplify=F)
-    markers = intersect(unlist(de.markers),row.names(norm.dat))
-    return(list(markers=markers, de.genes=de.genes[select.pairs]))
+    
+    pairs <- names(de.genes)
+    
+    pairs.df <- gsub("cl","", do.call("rbind", strsplit(pairs, "_")))
+    row.names(pairs.df) <- pairs
+    
+    select.pairs <- pairs[pairs.df[,1] %in% cl & pairs.df[,2] %in% cl]
+    
+    de.markers <- sapply(select.pairs, 
+                         function(s) {
+                           tmp <- de.genes[[s]]
+                           c(head(  tmp$up.genes, n.markers), 
+                             head(tmp$down.genes, n.markers))
+                         },
+                         simplify=F)
+    
+    markers <- intersect(unlist(de.markers), row.names(norm.dat))
+    
+    return(list(markers = markers, 
+                de.genes = de.genes[select.pairs]))
   }
 
 markers_max_tau <- function(cl.dat, th=0.5, tau.th=0.7,n.markers=3)
@@ -171,63 +199,59 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,up.gene.scor
   }
 
 
-select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num = 1,rm.genes=NULL)
-  {
-   add.up = add.down=setNames(rep(pair.num, length(de.genes)), names(de.genes))
-   if(!is.null(default.markers)){
-     up.default = sapply(de.genes, function(x){intersect(x$up.genes, default.markers)},simplify=F)
-     down.default = sapply(de.genes, function(x){intersect(x$down.genes, default.markers)},simplify=F)
-     add.up = pmax(add.up -  sapply(up.default, length),0)
-     add.down = pmax(add.down -  sapply(down.default, length),0)
-   }
-   add.up = add.up[add.up>0, drop=F]
-   add.down = add.down[add.down>0, drop=F]
-   result = select_markers_pair_direction(add.up,add.down,de.genes=de.genes, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers),top.n=50,max.num=2000)
-   up.genes = up.default
-   down.genes=down.default
-   for(x in names(result$up.genes)){
-     up.genes[[x]]=c(up.genes[[x]], result$up.genes[[x]])
-   }
-   for(x in names(result$down.genes)){
-     down.genes[[x]]=c(down.genes[[x]], result$down.genes[[x]])
-   }
-   return(list(up.genes=up.genes, down.genes=down.genes, markers=c(default.markers, result$markers)))
- }
-
-
-group_specific_markers <- function(cl.g, norm.dat, cl, de.param, n.markers=5, cl.present.counts=NULL)
-  {
-    cl= droplevels(cl)
-    select.cells = names(cl)[cl %in% cl.g]
-    not.select.cells = setdiff(names(cl), select.cells)
-    if(is.null(cl.present.counts)){
-      fg = rowSums(norm.dat[,select.cells]> de.param$low.th)
-      bg = rowSums(norm.dat[,not.select.cells]> de.param$low.th)
-    }
-    else{
-      fg = rowSums(cl.present.counts[,cl.g,drop=F])
-      bg = rowSums(cl.present.counts[,levels(cl),drop=F]) - fg
-    }
-    bg.freq= bg/length(not.select.cells)
-    fg.freq = fg/length(select.cells)
-    tau = (fg.freq - bg.freq)/pmax(bg.freq,fg.freq)
-    ratio = fg/(fg+bg)
-    stats <- vec_chisq_test(fg, rep(length(select.cells),length(fg)), bg, rep(length(not.select.cells), length(bg)))
-    
-    g = names(fg.freq)[fg.freq > de.param$q1.th & tau > de.param$q.diff.th]
-    g = g[order(tau[g]+ ratio[g]/4 + fg.freq[g]/5,decreasing=T)]
-    select.g = c(g[tau[g]> 0.95], head(g, n.markers))
-    g = g[g %in% select.g]
-    if(length(g > 0)){
-      df=data.frame(g=g,specificity=round(tau[g],digits=2), fg.freq=round(fg.freq[g],digits=2), bg.freq = round(bg.freq[g],digits=2), fg.counts=fg[g],bg.counts=bg[g],pval=stats[g,"pval"])
-      return(df)
-    }
+group_specific_markers <- function(cl.g, 
+                                   norm.dat, 
+                                   cl, 
+                                   de.param, 
+                                   n.markers = 5, 
+                                   cl.present.counts = NULL) {
+  cl <- droplevels(cl)
+  select.cells <- names(cl)[cl %in% cl.g]
+  not.select.cells <- setdiff(names(cl), select.cells)
+  
+  if(is.null(cl.present.counts)){
+    fg <- Matrix::rowSums(norm.dat[, select.cells] > de.param$low.th)
+    bg <- Matrix::rowSums(norm.dat[, not.select.cells] > de.param$low.th)
+  } else{
+    fg <- Matrix::rowSums(cl.present.counts[, cl.g, drop = F])
+    bg <- Matrix::rowSums(cl.present.counts[, levels(cl), drop = F]) - fg
+  }
+  
+  bg.freq <- bg / length(not.select.cells)
+  fg.freq <- fg / length(select.cells)
+  
+  tau <- (fg.freq - bg.freq) / pmax(bg.freq, fg.freq)
+  ratio <- fg / (fg + bg)
+  
+  stats <- vec_chisq_test(fg, 
+                          rep(length(select.cells), length(fg)), 
+                          bg, 
+                          rep(length(not.select.cells), length(bg))
+  )
+  
+  g <- names(fg.freq)[fg.freq > de.param$q1.th & tau > de.param$q.diff.th]
+  g <- g[order(tau[g] + ratio[g] / 4 + fg.freq[g] / 5, decreasing = T)]
+  select.g <- c(g[tau[g] > 0.95], head(g, n.markers))
+  g <- g[g %in% select.g]
+  
+  if(length(g) > 0){
+    df <- data.frame(g = g,
+                     specificity = round(tau[g], digits = 2), 
+                     fg.freq = round(fg.freq[g], digits = 2), 
+                     bg.freq = round(bg.freq[g], digits = 2), 
+                     fg.counts = fg[g],
+                     bg.counts = bg[g],
+                     pval = stats[g, "pval"])
+    return(df)
+  } else {
     return(NULL)
   }
+}
 
 
 within_group_specific_markers <- function(cl.g, norm.dat, cl, ...)
   {
+    cl = as.factor(cl)
     cl = droplevels(cl[cl %in% cl.g])
     df = do.call("rbind", sapply(cl.g, function(x){
       df=group_specific_markers(x, norm.dat, cl,...)
@@ -280,3 +304,91 @@ node_specific_markers <- function(dend.list, norm.dat, cl,...)
     },simplify=F))
   }
 
+
+
+select_N_markers <- function(de.genes, up.gene.score=NULL, down.gene.score=NULL, default.markers=NULL, pair.num =1, add.up=pair.num, add.down=pair.num, rm.genes=NULL, pairs=names(de.genes))
+  {
+   add.up = setNames(rep(add.up, length(pairs)), pairs)
+   add.down= setNames(rep(add.down, length(pairs)), pairs)
+   if(!is.null(default.markers)){
+     up.default = sapply(pairs, function(p){intersect(de.genes[[p]]$up.genes, default.markers)},simplify=F)
+     down.default = sapply(pairs, function(p){intersect(de.genes[[p]]$down.genes, default.markers)},simplify=F)
+     add.up = pmax(add.up -  sapply(up.default, length),0)
+     add.down = pmax(add.down -  sapply(down.default, length),0)
+   }
+   add.up = add.up[add.up>0, drop=F]
+   add.down = add.down[add.down>0, drop=F]
+   result = select_markers_pair_direction(add.up,add.down,de.genes=de.genes, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers),top.n=50,max.num=2000)
+   up.genes = up.default
+   down.genes=down.default
+   for(x in names(result$up.genes)){
+     up.genes[[x]]=c(up.genes[[x]], result$up.genes[[x]])
+   }
+   for(x in names(result$down.genes)){
+     down.genes[[x]]=c(down.genes[[x]], result$down.genes[[x]])
+   }
+   return(list(up.genes=up.genes, down.genes=down.genes, markers=c(default.markers, result$markers)))
+ }
+
+
+
+select_pos_markers <- function(de.genes, cl, n.markers=3, default.markers=NULL, rm.genes=NULL, up.gene.score=NULL, down.gene.score=NULL)
+  {
+    pairs = names(de.genes)
+    pairs.df = as.data.frame(do.call("rbind", strsplit(pairs, "_")))
+    row.names(pairs.df) = pairs
+    pairs.df = pairs.df[pairs.df[,1]%in% levels(cl) & pairs.df[,2]%in% levels(cl),]
+    if(is.null(up.gene.score) | is.null(down.gene.score)){
+      tmp=get_gene_score(de.genes)
+      up.gene.score=tmp$up.gene.score
+      down.gene.score=tmp$down.gene.score
+    }
+    cl.df$markers=""
+    
+###for each cluster, find markers that discriminate it from other types
+    cl.markers <- sapply(levels(cl), function(tmp.cl){
+      up.pairs = row.names(pairs.df)[pairs.df[,1] == tmp.cl]
+      down.pairs = row.names(pairs.df)[pairs.df[,2] == tmp.cl]
+      add.up = setNames(rep(n.markers, length(up.pairs)), up.pairs)
+      add.down = setNames(rep(n.markers, length(down.pairs)), down.pairs)
+
+      up.default = sapply(up.pairs, function(p){intersect(de.genes[[p]]$up.genes, default.markers)},simplify=F)
+      down.default = sapply(down.pairs, function(p){intersect(de.genes[[p]]$down.genes, default.markers)},simplify=F)
+      if(length(up.default)>0){
+        add.up = pmax(add.up -  sapply(up.default, length),0)
+      }
+      if(length(down.default)>0){
+        add.down = pmax(add.down -  sapply(down.default, length),0)
+      }
+      tmp.result = select_markers_pair_direction(add.up=add.up, add.down=add.down,de.genes=de.genes, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers))
+      
+      unique(c(tmp.result$markers, unlist(up.default), unlist(down.default)))
+    },simplify=F)  
+  }
+
+
+
+###Beta score from Trygve
+
+get_beta_score <- function(propExpr, spec.exp = 2, mcores=1){
+  if(mcores ==1){
+    registerDoSEQ()
+  }
+  else{
+    cl <- parallel::makeForkCluster(mcores)
+    doParallel::registerDoParallel(cl)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+  }
+  calc_beta <- function(y, spec.exp = 2, eps1 = 1e-10) {
+    d1 <- as.matrix(dist(y))
+    score1 <- sum(d1^spec.exp) / (sum(d1) + eps1)
+    return(score1)
+  }
+
+  res <- foreach(i = 1:nrow(propExpr), .combine="c") %dopar% {
+    print(i)
+    calc_beta(propExpr[i,])
+  }
+  names(res) = row.names(propExpr)
+  return(res)
+}

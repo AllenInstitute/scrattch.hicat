@@ -3,3 +3,9 @@
 .RData
 .Ruserdata
 inst/doc
+include
+lib
+include
+bin
+.vscode
+.DS_Store

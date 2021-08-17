@@ -10,7 +10,7 @@ jaccard(m)
 \item{m}{A matrix or sparse matrix}
 }
 \value{
-a sparse matrix of Jaccard distances.
+a sparse matrix of class dgTMatrix containing Jaccard distances between every pair of samples.
 }
 \description{
 Compute jaccard distances between columns of a matrix

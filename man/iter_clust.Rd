@@ -4,7 +4,7 @@
 \alias{iter_clust}
 \title{Iterative clustering algorithm for single cell RNAseq dataset}
 \usage{
-iter_clust(norm.dat, select.cells = colnames(norm.dat), prefix = NULL,
+iter_clust(norm.dat, select.cells = NULL, prefix = NULL,
   split.size = 10, result = NULL, method = "auto", ...)
 }
 \arguments{
@@ -14,23 +14,19 @@ iter_clust(norm.dat, select.cells = colnames(norm.dat), prefix = NULL,
 
 \item{prefix}{The character string to indicate current iteration.}
 
-\item{split.size}{The minimal cluster size for further splitting}
+\item{split.size}{The minimum cluster size for further splitting. Default = 10.}
 
 \item{result}{The current clustering result as basis for further splitting.}
 
-\item{method}{Clustering method. It can be "auto", "louvain", "hclust"}
+\item{method}{Clustering method. Options are "auto", "louvain", and "ward.D". Default is "auto".}
 
-\item{...}{Other parameters passed to method `onestep_clust()`}
+\item{...}{Other parameters passed to `onestep_clust()`}
 }
 \value{
 Clustering result is returned as a list with two elements: 
         cl: cluster membership for each cell
-        markers: top markers that seperate clusters
+        markers: top markers that separate clusters
 }
 \description{
 Iterative clustering algorithm for single cell RNAseq dataset
-}
-\examples{
-clust.result <- iter_clust(norm.dat)
-          clust.result <- iter_clust(norm.dat, de.param = de_param(q1.th = 0.5, de.score.th = 100))
 }
