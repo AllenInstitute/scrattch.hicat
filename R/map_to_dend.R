@@ -224,6 +224,8 @@ summarize_cl <-
     markers.cl.list = do.call("c", markers.cl.list)
     
     all.markers = unique(unlist(markers.cl.list))
+    # to deal with missing genes
+    all.markers = intersect(all.markers, rownames(map.dat))
     gene.anno=""
     memb.th = lapply(row.names(memb), function(cell) {
       ###Check all the node with confidence > conf.th
