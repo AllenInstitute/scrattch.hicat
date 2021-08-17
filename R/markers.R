@@ -10,9 +10,7 @@
 #' @export
 #'
 #' @examples
-
-
-select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,bin.lfc.th=NULL,...)                  
+select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,...)
   {
     require(parallel)
     if(is.null(de.genes)){
@@ -25,13 +23,6 @@ select_markers <- function(norm.dat, cl, n.markers=20,de.genes=NULL, mc.cores=1,
       sapply(s, function(x){
         tmp = de.genes[[x]]
         select.genes = c(head(names(tmp$up.genes),n.markers), head(names(tmp$down.genes),n.markers))
-        ###Choose binary genes even if not the top genes
-        if(!is.null(bin.lfc.th)){
-          de.df = tmp$de.df
-          bin.genes = tmp$genes[abs(de.df[tmp$genes, "lfc"]) > bin.lfc.th]
-          select.genes = union(select.genes, bin.genes)
-        }
-        select.genes
       },simplify=F)
     },mc.cores=mc.cores)
     if(!is.null(norm.dat)){
@@ -181,7 +172,7 @@ select_markers_pair <- function(de.genes, add.genes, cl.means, gene.score=NULL,r
 #' @examples
 select_markers_pair_direction <- function(de.genes, add.up,add.down,cl.means, up.gene.score=NULL,down.gene.score=NULL,rm.genes=NULL,top.n=50,max.num=2000)
   {
-    up.genes = down.genes=list()
+    up.genes = down.genes=NULL
     final.genes=c()
     if(is.null(up.gene.score)){
       pairs.n=union(names(add.up), names(add.down))
@@ -216,15 +207,14 @@ select_markers_pair_direction <- function(de.genes, add.up,add.down,cl.means, up
       add.down[select.down.pair]= add.down[select.down.pair]-1
       add.up = add.up[add.up >0, drop=F]
       add.down = add.down[add.down >0, drop=F]
-      for(p in select.up.pair){
-        up.genes[[p]]=c(up.genes[[p]],g)
-      }
-      for(p in select.down.pair){
-        down.genes[[p]]=c(down.genes[[p]],g)
-      }
+
+      tmp = data.frame(gene=rep(g, length(select.up.pair)), pair = select.up.pair)
+      up.genes = rbind(up.genes, tmp)
+      tmp = data.frame(gene=rep(g, length(select.down.pair)), pair = select.down.pair)
+      down.genes = rbind(down.genes, tmp)      
       final.genes=c(final.genes, g)
       select.genes = setdiff(select.genes, final.genes)
-      cat(g, length(add.up), length(add.down),"\n")
+      cat(g, length(add.up), length(add.down),length(select.genes),"\n")
     }
     markers= final.genes
     return(list(markers=markers, up.genes=up.genes, down.genes=down.genes))
@@ -328,29 +318,31 @@ select_N_markers <- function(de.genes, cl.means, up.gene.score=NULL, down.gene.s
    add.down= setNames(rep(add.down, length(pairs)), pairs)
    up.default = down.default = c()
    if(!is.null(default.markers)){
-     library(parallel)
-     up.default =   parallel::pvec(pairs, function(x){
-       g.list=sapply(x, function(p){intersect(names(de.genes[[p]]$up.genes), default.markers)},simplify=F)
-     },mc.cores=mc.cores)
-
-     down.default =   parallel::pvec(pairs, function(x){
-       g.list=sapply(x, function(p){intersect(names(de.genes[[p]]$down.genes), default.markers)},simplify=F)
-     },mc.cores=mc.cores)     
-     
-     add.up = pmax(add.up -  sapply(up.default, length),0)
-     add.down = pmax(add.down -  sapply(down.default, length),0)
+     tmp= intersect(default.markers, row.names(up.gene.score))
+     up.default=up.gene.score[tmp,]
+     up.num = colSums(up.default)[pairs]     
+     down.default = down.gene.score[tmp,]
+     down.num = colSums(down.default)[pairs]
+     add.up = pmax(add.up -  up.num,0)
+     add.down = pmax(add.down -  down.num,0)
    }
    add.up = add.up[add.up>0, drop=F]
    add.down = add.down[add.down>0, drop=F]
    result = select_markers_pair_direction(add.up,add.down,de.genes=de.genes, cl.means=cl.means,up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers),top.n=50,max.num=2000)
-   up.genes = up.default
-   down.genes=down.default
-   for(x in names(result$up.genes)){
-     up.genes[[x]]=c(up.genes[[x]], result$up.genes[[x]])
+   up.genes = result$up.genes
+   down.genes = result$down.genes
+   if(length(default.markers)>0){
+     up.default = as(up.default,"TsparseMatrix")
+     up.default = data.frame(gene = row.names(up.default)[up.default@i+1], pair= colnames(up.default)[up.default@j+1])
+     up.genes = rbind(up.default,up.genes)
+     
+     down.default = as(down.default,"TsparseMatrix")
+     down.default = data.frame(gene = row.names(down.default)[down.default@i+1], pair= colnames(down.default)[down.default@j+1])
+     down.genes = rbind(down.default,down.genes)
    }
-   for(x in names(result$down.genes)){
-     down.genes[[x]]=c(down.genes[[x]], result$down.genes[[x]])
-   }
+   up.genes = split(up.genes$gene, up.genes$pair)
+   down.genes = split(down.genes$gene, down.genes$pair)
+
    return(list(up.genes=up.genes, down.genes=down.genes, markers=c(default.markers, result$markers)))
  }
 

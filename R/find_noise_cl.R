@@ -107,16 +107,16 @@ find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
       cl1= row.names(nn.df)[i]
       cl2=as.character(nn.df$nn.cl[i])
       de = get_de_pair(de.genes, cl1, cl2)
-      up.genes = head(de$names(up.genes), 50)
+      up.genes = head(names(de$up.genes), 50)
       nn.df$up.genes[i] = length(up.genes)
-      nn.df$up.genes.score[i] = sum(-log10(de$up.genes[up.genes]))
+      nn.df$up.genes.score[i] = sum(pmin(-log10(de$up.genes[up.genes]),20))
       
       up.genes.olap =sapply( setdiff(cl.good, c(cl1,cl2)), function(k){
         p = paste0(k,"_",cl2)
         tmp.de = get_de_pair(de.genes, k, cl2)
         olap.genes= intersect(names(tmp.de$up.genes), up.genes)
         olap.num = length(olap.genes)
-        olap.score= sum(-log10(de$up.genes[olap.genes]))
+        olap.score= sum(pmin(-log10(de$up.genes[olap.genes]), 20))
         c(olap.num, olap.score)
       })
       cl3 = names(which.max(up.genes.olap[1,]))
@@ -127,11 +127,11 @@ find_doublet <- function(cl.df, cl.sim, cl.good, de.genes=NULL)
       
       de1 = get_de_pair(de.genes, cl1, cl3)
       up.genes = head(names(de1$up.genes), 50)
-      up.gene.score= sum(-log10(de1$up.genes[up.genes]))
+      up.gene.score= sum(pmin(-log10(de1$up.genes[up.genes]),20))
       de2 = get_de_pair(de.genes, cl2, cl3)
       olap.genes = intersect(names(de2$up.genes), up.genes)  
       nn.df$max.olap.genes2[i] = length(olap.genes)
-      nn.df$max.olap.score2[i] = sum(-log10(de1$up.genes[olap.genes]))
+      nn.df$max.olap.score2[i] = sum(pmin(-log10(de1$up.genes[olap.genes]),20))
       nn.df$max.olap.ratio2[i] = nn.df$max.olap.score2[i]/ up.gene.score
     }
     nn.df$max.olap.cl_label = cl.df[as.character(nn.df$max.olap.cl),"cluster_label"]
@@ -283,13 +283,16 @@ plot_low_qc <- function(norm.dat,
 
 
 
-find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
+find_doublet_all <- function(de.genes, mc.cores=5, min.genes=100)
   {    
     require(parallel)
     if(is.null(de.genes)){
       stop("Need to specify de.genes")
     }
-    result.list=  parallel::pvec(names(de.genes), function(pairs){
+    pairs.df = get_pairs(names(de.genes))
+        
+    cl = union(pairs.df[,1],pairs.df[,2])
+    result.list=  parallel::pvec(sample(row.names(pairs.df)), function(pairs){
       result.list= sapply(pairs, function(p){
         de = de.genes[[p]]
         if(length(de)==0){
@@ -298,9 +301,8 @@ find_doublet_all <- function(de.genes, cl, mc.cores=5, min.genes=100)
         if(de$up.num < min.genes | de$down.num < min.genes){
           return(NULL)
         }
-        tmp=strsplit(p,"_")[[1]]
-        cl1 = tmp[[1]]
-        cl2 = tmp[[2]]
+        cl1 = pairs.df[p,1]
+        cl2 = pairs.df[p,2]
         
         up.genes.score = head(de$up.genes, 50)
         down.genes.score = head(de$down.genes,50)

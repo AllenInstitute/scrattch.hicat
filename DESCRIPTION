@@ -1,13 +1,14 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
-Version: 1.0.6
+Version: 1.0.7
 Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
-  person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
   person("Cindy", "van Velthoven", email = "cindy.vanvelthoven@alleninstitute.org", role = c("aut")),
+  person("Changkyu","Lee", email="Changkyul@alleninstitute.org", role = c("aut")),  
+  person("Yuan","Gao", email="yuan.gao@alleninstitute.org", role = c("aut")),  
+  person("Trygve", "Bakken", email = "trygveb@alleninstitute.org", role = c("aut")),
   person("Jeremy", "Miller", email = "jeremym@alleninstitute.org", role = c("aut")),	
   person("Adriana","Sedeno-Cortes", email ="adrianas@alleninstitute.org", role = c("aut")),
-  person("Changkyu","Lee", email="Changkyul@alleninstitute.org", role = c("aut")),
   person("Saroja","Somasundaram", email="sarojas@alleninstitute.org", role = c("aut")))
 Description: Iteractive clustering of single cell RNASeq dataset. 
 BugReports: https://github.com/AllenInstitute/scrattch.hicat/issues

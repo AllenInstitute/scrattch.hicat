@@ -399,11 +399,6 @@ iter_clust <- function(norm.dat,
   else{
     select.method=method
   }
-  if(length(select.cells) <= 3000){
-    if(!is.matrix(norm.dat)){
-      norm.dat = as.matrix(norm.dat[,select.cells])
-    }
-  }
   if(is.null(result)){        
     result=onestep_clust(norm.dat, select.cells=select.cells, prefix=prefix,method=select.method,...)
     gc()

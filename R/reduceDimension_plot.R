@@ -1,6 +1,8 @@
 jet.colors <-colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan","#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+blue.red <-colorRampPalette(c("blue", "white", "red"))
 
-#' Title
+
+#' get_RD_cl_center
 #'
 #' @param rd.dat 
 #' @param cl 
@@ -20,7 +22,7 @@ get_RD_cl_center <- function(rd.dat, cl)
   }))
 }
 
-#' Title
+#' plot_RD_cl
 #'
 #' @param rd.dat 
 #' @param cl 
@@ -96,7 +98,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
 
  
 ###meta is discretized. 
-#' Title
+#' plot_RD_meta
 #'
 #' @param rd.dat 
 #' @param meta 
@@ -146,7 +148,7 @@ plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15,
   }
 
 
-#' Title
+#' plot_RD_gene
 #'
 #' @param rd.dat 
 #' @param norm.dat 
@@ -191,34 +193,36 @@ plot_RD_gene <- function(rd.dat, norm.dat, genes, cex=0.15)
 #' @examples
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     library(grid)
-                                        # Make a list from the ... arguments and plotlist
+    # Make a list from the ... arguments and plotlist
     plots <- c(list(...), plotlist)
     
     numPlots = length(plots)
     
-                                        # If layout is NULL, then use 'cols' to determine layout
+     # If layout is NULL, then use 'cols' to determine layout
     if (is.null(layout)) {
-                                        # Make the panel
-                                        # ncol: Number of columns of plots
-                                        # nrow: Number of rows needed, calculated from # of cols
-      layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                       ncol = cols, nrow = ceiling(numPlots/cols))
+        # Make the panel
+        # ncol: Number of columns of plots
+        # nrow: Number of rows needed, calculated from # of cols
+        layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                         ncol = cols, 
+                         nrow = ceiling(numPlots/cols))
     }
     
     if (numPlots==1) {
       print(plots[[1]])
       
     } else {
-                                        # Set up the page
-      grid.newpage()
-      pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-      
-                                        # Make each plot, in the correct location
+          # Set up the page
+          grid.newpage()
+          pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+          
+      # Make each plot, in the correct location
       for (i in 1:numPlots) {
-                                        # Get the i,j matrix positions of the regions that contain this subplot
+        # Get the i,j matrix positions of the regions that contain this subplot
         matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
         
-        print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+        print(plots[[i]], 
+              vp = viewport(layout.pos.row = matchidx$row,
                             layout.pos.col = matchidx$col))
       }
     }
@@ -226,7 +230,7 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 
 
 
-#' Title
+#' plot_3d_label
 #'
 #' @param df 
 #' @param col 
@@ -268,7 +272,7 @@ plot_3d_label <- function(df, col, label_col=NULL,cex=1, label.cex=cex, init=TRU
   }
 }
 
-#' Title
+#' mybgplot3d
 #'
 #' @param tt 
 #' @param bg.col 
@@ -297,7 +301,7 @@ mybgplot3d <- function(tt, bg.col=bg.col)
 }
 
 
-#' Title
+#' plot_3d_val
 #'
 #' @param df 
 #' @param val 
@@ -329,7 +333,7 @@ plot_3d_val <- function(df, val, cex=1, max.val=quantile(val, 0.99), init=TRUE, 
 
 
 
-#' Title
+#' plot_3d_label_multiple
 #'
 #' @param df 
 #' @param cols 
@@ -346,23 +350,35 @@ plot_3d_val <- function(df, val, cex=1, max.val=quantile(val, 0.99), init=TRUE, 
 #' @export
 #'
 #' @examples
-plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7, fn = NULL,win.dim = c(20,40,1200,800), layout = NULL, bg.col="gray60", dir="./")
+
+plot_3d_label_multiple <- function(df, 
+                                   cols, 
+                                   label_cols, 
+                                   cex=0.7, 
+                                   label.cex=0.7, 
+                                   fn = NULL,
+                                   win.dim = c(20,40,1200,800), 
+                                   layout = NULL, 
+                                   bg.col="gray60", 
+                                   dir="./")
 {
   n.win = length(cols)
   library(rgl)
-  mfrow3d(1,n.win)
-  next3d()
+  options(rgl.printRglwidget = TRUE)
   
-  open3d()
+  rgl::mfrow3d(1,n.win)
+  rgl::next3d()
+  
+  rgl::open3d()
   
   ###specify dimensions of the plots
-  par3d(windowRect=win.dim)
+  rgl::par3d(windowRect=win.dim)
   #bg3d(bg.col)
   if(is.null(layout)){
     layout <- matrix(1:n.win, nrow=1)
     layout = rbind(layout, layout)
   }
-  layout3d(layout, sharedMouse = TRUE)
+  rgl::layout3d(layout, sharedMouse = TRUE)
   
   for (i in 1:n.win) {
     next3d()
@@ -370,18 +386,39 @@ plot_3d_label_multiple <- function(df, cols, label_cols, cex=0.7, label.cex=0.7,
     if(length(col)==1){
       tmp.col = paste0(col,"_color")
       if(tmp.col %in% colnames(df)){ 
-        plot_3d_label(df, col=tmp.col, label_col=label_cols[[i]],init=FALSE, cex=cex, label.cex=label.cex, prefix=names(cols)[i], bg.col=bg.col)
+        print(1)
+        plot_3d_label(df, 
+                      col=tmp.col, 
+                      label_col=label_cols[[i]],
+                      init=FALSE, 
+                      cex=cex, 
+                      label.cex=label.cex, 
+                      prefix=names(cols)[i], 
+                      bg.col=bg.col)
       }
       else{
-        plot_3d_val(df, val=df[[col]], init=FALSE,cex=cex,prefix=names(cols)[i], bg.col=bg.col)
+        print(2)
+        plot_3d_val(df, 
+                    val=df[[col]], 
+                    init=FALSE,
+                    cex=cex,
+                    prefix=names(cols)[i], 
+                    bg.col=bg.col)
       }
     }
     else{
-      plot_3d_val(df, val=col,init=FALSE, cex=cex,prefix=names(cols)[i],bg.col=bg.col)
+      print(3)
+      plot_3d_val(df, 
+                  val=col,
+                  init=FALSE, 
+                  cex=cex,
+                  prefix=names(cols)[i],
+                  bg.col=bg.col)
     }
   }
   if(!is.null(fn)){
-    writeWebGL(dir=dir, filename=fn)
+    filename=file.path(dir, paste0(fn, ".html"))
+    htmlwidgets::saveWidget(rglwidget(), filename)
   }
 }
 
@@ -480,8 +517,8 @@ plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missin
 
 #' plot_2d_umap_anno
 #' 
-#' @param umap.fn path to umap coordinates. CSV file containing sample_names and umap x/y coordinates
-#' @param anno.df Sample annotations. The first column should be sample_name, and each annotation should have \_id, \_label, and \_color columns. Requires cluster_id which needs to be sequential in order of the dendrogram.
+#' @param umap.fn path to umap coordinates. CSV file containing sample_id and umap x/y coordinates
+#' @param anno.df Sample annotations. The first column should be sample_id, and each annotation should have \_id, \_label, and \_color columns. Requires cluster_id which needs to be sequential in order of the dendrogram.
 #' @param dest.d path to save plots.
 #' @param meta.fields  base name of variables to be represented as bargraphs below dendrogram. Annotation variables need to be represented as \_id, \_label, \_color in anno.
 #' @param show.label TRUE or FALSE. To show cluster label on top of plot.
@@ -522,11 +559,11 @@ plot_2d_umap_anno <- function(umap.fn,
   if(is.null(umap.2d)){
   #load umap from csv
     umap.2d <- as.data.frame(fread(umap.fn,header=TRUE))
-    colnames(umap.2d) <- c("sample_name","Dim1","Dim2")
+    colnames(umap.2d) <- c("sample_id","Dim1","Dim2")
     umap.2d <- umap.2d[sample(1:nrow(umap.2d)),]
   }
   umap.df = umap.2d %>% left_join(anno.df)
-  row.names(umap.2d)<-umap.2d$sample_name
+  row.names(umap.2d)<-umap.2d$sample_id
   umap.2d <- umap.2d[,c("Dim1","Dim2")]
 
   # extract filename for saving
@@ -534,7 +571,7 @@ plot_2d_umap_anno <- function(umap.fn,
   umap.fn <- gsub(".csv", "",umap.fn)
   
   #setup cluster labels/colors for plotting
-  cl <- setNames(umap.df$cl, umap.df$sample_name)
+  cl <- setNames(umap.df$cl, umap.df$sample_id)
   cl.df <- umap.df %>% select(cluster_id, cluster_label, cluster_color,cl) %>% unique
   cl.color <- setNames(cl.df$cluster_color, cl.df$cl)
   cl.label <- setNames(cl.df$cluster_label, cl.df$cl)
@@ -615,15 +652,50 @@ plot_2d_umap_anno <- function(umap.fn,
 
 
 
+#' plot_3d_umap_anno
+#' 
+#' @param umap.fn path to umap coordinates. CSV file containing sample_id and umap x/y/z coordinates
+#' @param anno.df Sample annotations. The first column should be sample_id, and each annotation should have \_id, \_label, and \_color columns. Requires cluster_id which needs to be sequential in order of the dendrogram.
+#' @param dest.d path to load data from and save plots to.
+#' @param cols  base name of variables to be represented as bargraphs below dendrogram. Annotation variables need to be represented as \_id, \_label, \_color in anno.
+#' @param label_cols Which label on top of plot.
+#' @param win.dim dimensions of plot window
+#' @param cex size of plotted points. Default = 0.25
+#' @param html.fn name of html file to save figures can be saved as "png", "pdf" or "both"
+#'    
+#' @example_data:
+#'  
+#' umap <- read.csv("data/rd_plot_example/3d.umap.sampled.csv")
+#' load("data/rd_plot_example/anno.df.3d.rda")
+#' 
+#' 
+#' @usage plots <- plot_3d_umap_anno(umap.fn="3d.umap.sampled.csv", anno.df, cols=c("platform","cluster"),label_cols=list(NULL,NULL),html.fn = "3d.umap",dest.d="data/rd_plot_example" )
+#' 
+#'  
+#'    
+
 #dest.d = "Manuscript/common/umap_constellation/"
 #for(umap.fn in dir(dest.d, pattern="umap.2d.sampled.csv")){
 #  plot_2d_umap(umap.fn, dest.d)
 #}
-plot_3d_umap_anno <- function(umap.fn, dest.d, anno.df, cols= c("region_color","cluster_color"), label_cols=list(NULL, "cluster_label"), win.dim=c(20,40,1500, 800), cex=0.7, html.fn = NULL)
-  {
-    umap.3d <- as.data.frame(fread(file.path(dest.d,umap.fn),header=TRUE))
-    colnames(umap.3d) = c("sample_name", paste0("Dim", 1:(ncol(umap.3d)-1)))
-    umap.3d <- umap.3d %>% left_join(anno.df)
-    plot_3d_label_multiple(umap.3d, cols=cols, label_cols=label_cols, cex=cex, win.dim=win.dim, fn = html.fn, dir=dest.d)
-  }
+plot_3d_umap_anno <- function(umap.fn,
+                              anno.df, 
+                              cols= c("region","cluster"),
+                              label_cols=list(NULL,"cluster_label"), 
+                              win.dim=c(20,40,1500, 800),
+                              cex=0.7, 
+                              html.fn = NULL,
+                              dest.d="./")
+{
+  umap.3d <- as.data.frame(fread(file.path(dest.d,umap.fn),header=TRUE))
+  colnames(umap.3d) = c("sample_id", paste0("Dim", 1:(ncol(umap.3d)-1)))
+  umap.3d <- umap.3d %>% left_join(anno.df)
+  plot_3d_label_multiple(umap.3d, 
+                         cols=cols, 
+                         label_cols=label_cols, 
+                         cex=cex, 
+                         win.dim=win.dim, 
+                         fn = html.fn, 
+                         dir=dest.d)
+}
 

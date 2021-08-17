@@ -47,27 +47,30 @@
 map_by_cor <- function(train.dat, 
                        train.cl, 
                        test.dat,
+                       cl.dat = NULL,
                        method = "median") {
   
   method <- match.arg(arg = method, 
                       choices = c("mean","median"))
-  
-  # Get medians or means for each cluster
-  if(method == "median"){
-    cl.meds <- tapply(names(train.cl), 
-                      train.cl, 
-                      function(x) {
-                        train.mat <- train.dat[, x, drop = F]
-                        train.mat <- as.matrix(train.mat)
-                        matrixStats::rowMedians(train.mat)
-                      }
-    )
-    
-    cl.dat <- do.call("cbind", cl.meds)
-  } else {
-    cl.dat <- get_cl_means(train.dat, train.cl)
+
+  if(is.null(cl.dat)){
+                                        # Get medians or means for each cluster
+    if(method == "median"){
+      cl.meds <- tapply(names(train.cl), 
+                        train.cl, 
+                        function(x) {
+                          train.mat <- train.dat[, x, drop = F]
+                          train.mat <- as.matrix(train.mat)
+                          matrixStats::rowMedians(train.mat)
+                        }
+                        )
+      
+      cl.dat <- do.call("cbind", cl.meds)
+    } else {
+      cl.dat <- get_cl_means(train.dat, train.cl)
+    }
+    row.names(cl.dat) <- row.names(train.dat)
   }
-  row.names(cl.dat) <- row.names(train.dat)
   
   # Perform correlations
   if(!is.matrix(test.dat) & nrow(test.dat)*ncol(test.dat) > 1e8){
@@ -402,6 +405,8 @@ compare_annotate <- function(cl,
     }
    else{
      ref.cl <- setNames(factor(ref.cl), names(ref.cl))
+     ref.cl.df = data.frame(cluster_id = levels(ref.cl), cluster_label=levels(ref.cl))
+     row.names(ref.cl.df) = levels(ref.cl)
    }
   }
   

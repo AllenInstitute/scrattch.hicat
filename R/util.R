@@ -264,7 +264,7 @@ get_cl_mat <- function(cl, all.cells=NULL) {
 #' @return a matrix of genes (rows) x clusters (columns) with sums for each cluster
 #' @export
 #' 
-get_cl_sums <- function(mat, 
+get_cl_sums_R<- function(mat, 
                         cl)
 {  
   if(all(names(cl) %in% colnames(mat))){
@@ -285,15 +285,19 @@ get_row_sums <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
     if(!is.integer(select.col)){
       select.col = match(select.col, colnames(mat))
     }
-    tmp.mat = Matrix::sparseMatrix(x = 1, j= select.col, i = rep(1,length(select.col)),dims=c(1, ncol(mat)))
-    sums = Matrix::tcrossprod(mat,tmp.mat)
-    sums[select.row,]
+    cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
+    means = get_cl_means(mat, cl)
+    sums = means[select.row,]*length(select.col)    
   }
 
 get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
   {
-    sums = get_row_sums(mat, select.row, select.col)
-    sums/ length(select.col)
+    if(!is.integer(select.col)){
+      select.col = match(select.col, colnames(mat))
+    }
+    cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
+    means = get_cl_means(mat, cl)
+    means[select.rows,]
   }
 
 #' Compute cluster means for each row in a matrix
@@ -304,10 +308,10 @@ get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
 #' @return a matrix of genes (rows) x clusters (columns) with means for each cluster
 #' @export
 #' 
-get_cl_means <- function(mat, 
+get_cl_means_R<- function(mat, 
                          cl) {
   
-  cl.sums <- get_cl_sums(mat, cl)
+  cl.sums <- get_cl_sums_R(mat, cl)
   
   cl.size <- table(cl)
   
@@ -316,7 +320,21 @@ get_cl_means <- function(mat,
   return(cl.means)
 }
 
-get_cl_present <- function(mat, cl, low.th)
+get_cl_means<- function(mat,cl) {
+  if(!is.factor(cl)){
+    cl = setNames(factor(cl),names(cl))
+  }
+  if(is.matrix(mat)){
+    mat = Matrix(mat, sparse=T)
+  }
+  if(!all(names(cl) %in% colnames(mat))){
+    mat = Matrix::t(mat)
+  }  
+  result=rcpp_get_cl_means(mat, cl)
+  result[,levels(cl),drop=F]
+}
+  
+get_cl_present_R<- function(mat, cl, low.th)
   {
     tmp = mat
     if(is.matrix(tmp)){
@@ -326,8 +344,25 @@ get_cl_present <- function(mat, cl, low.th)
       tmp@x = as.numeric(tmp@x > low.th)
     }
     cl.present = get_cl_means(tmp,cl)
+   
   }
 
+get_cl_present<- function(mat, cl, low.th)
+{
+  if(!is.factor(cl)){
+    cl = setNames(factor(cl),names(cl))
+  }
+  if(is.matrix(mat)){
+    mat = Matrix(mat, sparse=T)
+  }
+  if(!all(names(cl) %in% colnames(mat))){
+    mat = Matrix::t(mat)
+  }  
+  result=rcpp_get_cl_present(mat, cl, low.th)
+  result[,levels(cl),drop=F]
+}
+
+  
 get_cl_sqr_means<- function(mat, cl)
   {
     tmp = mat
@@ -340,10 +375,18 @@ get_cl_sqr_means<- function(mat, cl)
     cl.sqr = get_cl_means(tmp,cl)
   }
 
+get_cl_sqr_means_new <- function(mat, cl)
+  {
+    if(!is.factor(cl)){
+      cl = setNames(factor(cl),names(cl))
+    }
+    result=rcpp_get_cl_sqr_means(mat, cl)
+    result[,levels(cl),drop=F]
+  }
 
-get_cl_vars <- function(mat, 
-                        cl, cl.means=NULL, cl.sqr.means = NULL) {
-  
+
+get_cl_vars <- function(mat, cl, cl.means=NULL, cl.sqr.means = NULL)
+{  
   if(is.null(cl.means)){
     cl.means = get_cl_means(mat,cl)
   }
@@ -364,7 +407,7 @@ get_cl_vars <- function(mat,
 #' @return a matrix of genes (rows) x clusters (columns) with medians for each cluster
 #' @export
 #' 
-get_cl_medians <- function(mat, cl)
+get_cl_medians_R <- function(mat, cl)
 {
   library(Matrix)
   library(matrixStats)
@@ -383,6 +426,13 @@ get_cl_medians <- function(mat, cl)
   return(cl.med)
 }
 
+get_cl_medians <- function(mat, cl)
+  {
+    if(!is.factor(cl)){
+      cl = setNames(factor(cl),names(cl))
+    }
+    rcpp_get_cl_medians(mat, cl)
+  }
 
 #' Compute cluster proportions for each row in a matrix
 #'
@@ -629,268 +679,27 @@ filter_by_size <- function(cat, min.size)
     }
   }
 
-l2norm <- function(X, transposed=TRUE)
+l2norm <- function(X, by="column")
 {
-  if (transposed) {
-    l2norm <- sqrt(colSums(X^2))
-    if (any(l2norm==0)) {
-      stop("L2 norms of zero detected for distance='Cosine'")
+  if (by=="column") {
+    l2norm <- sqrt(Matrix::colSums(X^2))
+    if (!any(l2norm==0)) {
+      X=sweep(X, 2, l2norm, "/", check.margin=FALSE)
     }
-    sweep(X, 2, l2norm, "/", check.margin=FALSE)
-  } else {
-    l2norm <- sqrt(rowSums(X^2))
-    if (any(l2norm==0)) {
-      stop("L2 norms of zero detected for distance='Cosine'")
+    else{
+      warning("L2 norms of zero detected for distance='Cosine, no transformation")
     }
-    X/l2norm
-  }
-}
-
-#' Perform matrix operation using RCPP 
-#' 
-#' Currently supported operations are: sums, means, median, present, sqr_means
-#' 
-#' 
-#' @param mat a numeric matrix
-#' @param cl a cluster factor object
-#' @param stats operation string. Currently support: sums, means, median, present, sqr_means
-#' @param sparse boolean] to indicate if the matrix is sparse or not
-#' @param transpose boolean to indicate if the matrix is transposed or not
-#' @param parallel boolean to indicate if running the rcpp function in parallel or not
-#' @param numThreads integer to indicate the number of threads
-#' 
-#' @return the resulting numeric matrix after applying the operation
-#' 
-#' @export
-#' 
-rcpp_get_cl_stats <- function(mat, 
-                              cl, 
-                              stats = c("sums","means","medians","present","sqr_sums","sqr_means"), 
-                              sparse = c(TRUE,FALSE), 
-                              transpose= c(FALSE,TRUE), 
-                              parallel = c(FALSE,TRUE),
-                              mc.cores = 1,...)
-{
-  mc.cores = mc.cores
-  setThreadOptions(numThreads = mc.cores)
-  
-  if (stats == "sums") {
-    rcpp_get_cl_sums_func(mat, cl, sparse, transpose, parallel)
-  } else if (stats == "means") {
-    rcpp_get_cl_means_func(mat, cl, sparse, transpose, parallel)
-  } else if (stats == "medians") {
-    rcpp_get_cl_median_func(mat, cl, sparse, transpose, parallel)
-  } else if (stats == "present") {
-    rcpp_get_cl_present_func(mat, cl, sparse, transpose, parallel)
-  } else if (stats == "sqr_means") {
-    rcpp_get_cl_sqr_means_func(mat, cl, sparse, transpose, parallel)
-  } else if (stats == "sqr_sums") {
-    rcpp_get_cl_sqr_means_func(mat, cl, sparse, transpose, parallel)
+    X = X 
   } else {
-    stop("the stats value is not supported")
-  }
-}
-
-rcpp_get_cl_sums_func <- function(mat, cl, sparse, transpose, parallel)
-{
-  if (sparse) {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_sums_RcppParallel_transpose(mat, cl))
-      } else {
-        return(rcpp_get_cl_sums_transpose(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_sums_RcppParallel(mat, cl))
-      } else {
-        return(rcpp_get_cl_sums(mat, cl))
-      }
+    l2norm <- sqrt(Matrix::rowSums(X^2))
+    if (!any(l2norm==0)) {      
+      X= X/l2norm
     }
-  } else {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_sums_RcppParallel_transpose_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_sums_transpose_dense(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_sums_RcppParallel_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_sums_dense(mat, cl))
-      }
+    else{
+      warning("L2 norms of zero detected for distance='Cosine, no transformation")
     }
   }
 }
-
-rcpp_get_cl_means_func <- function(mat, cl, sparse, transpose, parallel)
-{
-  if (sparse) {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_means_RcppParallel_transpose(mat, cl))
-      } else {
-        return(rcpp_get_cl_means_transpose(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_means_RcppParallel(mat, cl))
-      } else {
-        return(rcpp_get_cl_means(mat, cl))
-      }
-    }
-  } else {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_means_RcppParallel_transpose_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_means_transpose_dense(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_means_RcppParallel_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_means_dense(mat, cl))
-      }
-    }
-  }
-}
-
-rcpp_get_cl_median_func <- function(mat, cl, sparse, transpose, parallel)
-{
-  if (sparse) {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_medians_RcppParallel_transpose(mat, cl))
-      } else {
-        return(rcpp_get_cl_medians_transpose(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_medians_RcppParallel(mat, cl))
-      } else {
-        return(rcpp_get_cl_medians(mat, cl))
-      }
-    }
-  } else {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_medians_RcppParallel_transpose_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_medians_transpose_dense(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_medians_RcppParallel_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_medians_dense(mat, cl))
-      }
-    }
-  }
-}
-
-rcpp_get_cl_present_func <- function(mat, cl, sparse, transpose, parallel)
-{
-  if (sparse) {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_present_RcppParallel_transpose(mat, cl))
-      } else {
-        return(rcpp_get_cl_present_transpose(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_present_RcppParallel(mat, cl))
-      } else {
-        return(rcpp_get_cl_present(mat, cl))
-      }
-    }
-  } else {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_present_RcppParallel_transpose_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_present_transpose_dense(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_present_RcppParallel_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_present_dense(mat, cl))
-      }
-    }
-  }
-}
-
-rcpp_get_cl_sqr_means_func <- function(mat, cl, sparse, transpose, parallel)
-{
-  if (sparse) {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_means_RcppParallel_transpose(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_means_transpose(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_means_RcppParallel(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_means(mat, cl))
-      }
-    }
-  } else {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_means_RcppParallel_transpose_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_means_transpose_dense(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_means_RcppParallel_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_means_dense(mat, cl))
-      }
-    }
-  }
-}
-
-rcpp_get_cl_sqr_sums_func <- function(mat, cl, sparse, transpose, parallel)
-{
-  if (sparse) {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_sums_RcppParallel_transpose(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_sums_transpose(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_sums_RcppParallel(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_sums(mat, cl))
-      }
-    }
-  } else {
-    if (transpose) {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_sums_RcppParallel_transpose_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_sums_transpose_dense(mat, cl))
-      }
-    } else {
-      if (parallel) {
-        return(rcpp_get_cl_sqr_sums_RcppParallel_dense(mat, cl))
-      } else {
-        return(rcpp_get_cl_sqr_sums_dense(mat, cl))
-      }
-    }
-  }
-}
-
-
-
 
 
 
@@ -1079,4 +888,19 @@ get_cl_stats <- function(mat,
 }
 
 
+standardize <- function(X, by="column")
+{  
+  if(by=="column"){
+    mean = Matrix::colMeans(X)
+    X=sweep(X, 2, mean, "-")
+    sd = sqrt(Matrix::colSums(X^2)/nrow(X))
+    X = sweep(X, 2, sd, "/")
+  }
+  else{
+    mean = Matrix::rowMeans(X)
+    X=sweep(X, 1, mean, "-")
+    sd = sqrt(Matrix::rowSums(X^2)/ncol(X))
+    X = sweep(X, 1, sd, "/")    
+  }
+}
 
