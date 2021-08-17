@@ -391,7 +391,9 @@ compare_annotate <- function(cl,
                              reorder = TRUE,
                              rename = TRUE,                             
                              do.droplevels=TRUE,
-                             min.th=1) {
+                             min.th=1,
+                             cex.x=6,
+                             cex.y=6) {
 
   if(!is.factor(cl)){
     cl <- setNames(factor(cl), names(cl))
@@ -491,8 +493,8 @@ compare_annotate <- function(cl,
     ggplot2::theme(axis.text.x = ggplot2::element_text(vjust = 0.1,
                                                        hjust = 1, 
                                                        angle = 90,
-                                                       size = 7),
-                   axis.text.y = ggplot2::element_text(size = 6)) + 
+                                                       size = cex.x),
+                   axis.text.y = ggplot2::element_text(size = cex.y)) + 
     ggplot2::scale_color_gradient(low = "yellow", 
                                   high = "darkblue") + 
     ggplot2::scale_size(range = c(0, 3))

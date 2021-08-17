@@ -342,23 +342,34 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
 
   ###Merge small cells based on KNN prediction
   cl.small.cells= names(cl)[cl %in% cl.small]
-  cl.big.cells= names(cl)[cl %in% cl.big]  
+  cl.big.cells= names(cl)[cl %in% cl.big]
   if(length(cl.small)>0){
     cl.small.cells.byplatform = split(cl.small.cells, as.character(comb.dat$meta.df[cl.small.cells, "platform"]))
-    cl.big.cells.byplatform = split(cl.big.cells, comb.dat$meta.df[cl.big.cells, "platform"])    
+    cl.big.cells.byplatform = split(cl.big.cells, comb.dat$meta.df[cl.big.cells, "platform"])
+    unresolved.cells=c()
+    new.cl = c()
     for(set in names(cl.small.cells.byplatform)){
       query.cells =cl.small.cells.byplatform[[set]]
       if(length(query.cells)==0){next}
       ref.cells =intersect(cl.big.cells.byplatform[[set]], colnames(merge.dat.list[[set]]))
       ref.cells = sample_cells(cl[ref.cells],300)
+      if(is.null(ref.cells)){
+        unresolved.cells = c(unresolved.cells, query.cells)
+        next
+      }
       dat = merge.dat.list[[set]]
       knn.idx = get_knn(dat[anchor.genes,query.cells,drop=F], dat[anchor.genes,ref.cells,drop=F], method="Annoy.Euclidean", k=min(15, ceiling(length(ref.cells)/2)))
       pred.result = predict_knn(knn.idx=knn.idx, reference = ref.cells, cl=cl)
       tmp.cl = with(pred.result$pred.df, setNames(pred.cl, row.names(pred.result$pred.df)))
-      cl[names(tmp.cl)] = tmp.cl
+      new.cl = c(new.cl, tmp.cl)
     }
+    if(length(unresolved.cells)>0){
+      tb = table(cl[names(new.cl)], new.cl)
+      map.cl = setNames(colnames(tb)[apply(tb, 1, which.max)], row.names(tb))
+      new.cl[unresolved.cells] = map.cl[as.character(cl[unresolved.cells])]
+    }
+    cl[names(new.cl)]=new.cl
   }
-  
   cl.rd.list = get_cl_means_list(merge.dat.list, cl=cl, de.param.list=merge.de.param.list, select.genes=anchor.genes)  
   
   pairs=NULL

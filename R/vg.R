@@ -244,18 +244,7 @@ gene_vars <- function(dat,
   if(rescale) {
     dat <- rescale_samples(dat)
   }
-  
-  if(is.null(means)) {
-    means <- gene_means(dat)
-  }
-  
-  squared_dat <- dat^2  
-  if(is.matrix(dat)) {
-    rowMeans(squared_dat) - means ^ 2
-  } else {
-    Matrix::rowMeans(squared_dat) - means ^ 2
-  }
-  
+  get_row_vars(dat, means=means)
 }
 
 #' Compute dispersion for each gene in a gene x sample matrix

@@ -98,13 +98,13 @@ plot_tsne <- function(cl, cl.df, comb.dat, prefix, tsne.df, cex=0.3, fn.size=2, 
 #' @export
 #'
 #' @examples
-plot_confusion <- function(consensus.cl, prefix, comb.dat,consensus.cl.df = NULL, do.droplevels = FALSE,...)
+plot_confusion <- function(consensus.cl, prefix, comb.dat,consensus.cl.df = NULL, do.droplevels = FALSE,cex.x=6, cex.y=6,...)
 {
   g.list=list()
   for(x in names(comb.dat$cl.list)){
     if(sum(names(comb.dat$cl.list[[x]]) %in% names(consensus.cl)) > 0){
       if(is.null(consensus.cl.df)){
-        g = compare_annotate(consensus.cl, comb.dat$cl.list[[x]], comb.dat$cl.df.list[[x]], rename = FALSE, do.droplevels=do.droplevels)$g
+        g = compare_annotate(consensus.cl, comb.dat$cl.list[[x]], comb.dat$cl.df.list[[x]], rename = FALSE, do.droplevels=do.droplevels,cex.x=cex.x, cex.y=cex.y)$g
         g = g + xlab("consensus cluster") + ylab(x)
       }
       else{

@@ -286,8 +286,8 @@ get_row_sums <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
       select.col = match(select.col, colnames(mat))
     }
     cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
-    means = get_cl_means(mat, cl)
-    sums = means[select.row,]*length(select.col)    
+    sums = get_cl_sums(mat, cl)
+    sums[select.rows,]
   }
 
 get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
@@ -297,8 +297,25 @@ get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
     }
     cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
     means = get_cl_means(mat, cl)
-    means[select.rows,]
+    means[select.row,]
   }
+
+
+get_row_vars <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat), means=NULL)
+  {
+    if(!is.integer(select.col)){
+      select.col = match(select.col, colnames(mat))
+    }
+    cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
+    if(is.null(means)){
+      means = get_cl_means(mat, cl)
+    }
+    sqr_means = get_cl_sqr_means(mat, cl)    
+    vars = sqr_means - means^2
+    vars[select.row,]
+  }
+
+
 
 #' Compute cluster means for each row in a matrix
 #' 
@@ -320,20 +337,31 @@ get_cl_means_R<- function(mat,
   return(cl.means)
 }
 
-get_cl_means<- function(mat,cl) {
+get_cl_means <- function(mat,cl)
+{
   if(!is.factor(cl)){
     cl = setNames(factor(cl),names(cl))
   }
-  if(is.matrix(mat)){
-    mat = Matrix(mat, sparse=T)
+  if(all(names(cl) %in% colnames(mat))){
+    if(is.matrix(mat)){
+      #result=rcpp_get_cl_means_dense(mat, cl)
+      result=rcpp_get_cl_means(as.matrix(mat), cl)
+    }
+    else{
+      result=rcpp_get_cl_means(mat, cl)
+    }
   }
-  if(!all(names(cl) %in% colnames(mat))){
-    mat = Matrix::t(mat)
-  }  
-  result=rcpp_get_cl_means(mat, cl)
+  else{
+    if(is.matrix(mat)){
+      result=rcpp_get_cl_means_transpose_dense(mat, cl)
+    }
+    else{
+      result=rcpp_get_cl_means_transpose(mat, cl)
+    }
+  }
   result[,levels(cl),drop=F]
 }
-  
+
 get_cl_present_R<- function(mat, cl, low.th)
   {
     tmp = mat
@@ -344,7 +372,6 @@ get_cl_present_R<- function(mat, cl, low.th)
       tmp@x = as.numeric(tmp@x > low.th)
     }
     cl.present = get_cl_means(tmp,cl)
-   
   }
 
 get_cl_present<- function(mat, cl, low.th)

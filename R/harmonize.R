@@ -245,7 +245,7 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
 #' @export
 #'
 #' @examples
-get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transposed=TRUE, return.distance=FALSE)
+get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.index=FALSE, transposed=TRUE, return.distance=FALSE)
   {
     if(transposed){
       cell.id = colnames(dat)
@@ -274,13 +274,15 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, transpo
       if(method=="RANN"){
         knn.result = RANN::nn2(ref.dat, dat, k=k)
       }
-      if(method %in% c("Annoy.Euclidean", "Annoy.Cosine")){
+      else if(method %in% c("Annoy.Euclidean", "Annoy.Cosine")){
         library(BiocNeighbors)      
         if(is.null(index)){
           if (method=="Annoy.Cosine"){
             ref.dat = l2norm(ref.dat,by = "row")
           }
-          index= buildAnnoy(ref.dat)
+          if(build.index){
+            index= buildAnnoy(ref.dat)
+          }
         }
         if (method=="Annoy.Cosine"){       
           dat = l2norm(dat,by="row")
@@ -351,8 +353,8 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
         tmp.dat = ref.dat[Matrix::rowSums(ref.dat >= 1) >=comb.dat$de.param.list[[ref.set]]$min.cells, ]
         tmp.dat@x = 2^tmp.dat@x - 1
         vg = find_vg(tmp.dat)
-        rm(tmp.dat)
-        gc()
+        rm(tmp.dat)        
+        #gc()
         select.genes = intersect(row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)],comb.dat$common.genes)
         
         if(length(select.genes) < 5){
@@ -387,6 +389,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
         select = gene.rank <= top.n & abs(rot.scaled ) > 2
         select.genes = colnames(select)[colSums(select)>0]
       }
+      rm(ref.dat)
       select.genes.list[[ref.set]] = select.genes
     }
     gene.score = table(unlist(select.genes.list))
@@ -458,7 +461,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
       ref.rd.dat = rd.dat[ref.cells,,drop=F]
       idx = match(ref.cells, comb.dat$all.cells)
       index = NULL
-      if(self.knn.method %in% c("Annoy.Euclidean")){
+      if(length(select.cells) >50000 & self.knn.method %in% c("Annoy.Euclidean")){
         require(BiocNeighbors)
         index = buildAnnoy(ref.rd.dat, distance ="Euclidean", transposed = FALSE)
       }      
@@ -476,7 +479,9 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
         else{
           distance = "Euclidean"
         }
-        index = buildAnnoy(ref.dat, distance =distance, transposed = TRUE)            
+        if(length(select.cells)>50000){
+          index = buildAnnoy(ref.dat, distance =distance, transposed = TRUE)
+        }
       }
       knn =do.call("rbind", lapply(setdiff(select.sets,ref.set), function(set){
         cat("Set ", set, "\n")
@@ -488,14 +493,14 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
         tmp.cores = mc.cores
         if(ncol(dat)< batch.size){
           tmp.cores = 1
-        }          
+        }         
         knn=get_knn_batch(dat=dat, ref.dat = ref.dat, k=k.tmp, method = cross.knn.method, batch.size = batch.size, mc.cores=tmp.cores, index=index, transposed=TRUE)
-        if(!is.null(comb.dat$cl.list)){
-          test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])          
-          if(!is.null(test.knn)){
-            cat("Knn", set, ref.set, cross.knn.method, "cl.score", test.knn$cl.score, "cell.score", test.knn$cell.score,"\n")
-          }
-        }
+        #if(!is.null(comb.dat$cl.list)){
+        #  test.knn = test_knn(knn, comb.dat$cl.list[[set]], colnames(ref.dat), comb.dat$cl.list[[ref.set]])          
+        #  if(!is.null(test.knn)){
+        #    cat("Knn", set, ref.set, cross.knn.method, "cl.score", test.knn$cl.score, "cell.score", test.knn$cell.score,"\n")
+        #  }
+        #}
         knn = matrix(idx[knn], nrow=nrow(knn), dimnames=list(row.names(knn), NULL))        
       }))
       if(!is.null(index)){

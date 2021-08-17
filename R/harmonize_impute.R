@@ -125,8 +125,7 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
           rd.dat  = filter_RD(rd.result$rd.dat, rm.eigen, rm.th,verbose=verbose)
         }
         #print(ncol(rd.dat))        
-        knn = RANN::nn2(data=rd.dat[ref.cells,],query=rd.dat,k=k)[[1]]        
-        row.names(knn) = row.names(rd.dat)
+        knn = get_knn_batch(rd.dat, rd.dat[ref.cells], method="Annoy.Euclidean", mc.cores=mc.cores)        
         dat = as.matrix(comb.dat$dat.list[[x]][select.genes,ref.cells])
         reference.id = 1:length(ref.cells)
         cell.id = match(row.names(rd.dat), select.cells)                

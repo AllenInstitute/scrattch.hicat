@@ -225,8 +225,9 @@ onestep_clust <- function(norm.dat,
   else{
     sampled.cells = select.cells
   }
+  
   ###Find high variance genes
-  tmp = get_cl_present(norm.dat, setNames(rep(1, length(select.cells)),select.cells), de.param$low.th)
+  tmp = get_cl_present_R(norm.dat, setNames(rep(1, length(select.cells)),select.cells), de.param$low.th)
   select.genes = row.names(norm.dat)[which(tmp * length(select.cells) >= de.param$min.cells)]
   ###Find high variance genes.
   if(is.null(counts)){
@@ -244,7 +245,6 @@ onestep_clust <- function(norm.dat,
   }
   vg = find_vg(counts,plot_file=plot_file)
   rm(counts)
-  gc()
   if(dim.method=="auto"){
     if(length(select.cells)> 1000){
       dim.method="pca"
@@ -347,7 +347,7 @@ onestep_clust <- function(norm.dat,
       cat("Expand",prefix, "\n")
       cl.size=table(cl)
       print(cl.size)
-      save(cl, file=paste0(prefix, ".cl.rda"))
+      #save(cl, file=paste0(prefix, ".cl.rda"))
     }
     de.genes = merge.result$de.genes
     markers= merge.result$markers
@@ -398,6 +398,11 @@ iter_clust <- function(norm.dat,
   }
   else{
     select.method=method
+  }
+  if(length(select.cells) <= 3000){
+    if(!is.matrix(norm.dat)){
+      norm.dat = as.matrix(norm.dat[,select.cells])
+    }
   }
   if(is.null(result)){        
     result=onestep_clust(norm.dat, select.cells=select.cells, prefix=prefix,method=select.method,...)
@@ -481,7 +486,7 @@ combine_finer_split <- function(cl, finer.cl)
 
 iter_clust_merge <- function(norm.dat, select.cells, merge.type="undirectional", de.param = de_param(), max.cl.size = 300,...)
 {
-  result <- scrattch.hicat::iter_clust(norm.dat=norm.dat, select.cells=select.cells, de.param = de.param, merge.type=merge.type, ...)
+  result <- iter_clust(norm.dat=norm.dat, select.cells=select.cells, de.param = de.param, merge.type=merge.type, ...)
   result=merge_cl(norm.dat, cl=result$cl, rd.dat.t = norm.dat[result$markers,], merge.type=merge.type, de.param=de.param, max.cl.size=max.cl.size)
   return(result)
 }
