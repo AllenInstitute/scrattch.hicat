@@ -41,6 +41,158 @@ rcpp_get_cl_sums_RcppParallel <- function(mat, clAll) {
     .Call('_scrattch_hicat_rcpp_get_cl_sums_RcppParallel', PACKAGE = 'scrattch.hicat', mat, clAll)
 }
 
+rcpp_get_cl_sqr_sums <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_sums_RcppParallel <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums_RcppParallel', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_means_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_means_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_means_RcppParallel_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_means_RcppParallel_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_present_dense <- function(mat, clAll, lowth) {
+    .Call('_scrattch_hicat_rcpp_get_cl_present_dense', PACKAGE = 'scrattch.hicat', mat, clAll, lowth)
+}
+
+rcpp_get_cl_present_RcppParallel_dense <- function(mat, clAll, lowth) {
+    .Call('_scrattch_hicat_rcpp_get_cl_present_RcppParallel_dense', PACKAGE = 'scrattch.hicat', mat, clAll, lowth)
+}
+
+rcpp_get_cl_sqr_means_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_means_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_means_RcppParallel_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_medians_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_medians_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_medians_RcppParallel_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sums_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sums_RcppParallel_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_sums_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_sums_RcppParallel_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums_RcppParallel_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_means_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_means_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_means_RcppParallel_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_present_transpose <- function(mat, clAll, lowth) {
+    .Call('_scrattch_hicat_rcpp_get_cl_present_transpose', PACKAGE = 'scrattch.hicat', mat, clAll, lowth)
+}
+
+rcpp_get_cl_present_RcppParallel_transpose <- function(mat, clAll, lowth) {
+    .Call('_scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose', PACKAGE = 'scrattch.hicat', mat, clAll, lowth)
+}
+
+rcpp_get_cl_sqr_means_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_means_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_means_RcppParallel_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_medians_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_medians_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_medians_RcppParallel_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sums_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sums_RcppParallel_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_sums_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_sums_RcppParallel_transpose <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums_RcppParallel_transpose', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_means_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_means_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_means_RcppParallel_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_present_transpose_dense <- function(mat, clAll, lowth) {
+    .Call('_scrattch_hicat_rcpp_get_cl_present_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll, lowth)
+}
+
+rcpp_get_cl_present_RcppParallel_transpose_dense <- function(mat, clAll, lowth) {
+    .Call('_scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll, lowth)
+}
+
+rcpp_get_cl_sqr_means_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_means_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_means_RcppParallel_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_medians_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_medians_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_medians_RcppParallel_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sums_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sums_RcppParallel_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_sums_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
+rcpp_get_cl_sqr_sums_RcppParallel_transpose_dense <- function(mat, clAll) {
+    .Call('_scrattch_hicat_rcpp_get_cl_sqr_sums_RcppParallel_transpose_dense', PACKAGE = 'scrattch.hicat', mat, clAll)
+}
+
 RowMergeMatrices <- function(mat1, mat2, mat1_rownames, mat2_rownames, all_rownames) {
     .Call('_scrattch_hicat_RowMergeMatrices', PACKAGE = 'scrattch.hicat', mat1, mat2, mat1_rownames, mat2_rownames, all_rownames)
 }
