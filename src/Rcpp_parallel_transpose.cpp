@@ -1,4 +1,4 @@
-//Rcpp_parallel.cpp
+//Rcpp_parallel_transpose.cpp
 
 // [[Rcpp::depends(beachmat)]]
 // [[Rcpp::depends(RcppParallel)]]
@@ -18,11 +18,11 @@ using namespace RcppParallel;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_means_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
 	CharacterVector clAll_name = names_f(clAll);
@@ -46,7 +46,7 @@ Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clA
 		cl[cl_pos[i] - 1] = cluster_col_name_id_map[std::string(mat_name[cl_pos[i] - 1])];
 		cl_colnames_vec[cl_pos[i] - 1] = cluster_col_name_lev_map[std::string(mat_name[cl_pos[i] - 1])];
 	}
-
+	
 	/* Set up hash maps for column cluster lookup: mat_cluster_vector is the column number in the res matrix for whole dataset, 
 	   cluster_col_map is for each cluster
 	   levs is the level of the cluster id: "1" "2" "3" "4" "5" "6" "7" "8" "9" "23"
@@ -84,20 +84,16 @@ Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clA
 			continue;
 		cluster_id_number[cluster_col_map[cl[i]]]++;
 	}
-
+	
 	/* Loop though sparse matrix and access non-zero entry
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 	for (int col_i = 0; col_i < ptr->get_ncol(); col_i++)
 	{
-		// skip the column if it doesn't exist in clAll
-		if (cl[col_i] < 1)
-			continue;
-
 		// loop over col_i-th column of mat matrix
 		auto indices = ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
 		auto xptr = indices.x;
@@ -105,8 +101,12 @@ Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clA
 		auto nnzero = indices.n;
 
 		for (int row_i = 0; row_i < nnzero; row_i++)
-		{
-			res(*(iptr + row_i), mat_cluster_vector[col_i]) += *(xptr + row_i);
+		{			
+			// skip the row if it doesn't exist in clAll
+		    if (cl[*(iptr + row_i)] < 1)
+				continue;
+			
+			res(col_i, mat_cluster_vector[*(iptr + row_i)]) += *(xptr + row_i);
 		}
 	}
 
@@ -118,8 +118,8 @@ Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clA
 	}
 	colnames(res) = colnames_vec;
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -129,7 +129,7 @@ Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clA
 
 /*To use parallelFor, create a Worker object that defines an operator() which is called by the parallel scheduler.*/
 
-struct ColumnMeanSparse : public Worker
+struct ColumnMeanSparseTranspose : public Worker
 {
 	// source matrix and maps
 	beachmat::lin_sparse_matrix *matrix_ptr;
@@ -141,7 +141,7 @@ struct ColumnMeanSparse : public Worker
 	RMatrix<double> output;
 
 	// initialize with source and destination
-	ColumnMeanSparse(beachmat::lin_sparse_matrix *matrix_ptr,
+	ColumnMeanSparseTranspose(beachmat::lin_sparse_matrix *matrix_ptr,
 					 const IntegerVector mat_cluster_vector,
 					 const IntegerVector cl,
 					 NumericMatrix output)
@@ -155,8 +155,7 @@ struct ColumnMeanSparse : public Worker
 		for (int col_i = begin; col_i < end; col_i++)
 		{
 
-			if (cl[col_i] < 1)
-				continue;
+			
 
 			// loop over col_i-th column of mat matrix
 			auto indices = matrix_ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
@@ -166,7 +165,12 @@ struct ColumnMeanSparse : public Worker
 
 			for (int row_i = 0; row_i < nnzero; row_i++)
 			{
-				output(*(iptr + row_i), mat_cluster_vector[col_i]) += *(xptr + row_i);
+				if (cl[*(iptr + row_i)] < 1)
+					continue;
+			
+				output(col_i, mat_cluster_vector[*(iptr + row_i)]) += *(xptr + row_i);
+				
+				
 			}
 		}
 	}
@@ -174,11 +178,12 @@ struct ColumnMeanSparse : public Worker
 
 /*The function calls the ColumnMeanSparse*/
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
 	CharacterVector clAll_name = names_f(clAll);
@@ -245,16 +250,16 @@ Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel(Rcpp::RObject mat, Rcpp::Inte
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 
 	// column mean sparse functor (pass input and output matrixes)
 	auto matrix_ptr = ptr.get();
-	ColumnMeanSparse column_mean_sparse(matrix_ptr, mat_cluster_vector, cl, res);
+	ColumnMeanSparseTranspose column_mean_sparse_transpose(matrix_ptr, mat_cluster_vector, cl, res);
 
 	// call parallelFor to do the work
-	parallelFor(0, ptr->get_ncol(), column_mean_sparse, 20);
+	parallelFor(0, ptr->get_ncol(), column_mean_sparse_transpose, 20);
 
 	// loop over columns of res matrix, and divide by number of cells in each cluster
 	for (int i = 0; i < res.ncol(); i++)
@@ -265,8 +270,8 @@ Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel(Rcpp::RObject mat, Rcpp::Inte
 	colnames(res) = colnames_vec;
 
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -275,12 +280,12 @@ Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel(Rcpp::RObject mat, Rcpp::Inte
 //////////////////////////////////////////////////////////////////////////////////
 
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_present(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth)
+Rcpp::NumericMatrix rcpp_get_cl_present_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth)
 {
 
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
 	CharacterVector cl_all_cl_name = names_f(clAll);
@@ -347,14 +352,12 @@ Rcpp::NumericMatrix rcpp_get_cl_present(Rcpp::RObject mat, Rcpp::IntegerVector c
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 	for (int col_i = 0; col_i < ptr->get_ncol(); col_i++)
 	{
-		// skip the column if it doesn't exist in clAll
-		if (cl[col_i] < 1)
-			continue;
+		
 
 		// loop over col_i-th column of mat matrix
 		auto indices = ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
@@ -364,11 +367,15 @@ Rcpp::NumericMatrix rcpp_get_cl_present(Rcpp::RObject mat, Rcpp::IntegerVector c
 
 		for (int row_i = 0; row_i < nnzero; row_i++)
 		{
-
+			if (cl[*(iptr + row_i)] < 1)
+				continue;
+			
 			if (*(xptr + row_i) < lowth)
 				continue;
 
-			res(*(iptr + row_i), mat_cluster_vector[col_i]) += 1.0;
+			res(col_i, mat_cluster_vector[*(iptr + row_i)]) += 1.0;
+			
+			
 		}
 	}
 
@@ -381,8 +388,8 @@ Rcpp::NumericMatrix rcpp_get_cl_present(Rcpp::RObject mat, Rcpp::IntegerVector c
 	colnames(res) = colnames_vec;
 
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -392,38 +399,34 @@ Rcpp::NumericMatrix rcpp_get_cl_present(Rcpp::RObject mat, Rcpp::IntegerVector c
 
 /*To use parallelFor, create a Worker object that defines an operator() which is called by the parallel scheduler.*/
 
-struct ColumnPresentSparse : public Worker
+struct ColumnPresentSparseTranspose : public Worker
 {
 	// source matrix and maps
 	beachmat::lin_sparse_matrix *matrix_ptr;
 
-	RVector<int> mat_cluster_vector;
+	const RVector<int> mat_cluster_vector;
 
-	RVector<int> cl;
-
+	const RVector<int> cl;
+	
 	double lowth;
 	// destination matrix
 	RMatrix<double> output;
 
-	// initialize with source, cl_id and destination
-	ColumnPresentSparse(beachmat::lin_sparse_matrix *matrix_ptr,
-						IntegerVector mat_cluster_vector,
-						IntegerVector cl,
-						double lowth,
-						NumericMatrix output)
+	// initialize with source and destination
+	ColumnPresentSparseTranspose(beachmat::lin_sparse_matrix *matrix_ptr,
+					 const IntegerVector mat_cluster_vector,
+					 const IntegerVector cl,
+					 double lowth,
+					 NumericMatrix output)
 		: matrix_ptr(matrix_ptr), mat_cluster_vector(mat_cluster_vector), cl(cl), lowth(lowth), output(output) {}
 
-	// get the column sum of the given cols
+	// get the row sum of the given cols
 	void operator()(std::size_t begin, std::size_t end)
 	{
 		std::vector<double> workspace_x(matrix_ptr->get_nrow());
 		std::vector<int> workspace_i(matrix_ptr->get_nrow());
 		for (int col_i = begin; col_i < end; col_i++)
 		{
-
-			if (cl[col_i] < 1)
-				continue;
-
 			// loop over col_i-th column of mat matrix
 			auto indices = matrix_ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
 			auto xptr = indices.x;
@@ -432,11 +435,13 @@ struct ColumnPresentSparse : public Worker
 
 			for (int row_i = 0; row_i < nnzero; row_i++)
 			{
-
+				if (cl[*(iptr + row_i)] < 1)
+					continue;
+			
 				if (*(xptr + row_i) < lowth)
 					continue;
 
-				output(*(iptr + row_i), mat_cluster_vector[col_i]) += 1.0;
+				output(col_i, mat_cluster_vector[*(iptr + row_i)]) += 1.0;
 			}
 		}
 	}
@@ -444,18 +449,18 @@ struct ColumnPresentSparse : public Worker
 
 /*The function calls the ColumnPresentSparse*/
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth)
+Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth)
 {
-
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
-	CharacterVector cl_all_cl_name = names_f(clAll);
+	CharacterVector clAll_name = names_f(clAll);
 
 	Function match_f("match");
-	IntegerVector cl_pos = match_f(cl_all_cl_name, mat_name);
+	IntegerVector cl_pos = match_f(clAll_name, mat_name);
 
 	CharacterVector levs_all = clAll.attr("levels");
 	std::unordered_map<std::string, int> cluster_col_name_id_map;
@@ -463,8 +468,8 @@ Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::In
 
 	for (int i = 0; i < clAll.length(); i++)
 	{
-		cluster_col_name_id_map[std::string(cl_all_cl_name[i])] = clAll[i];
-		cluster_col_name_lev_map[std::string(cl_all_cl_name[i])] = std::string(levs_all[clAll[i] - 1]);
+		cluster_col_name_id_map[std::string(clAll_name[i])] = clAll[i];
+		cluster_col_name_lev_map[std::string(clAll_name[i])] = std::string(levs_all[clAll[i] - 1]);
 	}
 	IntegerVector cl(mat_name.length(), 0);
 	CharacterVector cl_colnames_vec(mat_name.length());
@@ -501,7 +506,7 @@ Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::In
 	}
 
 	/* Count cells in each cluster 
-	   unique_clusters = number of clusters 
+	   unique_clusters = number of clusters = 10 
 	   cluster_id_number = number of cells in each cluster correspond to colnames_vec */
 	int unique_clusters = cluster_col_map.size();
 	std::vector<int> cluster_id_number(unique_clusters, 0);
@@ -516,16 +521,16 @@ Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::In
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 
 	// column mean sparse functor (pass input and output matrixes)
 	auto matrix_ptr = ptr.get();
-	ColumnPresentSparse column_present_sparse(matrix_ptr, mat_cluster_vector, cl, lowth, res);
+	ColumnPresentSparseTranspose column_present_sparse_transpose(matrix_ptr, mat_cluster_vector, cl, lowth, res);
 
 	// call parallelFor to do the work
-	parallelFor(0, ptr->get_ncol(), column_present_sparse, 20);
+	parallelFor(0, ptr->get_ncol(), column_present_sparse_transpose, 20);
 
 	// loop over columns of res matrix, and divide by number of cells in each cluster
 	for (int i = 0; i < res.ncol(); i++)
@@ -536,8 +541,8 @@ Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::In
 	colnames(res) = colnames_vec;
 
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -546,18 +551,18 @@ Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel(Rcpp::RObject mat, Rcpp::In
 //////////////////////////////////////////////////////////////////////////////////
 
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
-	CharacterVector cl_all_cl_name = names_f(clAll);
+	CharacterVector clAll_name = names_f(clAll);
 
 	Function match_f("match");
-	IntegerVector cl_pos = match_f(cl_all_cl_name, mat_name);
+	IntegerVector cl_pos = match_f(clAll_name, mat_name);
 
 	CharacterVector levs_all = clAll.attr("levels");
 	std::unordered_map<std::string, int> cluster_col_name_id_map;
@@ -565,8 +570,8 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector
 
 	for (int i = 0; i < clAll.length(); i++)
 	{
-		cluster_col_name_id_map[std::string(cl_all_cl_name[i])] = clAll[i];
-		cluster_col_name_lev_map[std::string(cl_all_cl_name[i])] = std::string(levs_all[clAll[i] - 1]);
+		cluster_col_name_id_map[std::string(clAll_name[i])] = clAll[i];
+		cluster_col_name_lev_map[std::string(clAll_name[i])] = std::string(levs_all[clAll[i] - 1]);
 	}
 	std::vector<int> cl(mat_name.length(), 0);
 	CharacterVector cl_colnames_vec(mat_name.length());
@@ -575,7 +580,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector
 		cl[cl_pos[i] - 1] = cluster_col_name_id_map[std::string(mat_name[cl_pos[i] - 1])];
 		cl_colnames_vec[cl_pos[i] - 1] = cluster_col_name_lev_map[std::string(mat_name[cl_pos[i] - 1])];
 	}
-
+	
 	/* Set up hash maps for column cluster lookup: mat_cluster_vector is the column number in the res matrix for whole dataset, 
 	   cluster_col_map is for each cluster
 	   levs is the level of the cluster id: "1" "2" "3" "4" "5" "6" "7" "8" "9" "23"
@@ -603,7 +608,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector
 	}
 
 	/* Count cells in each cluster 
-	   unique_clusters = number of clusters = 10 
+	   unique_clusters = number of clusters 
 	   cluster_id_number = number of cells in each cluster correspond to colnames_vec */
 	int unique_clusters = cluster_col_map.size();
 	std::vector<int> cluster_id_number(unique_clusters, 0);
@@ -613,30 +618,29 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector
 			continue;
 		cluster_id_number[cluster_col_map[cl[i]]]++;
 	}
-
+	
 	/* Loop though sparse matrix and access non-zero entry
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 	for (int col_i = 0; col_i < ptr->get_ncol(); col_i++)
 	{
-		// skip the column if it doesn't exist in clAll
-		if (cl[col_i] < 1)
-			continue;
-
 		// loop over col_i-th column of mat matrix
 		auto indices = ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
-		auto xptr = indices.x; // row values
-		auto iptr = indices.i; // row indices
+		auto xptr = indices.x;
+		auto iptr = indices.i;
 		auto nnzero = indices.n;
 
 		for (int row_i = 0; row_i < nnzero; row_i++)
-		{
-
-			res(*(iptr + row_i), mat_cluster_vector[col_i]) += std::pow(*(xptr + row_i),2.0);
+		{			
+			// skip the row if it doesn't exist in clAll
+		    if (cl[*(iptr + row_i)] < 1)
+				continue;
+			
+			res(col_i, mat_cluster_vector[*(iptr + row_i)]) += std::pow(*(xptr + row_i),2.0);
 		}
 	}
 
@@ -648,8 +652,8 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector
 	}
 	colnames(res) = colnames_vec;
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -657,7 +661,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means(Rcpp::RObject mat, Rcpp::IntegerVector
 // get_cl_sq_means method2: iterate over only the non-zero elements in a column in a sparse matrix, using RcppParallel
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-struct ColumnSqrMeansSparse : public Worker
+struct ColumnSqrMeansSparseTranspose : public Worker
 {
 	// source matrix and maps
 	beachmat::lin_sparse_matrix *matrix_ptr;
@@ -669,7 +673,7 @@ struct ColumnSqrMeansSparse : public Worker
 	RMatrix<double> output;
 
 	// initialize with source, cl_id and destination
-	ColumnSqrMeansSparse(beachmat::lin_sparse_matrix *matrix_ptr,
+	ColumnSqrMeansSparseTranspose(beachmat::lin_sparse_matrix *matrix_ptr,
 						 IntegerVector mat_cluster_vector,
 						 IntegerVector cl,
 						 NumericMatrix output)
@@ -683,9 +687,6 @@ struct ColumnSqrMeansSparse : public Worker
 		for (int col_i = begin; col_i < end; col_i++)
 		{
 
-			if (cl[col_i] < 1)
-				continue;
-
 			// loop over col_i-th column of mat matrix
 			auto indices = matrix_ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
 			auto xptr = indices.x; // row values
@@ -694,8 +695,11 @@ struct ColumnSqrMeansSparse : public Worker
 
 			for (int row_i = 0; row_i < nnzero; row_i++)
 			{
-
-				output(*(iptr + row_i), mat_cluster_vector[col_i]) += std::pow(*(xptr + row_i), 2.0);
+				
+				if (cl[*(iptr + row_i)] < 1)
+				continue;
+			
+				output(col_i, mat_cluster_vector[*(iptr + row_i)]) += std::pow(*(xptr + row_i),2.0);
 			}
 		}
 	}
@@ -703,12 +707,12 @@ struct ColumnSqrMeansSparse : public Worker
 
 /*The function calls the ColumnSqrMeansSparse*/
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
 	CharacterVector cl_all_cl_name = names_f(clAll);
@@ -775,16 +779,16 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel(Rcpp::RObject mat, Rcpp::
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 
 	// column mean sparse functor (pass input and output matrixes)
 	auto matrix_ptr = ptr.get();
-	ColumnSqrMeansSparse column_sqr_means_sparse(matrix_ptr, mat_cluster_vector, cl, res);
+	ColumnSqrMeansSparseTranspose column_sqr_means_sparse_transpose(matrix_ptr, mat_cluster_vector, cl, res);
 
 	// call parallelFor to do the work
-	parallelFor(0, ptr->get_ncol(), column_sqr_means_sparse);
+	parallelFor(0, ptr->get_ncol(), column_sqr_means_sparse_transpose);
 
 	// loop over columns of res matrix, and divide by number of cells in each cluster
 	for (int i = 0; i < res.ncol(); i++)
@@ -795,8 +799,8 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel(Rcpp::RObject mat, Rcpp::
 
 	colnames(res) = colnames_vec;
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -805,11 +809,11 @@ Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel(Rcpp::RObject mat, Rcpp::
 //////////////////////////////////////////////////////////////////////////////////
 
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_medians(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_medians_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
 	CharacterVector cl_all_cl_name = names_f(clAll);
@@ -834,11 +838,10 @@ Rcpp::NumericMatrix rcpp_get_cl_medians(Rcpp::RObject mat, Rcpp::IntegerVector c
 		cl_colnames_vec[cl_pos[i] - 1] = cluster_col_name_lev_map[std::string(mat_name[cl_pos[i] - 1])];
 	}
 
-	/* Set up hash map: cluster_col_pos_map is the map for vector of position in each cluster*/
+	/* Set up hash map: cluster_col_pos_map is the map for row index and cluster id*/
 	std::unordered_map<int, std::vector<int>> cluster_col_pos_map;
 	for (int i = 0; i < cl.size(); i++)
 	{
-
 		if (cl[i] < 1)
 			continue;
 
@@ -871,61 +874,61 @@ Rcpp::NumericMatrix rcpp_get_cl_medians(Rcpp::RObject mat, Rcpp::IntegerVector c
 		}
 	}
 
-	/* Loop through cluster_col_pos_map and create vector of vector*/
+	/* Loop through all columns and create vector of vector*/
+	int unique_clusters = cluster_col_map.size();
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), cluster_col_pos_map.size());
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
-
-	for (auto it = cluster_col_pos_map.begin(); it != cluster_col_pos_map.end(); ++it)
-	{
-		auto cluster_id = it->first;
-		auto pos_vec = it->second;
-
-		std::vector<std::vector<double>> sub_mat(ptr->get_nrow());
-		for (auto pos_i : pos_vec)
+	
+	// loop over all columns to get corresponding all values vector
+	for (int col_i = 0; col_i < ptr->get_ncol(); col_i++)
+	{		
+		// loop over col_i-th column of matrix
+		auto indices = ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
+		auto xptr = indices.x;
+		auto iptr = indices.i;
+		auto nnzero = indices.n;
+		std::vector<std::vector<double>> sub_mat(unique_clusters);
+		
+		for (int row_i = 0; row_i < nnzero; row_i++)
 		{
-			// loop over col_i-th column of sub mat matrix
-			auto indices = ptr->get_col(pos_i, workspace_x.data(), workspace_i.data());
-			auto xptr = indices.x;
-			auto iptr = indices.i;
-			auto nnzero = indices.n;
-
-			for (int row_i = 0; row_i < nnzero; row_i++)
-			{
-
-				sub_mat[*(iptr + row_i)].push_back(*(xptr + row_i));
-			}
+			// skip the row if it doesn't exist in clAll
+		    if (cl[*(iptr + row_i)] < 1)
+				continue;
+			
+			sub_mat[mat_cluster_vector[*(iptr + row_i)]].push_back(*(xptr + row_i));
 		}
-
-		size_t n = pos_vec.size() / 2;
-
-		for (int i = 0; i < sub_mat.size(); i++)
+		
+		for (auto it = cluster_col_pos_map.begin(); it != cluster_col_pos_map.end(); ++it)
 		{
-			sub_mat[i].resize(pos_vec.size(), 0);
+			
+			auto pos_vec = it->second;
+			auto sub_mat_id = mat_cluster_vector[pos_vec[0]];
+			size_t n = pos_vec.size() / 2;
+			
+			sub_mat[sub_mat_id].resize(pos_vec.size(), 0);
 
-			std::nth_element(sub_mat[i].begin(), sub_mat[i].begin() + n, sub_mat[i].end());
-			double vn = sub_mat[i][n];
+			std::nth_element(sub_mat[sub_mat_id].begin(), sub_mat[sub_mat_id].begin() + n, sub_mat[sub_mat_id].end());
+			double vn = sub_mat[sub_mat_id][n];
 
 			if (pos_vec.size() % 2 == 1)
 			{
-
-				res(i, mat_cluster_vector[pos_vec[0]]) = vn;
+				res(col_i, mat_cluster_vector[pos_vec[0]]) = vn;
 			}
 			else
 			{
-
-				std::nth_element(sub_mat[i].begin(), sub_mat[i].begin() + n - 1, sub_mat[i].end());
-				res(i, mat_cluster_vector[pos_vec[0]]) = 0.5 * (vn + sub_mat[i][n - 1]);
-			}
+				std::nth_element(sub_mat[sub_mat_id].begin(), sub_mat[sub_mat_id].begin() + n - 1, sub_mat[sub_mat_id].end());
+				res(col_i, mat_cluster_vector[pos_vec[0]]) = 0.5 * (vn + sub_mat[sub_mat_id][n - 1]);
+			}			
 		}
 	}
-
+	
 	colnames(res) = colnames_vec;
 
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -933,60 +936,62 @@ Rcpp::NumericMatrix rcpp_get_cl_medians(Rcpp::RObject mat, Rcpp::IntegerVector c
 // get_cl_median method2: iterate over only the non-zero elements in a column in a sparse matrix,using RcppParallel
 //////////////////////////////////////////////////////////////////////////////////
 
-struct ColumnMedianSparse : public Worker
+struct ColumnMedianSparseTranspose : public Worker
 {
 	// source matrix and maps
 	std::vector<std::vector<double>> sub_mat;
 
 	std::vector<int> mat_cluster_vector;
 
-	std::vector<int> pos_vec;
+	std::unordered_map<int, std::vector<int>> cluster_col_pos_map;
 
-	size_t n;
+	int col_i;
 	// destination matrix
 	RMatrix<double> output;
 
 	// initialize with source, cl_id and destination
-	ColumnMedianSparse(std::vector<std::vector<double>> sub_mat,
+	ColumnMedianSparseTranspose(std::vector<std::vector<double>> sub_mat,
 					   std::vector<int> mat_cluster_vector,
-					   std::vector<int> pos_vec,
-					   size_t n,
+					   std::unordered_map<int, std::vector<int>> cluster_col_pos_map,
+					   size_t col_i,
 					   NumericMatrix output)
-		: sub_mat(sub_mat), mat_cluster_vector(mat_cluster_vector), pos_vec(pos_vec), n(n), output(output) {}
-
-	// get the column sum of the given cols
-
+		: sub_mat(sub_mat), mat_cluster_vector(mat_cluster_vector), cluster_col_pos_map(cluster_col_pos_map), col_i(col_i), output(output) {}
+		
 	void operator()(std::size_t begin, std::size_t end)
 	{
-
+		// loop over cluster_col_pos_map in range of : [begin, end)
 		for (int i = begin; i < end; i++)
 		{
-			sub_mat[i].resize(pos_vec.size(), 0);
+			auto it = std::next(cluster_col_pos_map.begin(), i);
+			auto pos_vec = it->second;
+			auto sub_mat_id = mat_cluster_vector[pos_vec[0]];
+			size_t n = pos_vec.size() / 2;
+			
+			sub_mat[sub_mat_id].resize(pos_vec.size(), 0);
 
-			std::nth_element(sub_mat[i].begin(), sub_mat[i].begin() + n, sub_mat[i].end());
-			double vn = sub_mat[i][n];
+			std::nth_element(sub_mat[sub_mat_id].begin(), sub_mat[sub_mat_id].begin() + n, sub_mat[sub_mat_id].end());
+			double vn = sub_mat[sub_mat_id][n];
 
 			if (pos_vec.size() % 2 == 1)
 			{
-
-				output(i, mat_cluster_vector[pos_vec[0]]) = vn;
+				output(col_i, mat_cluster_vector[pos_vec[0]]) = vn;
 			}
 			else
 			{
-
-				std::nth_element(sub_mat[i].begin(), sub_mat[i].begin() + n - 1, sub_mat[i].end());
-				output(i, mat_cluster_vector[pos_vec[0]]) = 0.5 * (vn + sub_mat[i][n - 1]);
-			}
+				std::nth_element(sub_mat[sub_mat_id].begin(), sub_mat[sub_mat_id].begin() + n - 1, sub_mat[sub_mat_id].end());
+				output(col_i, mat_cluster_vector[pos_vec[0]]) = 0.5 * (vn + sub_mat[sub_mat_id][n - 1]);
+			}			
 		}
 	}
+	
 };
 
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_medians_RcppParallel(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_medians_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
 	CharacterVector cl_all_cl_name = names_f(clAll);
@@ -1049,46 +1054,42 @@ Rcpp::NumericMatrix rcpp_get_cl_medians_RcppParallel(Rcpp::RObject mat, Rcpp::In
 	}
 
 	/* Loop through cluster_col_pos_map and create vector of vector*/
+	int unique_clusters = cluster_col_map.size();
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), cluster_col_pos_map.size());
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
-
-	for (auto it = cluster_col_pos_map.begin(); it != cluster_col_pos_map.end(); ++it)
-	{
-		auto cluster_id = it->first;
-		auto pos_vec = it->second;
-
-		std::vector<std::vector<double>> sub_mat(ptr->get_nrow());
-		for (auto pos_i : pos_vec)
+	
+	// loop over all columns to get corresponding all values vector
+	for (int col_i = 0; col_i < ptr->get_ncol(); col_i++)
+	{		
+		// loop over col_i-th column of matrix
+		auto indices = ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
+		auto xptr = indices.x;
+		auto iptr = indices.i;
+		auto nnzero = indices.n;
+		std::vector<std::vector<double>> sub_mat(unique_clusters);
+		
+		for (int row_i = 0; row_i < nnzero; row_i++)
 		{
-			// loop over col_i-th column of sub mat matrix
-			auto indices = ptr->get_col(pos_i, workspace_x.data(), workspace_i.data());
-			auto xptr = indices.x; // row values
-			auto iptr = indices.i; // row indices
-			auto nnzero = indices.n;
-
-			for (int row_i = 0; row_i < nnzero; row_i++)
-			{
-
-				sub_mat[*(iptr + row_i)].push_back(*(xptr + row_i));
-			}
+			// skip the row if it doesn't exist in clAll
+		    if (cl[*(iptr + row_i)] < 1)
+				continue;
+			
+			sub_mat[mat_cluster_vector[*(iptr + row_i)]].push_back(*(xptr + row_i));
 		}
-
-		size_t n = pos_vec.size() / 2;
-
-		// column mean sparse functor (pass input and output matrixes)
-
-		ColumnMedianSparse column_median_sparse(sub_mat, mat_cluster_vector, pos_vec, n, res);
+		
+		// column median sparse functor (pass input and output matrixes)
+		ColumnMedianSparseTranspose column_median_sparse_transpose(sub_mat, mat_cluster_vector, cluster_col_pos_map, col_i, res);
 
 		// call parallelFor to do the work
-		parallelFor(0, sub_mat.size(), column_median_sparse);
+		parallelFor(0, sub_mat.size(), column_median_sparse_transpose);
 	}
 
 	colnames(res) = colnames_vec;
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -1101,11 +1102,11 @@ Rcpp::NumericMatrix rcpp_get_cl_medians_RcppParallel(Rcpp::RObject mat, Rcpp::In
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_sums(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_sums_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 
 	Function names_f("names");
@@ -1173,15 +1174,12 @@ Rcpp::NumericMatrix rcpp_get_cl_sums(Rcpp::RObject mat, Rcpp::IntegerVector clAl
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 	for (int col_i = 0; col_i < ptr->get_ncol(); col_i++)
 	{
-		// skip the column if it doesn't exist in clAll
-		if (cl[col_i] < 1)
-			continue;
-
+		
 		// loop over col_i-th column of mat matrix
 		auto indices = ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
 		auto xptr = indices.x;
@@ -1190,15 +1188,19 @@ Rcpp::NumericMatrix rcpp_get_cl_sums(Rcpp::RObject mat, Rcpp::IntegerVector clAl
 
 		for (int row_i = 0; row_i < nnzero; row_i++)
 		{
-			res(*(iptr + row_i), mat_cluster_vector[col_i]) += *(xptr + row_i);
+			if (cl[*(iptr + row_i)] < 1)
+				continue;
+			
+			
+			res(col_i, mat_cluster_vector[*(iptr + row_i)]) += *(xptr + row_i);
 		}
 	}
 
 	
 	colnames(res) = colnames_vec;
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }
 
@@ -1208,7 +1210,7 @@ Rcpp::NumericMatrix rcpp_get_cl_sums(Rcpp::RObject mat, Rcpp::IntegerVector clAl
 
 /*To use parallelFor, create a Worker object that defines an operator() which is called by the parallel scheduler.*/
 
-struct ColumnSumSparse : public Worker
+struct ColumnSumSparseTranspose : public Worker
 {
 	// source matrix and maps
 	beachmat::lin_sparse_matrix *matrix_ptr;
@@ -1220,7 +1222,7 @@ struct ColumnSumSparse : public Worker
 	RMatrix<double> output;
 
 	// initialize with source and destination
-	ColumnSumSparse(beachmat::lin_sparse_matrix *matrix_ptr,
+	ColumnSumSparseTranspose(beachmat::lin_sparse_matrix *matrix_ptr,
 					 const IntegerVector mat_cluster_vector,
 					 const IntegerVector cl,
 					 NumericMatrix output)
@@ -1234,8 +1236,7 @@ struct ColumnSumSparse : public Worker
 		for (int col_i = begin; col_i < end; col_i++)
 		{
 
-			if (cl[col_i] < 1)
-				continue;
+			
 
 			// loop over col_i-th column of mat matrix
 			auto indices = matrix_ptr->get_col(col_i, workspace_x.data(), workspace_i.data());
@@ -1245,19 +1246,26 @@ struct ColumnSumSparse : public Worker
 
 			for (int row_i = 0; row_i < nnzero; row_i++)
 			{
-				output(*(iptr + row_i), mat_cluster_vector[col_i]) += *(xptr + row_i);
+				if (cl[*(iptr + row_i)] < 1)
+					continue;
+			
+				output(col_i, mat_cluster_vector[*(iptr + row_i)]) += *(xptr + row_i);
+				
+				
 			}
 		}
 	}
 };
 
+
 /*The function calls the ColumnSumSparse*/
 //[[Rcpp::export]]
-Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
+Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll)
 {
 	// call R function to find positions of each cell in matrix
-	Function colnames_f("colnames");
-	CharacterVector mat_name = colnames_f(mat);
+	
+	Function rownames_f("rownames");
+	CharacterVector mat_name = rownames_f(mat);
 
 	Function names_f("names");
 	CharacterVector clAll_name = names_f(clAll);
@@ -1324,22 +1332,27 @@ Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel(Rcpp::RObject mat, Rcpp::Integ
 	   res is the matrix to store sum valuse in each cluster, dim=number of genes*number of clusters
 	   loop through each column of the sparse matrix mat. For each non-zero entry, find its cluster and column in res, add into the value*/
 	auto ptr = beachmat::read_lin_sparse_block(mat);
-	NumericMatrix res(ptr->get_nrow(), unique_clusters);
+	NumericMatrix res(ptr->get_ncol(), unique_clusters);
 	std::vector<double> workspace_x(ptr->get_nrow());
 	std::vector<int> workspace_i(ptr->get_nrow());
 
-	// column sum sparse functor (pass input and output matrixes)
+	// column mean sparse functor (pass input and output matrixes)
 	auto matrix_ptr = ptr.get();
-	ColumnSumSparse column_sum_sparse(matrix_ptr, mat_cluster_vector, cl, res);
+	ColumnSumSparseTranspose column_sum_sparse_transpose(matrix_ptr, mat_cluster_vector, cl, res);
 
 	// call parallelFor to do the work
-	parallelFor(0, ptr->get_ncol(), column_sum_sparse, 20);
+	parallelFor(0, ptr->get_ncol(), column_sum_sparse_transpose, 20);
 
-	
+	// loop over columns of res matrix, and divide by number of cells in each cluster
+	//for (int i = 0; i < res.ncol(); i++)
+	//{
+	//	NumericMatrix::Column col = res(_, i);
+	//	col = col / cluster_id_number[i];
+	//}
 	colnames(res) = colnames_vec;
 
 	// call R function to read and assign rownames
-	Function rownames_f("rownames");
-	rownames(res) = rownames_f(mat);
+	Function colnames_f("colnames");
+	rownames(res) = colnames_f(mat);
 	return res;
 }

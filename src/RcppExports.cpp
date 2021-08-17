@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // rcpp_get_cl_means
 Rcpp::NumericMatrix rcpp_get_cl_means(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
 RcppExport SEXP _scrattch_hicat_rcpp_get_cl_means(SEXP matSEXP, SEXP clAllSEXP) {
@@ -101,6 +106,396 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
     rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_medians_RcppParallel(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums
+Rcpp::NumericMatrix rcpp_get_cl_sums(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_RcppParallel
+Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_RcppParallel(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_RcppParallel(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_means_dense
+Rcpp::NumericMatrix rcpp_get_cl_means_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_means_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_means_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_means_RcppParallel_dense
+Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_means_RcppParallel_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_means_RcppParallel_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_present_dense
+Rcpp::NumericMatrix rcpp_get_cl_present_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_present_dense(SEXP matSEXP, SEXP clAllSEXP, SEXP lowthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    Rcpp::traits::input_parameter< double >::type lowth(lowthSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_present_dense(mat, clAll, lowth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_present_RcppParallel_dense
+Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_present_RcppParallel_dense(SEXP matSEXP, SEXP clAllSEXP, SEXP lowthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    Rcpp::traits::input_parameter< double >::type lowth(lowthSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_present_RcppParallel_dense(mat, clAll, lowth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sqr_means_dense
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sqr_means_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sqr_means_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sqr_means_RcppParallel_dense
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sqr_means_RcppParallel_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_medians_dense
+Rcpp::NumericMatrix rcpp_get_cl_medians_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_medians_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_medians_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_medians_RcppParallel_dense
+Rcpp::NumericMatrix rcpp_get_cl_medians_RcppParallel_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_medians_RcppParallel_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_medians_RcppParallel_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_dense
+Rcpp::NumericMatrix rcpp_get_cl_sums_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_RcppParallel_dense
+Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_RcppParallel_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_RcppParallel_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_means_transpose
+Rcpp::NumericMatrix rcpp_get_cl_means_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_means_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_means_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_means_RcppParallel_transpose
+Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_means_RcppParallel_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_present_transpose
+Rcpp::NumericMatrix rcpp_get_cl_present_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_present_transpose(SEXP matSEXP, SEXP clAllSEXP, SEXP lowthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    Rcpp::traits::input_parameter< double >::type lowth(lowthSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_present_transpose(mat, clAll, lowth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_present_RcppParallel_transpose
+Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose(SEXP matSEXP, SEXP clAllSEXP, SEXP lowthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    Rcpp::traits::input_parameter< double >::type lowth(lowthSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_present_RcppParallel_transpose(mat, clAll, lowth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sqr_means_transpose
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sqr_means_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sqr_means_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sqr_means_RcppParallel_transpose
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sqr_means_RcppParallel_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_medians_transpose
+Rcpp::NumericMatrix rcpp_get_cl_medians_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_medians_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_medians_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_medians_RcppParallel_transpose
+Rcpp::NumericMatrix rcpp_get_cl_medians_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_medians_RcppParallel_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_transpose
+Rcpp::NumericMatrix rcpp_get_cl_sums_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_RcppParallel_transpose
+Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel_transpose(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_RcppParallel_transpose(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_means_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_means_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_means_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_means_transpose_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_means_RcppParallel_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_means_RcppParallel_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_means_RcppParallel_transpose_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_present_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_present_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_present_transpose_dense(SEXP matSEXP, SEXP clAllSEXP, SEXP lowthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    Rcpp::traits::input_parameter< double >::type lowth(lowthSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_present_transpose_dense(mat, clAll, lowth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_present_RcppParallel_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_present_RcppParallel_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll, double lowth);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose_dense(SEXP matSEXP, SEXP clAllSEXP, SEXP lowthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    Rcpp::traits::input_parameter< double >::type lowth(lowthSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_present_RcppParallel_transpose_dense(mat, clAll, lowth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sqr_means_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sqr_means_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sqr_means_transpose_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sqr_means_RcppParallel_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_sqr_means_RcppParallel_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sqr_means_RcppParallel_transpose_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_medians_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_medians_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_medians_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_medians_transpose_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_medians_RcppParallel_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_medians_RcppParallel_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_medians_RcppParallel_transpose_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_sums_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_transpose_dense(mat, clAll));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_cl_sums_RcppParallel_transpose_dense
+Rcpp::NumericMatrix rcpp_get_cl_sums_RcppParallel_transpose_dense(Rcpp::RObject mat, Rcpp::IntegerVector clAll);
+RcppExport SEXP _scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose_dense(SEXP matSEXP, SEXP clAllSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RObject >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type clAll(clAllSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_cl_sums_RcppParallel_transpose_dense(mat, clAll));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -374,6 +769,38 @@ static const R_CallMethodDef CallEntries[] = {
     {"_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel, 2},
     {"_scrattch_hicat_rcpp_get_cl_medians", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians, 2},
     {"_scrattch_hicat_rcpp_get_cl_medians_RcppParallel", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_RcppParallel, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_RcppParallel", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_RcppParallel, 2},
+    {"_scrattch_hicat_rcpp_get_cl_means_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_means_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_means_RcppParallel_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_means_RcppParallel_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_present_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_present_dense, 3},
+    {"_scrattch_hicat_rcpp_get_cl_present_RcppParallel_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_present_RcppParallel_dense, 3},
+    {"_scrattch_hicat_rcpp_get_cl_sqr_means_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_medians_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_means_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_means_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_present_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_present_transpose, 3},
+    {"_scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose, 3},
+    {"_scrattch_hicat_rcpp_get_cl_sqr_means_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_medians_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose, 2},
+    {"_scrattch_hicat_rcpp_get_cl_means_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_means_transpose_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_means_RcppParallel_transpose_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_present_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_present_transpose_dense, 3},
+    {"_scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_present_RcppParallel_transpose_dense, 3},
+    {"_scrattch_hicat_rcpp_get_cl_sqr_means_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_transpose_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sqr_means_RcppParallel_transpose_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_medians_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_transpose_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_medians_RcppParallel_transpose_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_transpose_dense, 2},
+    {"_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose_dense", (DL_FUNC) &_scrattch_hicat_rcpp_get_cl_sums_RcppParallel_transpose_dense, 2},
     {"_scrattch_hicat_RowMergeMatrices", (DL_FUNC) &_scrattch_hicat_RowMergeMatrices, 5},
     {"_scrattch_hicat_RowMergeMatricesList", (DL_FUNC) &_scrattch_hicat_RowMergeMatricesList, 3},
     {"_scrattch_hicat_LogNorm", (DL_FUNC) &_scrattch_hicat_LogNorm, 3},
