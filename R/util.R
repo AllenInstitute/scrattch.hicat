@@ -342,75 +342,28 @@ get_cl_means <- function(mat,cl)
   if(!is.factor(cl)){
     cl = setNames(factor(cl),names(cl))
   }
-  if(all(names(cl) %in% colnames(mat))){
-    if(is.matrix(mat)){
-      #result=rcpp_get_cl_means_dense(mat, cl)
-      result=rcpp_get_cl_means(as.matrix(mat), cl)
-    }
-    else{
-      result=rcpp_get_cl_means(mat, cl)
-    }
-  }
-  else{
-    if(is.matrix(mat)){
-      result=rcpp_get_cl_means_transpose_dense(mat, cl)
-    }
-    else{
-      result=rcpp_get_cl_means_transpose(mat, cl)
-    }
-  }
+  result = get_cl_stats(mat, cl, stats="means")
   result[,levels(cl),drop=F]
 }
 
-get_cl_present_R<- function(mat, cl, low.th)
-  {
-    tmp = mat
-    if(is.matrix(tmp)){
-      tmp = tmp > low.th
-    }
-    else{
-      tmp@x = as.numeric(tmp@x > low.th)
-    }
-    cl.present = get_cl_means(tmp,cl)
+get_cl_sqr_means <- function(mat,cl)
+{
+  if(!is.factor(cl)){
+    cl = setNames(factor(cl),names(cl))
   }
+  result = get_cl_stats(mat, cl, stats="sqr_means")
+  result[,levels(cl),drop=F]
+}
+
 
 get_cl_present<- function(mat, cl, low.th)
 {
   if(!is.factor(cl)){
     cl = setNames(factor(cl),names(cl))
   }
-  if(is.matrix(mat)){
-    mat = Matrix(mat, sparse=T)
-  }
-  if(!all(names(cl) %in% colnames(mat))){
-    mat = Matrix::t(mat)
-  }  
-  result=rcpp_get_cl_present(mat, cl, low.th)
+  result = get_cl_stats(mat, cl, stats="present",lowth=low.th)
   result[,levels(cl),drop=F]
 }
-
-  
-get_cl_sqr_means<- function(mat, cl)
-  {
-    tmp = mat
-    if(is.matrix(tmp)){
-      tmp = tmp^2
-    }
-    else{
-      tmp@x = tmp@x^2
-    }
-    cl.sqr = get_cl_means(tmp,cl)
-  }
-
-get_cl_sqr_means_new <- function(mat, cl)
-  {
-    if(!is.factor(cl)){
-      cl = setNames(factor(cl),names(cl))
-    }
-    result=rcpp_get_cl_sqr_means(mat, cl)
-    result[,levels(cl),drop=F]
-  }
-
 
 get_cl_vars <- function(mat, cl, cl.means=NULL, cl.sqr.means = NULL)
 {  
@@ -418,7 +371,7 @@ get_cl_vars <- function(mat, cl, cl.means=NULL, cl.sqr.means = NULL)
     cl.means = get_cl_means(mat,cl)
   }
   if(is.null(cl.sqr.means)){
-    cl.sqr.means = get_cl_sqr_means(tmat,cl)
+    cl.sqr.means = get_cl_sqr_means(mat,cl)
   }
   cl.vars = cl.sqr.means - cl.means^2
   cl.size = as.vector(table(cl)[colnames(cl.vars)])
@@ -754,14 +707,19 @@ l2norm <- function(X, by="column")
 get_cl_stats <- function(mat, 
                          cl, 
                          stats = c("sums","means","medians","present","sqr_sums","sqr_means"), 
-                         sparse = c(TRUE,FALSE), 
-                         transpose= c(FALSE,TRUE), 
                          parallel = c(FALSE,TRUE),
                          mc.cores = 1,...)
 {
   mc.cores = mc.cores
   setThreadOptions(numThreads = mc.cores)
-  
+  transpose=FALSE
+  sparse=TRUE
+  if(!all(names(cl) %in% colnames(mat))){
+    transpose=TRUE
+  }
+  if(is.matrix(mat)){
+    sparse=FALSE
+  }
   if (sparse) {
     if (transpose) {
       if (parallel) { #sparse transpose parallel
@@ -772,7 +730,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians_RcppParallel_transpose(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel_transpose(mat, cl))
+          return(rcpp_get_cl_present_RcppParallel_transpose(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means_RcppParallel_transpose(mat, cl))
         } else if (stats == "sqr_sums") {
@@ -789,7 +747,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians_transpose(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_transpose(mat, cl))
+          return(rcpp_get_cl_present_transpose(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means_transpose(mat, cl))
         } else if (stats == "sqr_sums") {
@@ -808,7 +766,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians_RcppParallel(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel(mat, cl))
+          return(rcpp_get_cl_present_RcppParallel(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means_RcppParallel(mat, cl))
         } else if (stats == "sqr_sums") {
@@ -825,7 +783,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present(mat, cl))
+          return(rcpp_get_cl_present(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means(mat, cl))
         } else if (stats == "sqr_sums") {
@@ -838,8 +796,7 @@ get_cl_stats <- function(mat,
     }
   } else {
     if (transpose) {
-      if (parallel) {#dense transpose parallel
-        
+      if (parallel) {#dense transpose parallel        
         if (stats == "sums") { 
           return(rcpp_get_cl_sums_RcppParallel_transpose_dense(mat, cl))
         } else if (stats == "means") {
@@ -847,7 +804,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians_RcppParallel_transpose_dense(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel_transpose_dense(mat, cl))
+          return(rcpp_get_cl_present_RcppParallel_transpose_dense(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means_RcppParallel_transpose_dense(mat, cl))
         } else if (stats == "sqr_sums") {
@@ -865,7 +822,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians_transpose_dense(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_transpose_dense(mat, cl))
+          return(rcpp_get_cl_present_transpose_dense(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means_transpose_dense(mat, cl))
         } else if (stats == "sqr_sums") {
@@ -884,7 +841,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians_RcppParallel_dense(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel_dense(mat, cl))
+          return(rcpp_get_cl_present_RcppParallel_dense(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means_RcppParallel_dense(mat, cl))
         } else if (stats == "sqr_sums") {
@@ -901,7 +858,7 @@ get_cl_stats <- function(mat,
         } else if (stats == "medians") {
           return(rcpp_get_cl_medians_dense(mat, cl))
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_dense(mat, cl))
+          return(rcpp_get_cl_present_dense(mat, cl,...))
         } else if (stats == "sqr_means") {
           return(rcpp_get_cl_sqr_means_dense(mat, cl))
         } else if (stats == "sqr_sums") {

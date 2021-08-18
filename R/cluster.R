@@ -227,7 +227,7 @@ onestep_clust <- function(norm.dat,
   }
   
   ###Find high variance genes
-  tmp = get_cl_present_R(norm.dat, setNames(rep(1, length(select.cells)),select.cells), de.param$low.th)
+  tmp = get_cl_present(norm.dat, setNames(rep(1, length(select.cells)),select.cells), de.param$low.th)
   select.genes = row.names(norm.dat)[which(tmp * length(select.cells) >= de.param$min.cells)]
   ###Find high variance genes.
   if(is.null(counts)){
@@ -236,7 +236,7 @@ onestep_clust <- function(norm.dat,
     }
     else{
       counts = norm.dat[select.genes,sampled.cells]
-      counts@x = 2^(norm.dat@x) - 1
+      counts@x = 2^(counts@x) - 1
     }
   }
   plot_file=NULL
