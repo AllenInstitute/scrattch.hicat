@@ -706,10 +706,14 @@ l2norm <- function(X, by="column")
 
 get_cl_stats <- function(mat, 
                          cl, 
-                         stats = c("sums","means","medians","present","sqr_sums","sqr_means"), 
+                         stats = c("sums","means","medians","present","sqr_sums","sqr_means"),
+                         low.th=1,
                          parallel = c(FALSE,TRUE),
                          mc.cores = 1,...)
 {
+  if(!is.factor(cl)){
+    cl = as.factor(cl)
+  }
   mc.cores = mc.cores
   setThreadOptions(numThreads = mc.cores)
   transpose=FALSE
@@ -724,34 +728,34 @@ get_cl_stats <- function(mat,
     if (transpose) {
       if (parallel) { #sparse transpose parallel
         if (stats == "sums") {
-          return(rcpp_get_cl_sums_RcppParallel_transpose(mat, cl))
+          result=rcpp_get_cl_sums_RcppParallel_transpose(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means_RcppParallel_transpose(mat, cl))
+          result=rcpp_get_cl_means_RcppParallel_transpose(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians_RcppParallel_transpose(mat, cl))
+          result=rcpp_get_cl_medians_RcppParallel_transpose(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel_transpose(mat, cl,...))
+          result=rcpp_get_cl_present_RcppParallel_transpose(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means_RcppParallel_transpose(mat, cl))
+          result=rcpp_get_cl_sqr_means_RcppParallel_transpose(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums_RcppParallel_transpose(mat, cl))
+          result=rcpp_get_cl_sqr_sums_RcppParallel_transpose(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
         
       } else { #sparse transpose non-parallel
         if (stats == "sums") {
-          return(rcpp_get_cl_sums_transpose(mat, cl))
+          result=rcpp_get_cl_sums_transpose(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means_transpose(mat, cl))
+          result=rcpp_get_cl_means_transpose(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians_transpose(mat, cl))
+          result=rcpp_get_cl_medians_transpose(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_transpose(mat, cl,...))
+          result=rcpp_get_cl_present_transpose(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means_transpose(mat, cl))
+          result=rcpp_get_cl_sqr_means_transpose(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums_transpose(mat, cl))
+          result = rcpp_get_cl_sqr_sums_transpose(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
@@ -760,34 +764,34 @@ get_cl_stats <- function(mat,
     } else { 
       if (parallel) { #sparse non-transpose parallel
         if (stats == "sums") {
-          return(rcpp_get_cl_sums_RcppParallel(mat, cl))
+          result=rcpp_get_cl_sums_RcppParallel(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means_RcppParallel(mat, cl))
+          result=rcpp_get_cl_means_RcppParallel(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians_RcppParallel(mat, cl))
+          result=rcpp_get_cl_medians_RcppParallel(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel(mat, cl,...))
+          result=rcpp_get_cl_present_RcppParallel(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means_RcppParallel(mat, cl))
+          result=rcpp_get_cl_sqr_means_RcppParallel(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums_RcppParallel(mat, cl))
+          result=rcpp_get_cl_sqr_sums_RcppParallel(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
         
       } else { #sparse non-transpose non-parallel
         if (stats == "sums") {
-          return(rcpp_get_cl_sums(mat, cl))
+          result=rcpp_get_cl_sums(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means(mat, cl))
+          result=rcpp_get_cl_means(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians(mat, cl))
+          result=rcpp_get_cl_medians(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present(mat, cl,...))
+          result=rcpp_get_cl_present(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means(mat, cl))
+          result=rcpp_get_cl_sqr_means(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums(mat, cl))
+          result=rcpp_get_cl_sqr_sums(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
@@ -798,17 +802,17 @@ get_cl_stats <- function(mat,
     if (transpose) {
       if (parallel) {#dense transpose parallel        
         if (stats == "sums") { 
-          return(rcpp_get_cl_sums_RcppParallel_transpose_dense(mat, cl))
+          result=rcpp_get_cl_sums_RcppParallel_transpose_dense(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means_RcppParallel_transpose_dense(mat, cl))
+          result=rcpp_get_cl_means_RcppParallel_transpose_dense(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians_RcppParallel_transpose_dense(mat, cl))
+          result=rcpp_get_cl_medians_RcppParallel_transpose_dense(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel_transpose_dense(mat, cl,...))
+          result=rcpp_get_cl_present_RcppParallel_transpose_dense(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means_RcppParallel_transpose_dense(mat, cl))
+          result=rcpp_get_cl_sqr_means_RcppParallel_transpose_dense(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums_RcppParallel_transpose_dense(mat, cl))
+          result=rcpp_get_cl_sqr_sums_RcppParallel_transpose_dense(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
@@ -816,17 +820,17 @@ get_cl_stats <- function(mat,
       } else { #dense transpose non-parallel
         
         if (stats == "sums") {
-          return(rcpp_get_cl_sums_transpose_dense(mat, cl))
+          result=rcpp_get_cl_sums_transpose_dense(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means_transpose_dense(mat, cl))
+          result=rcpp_get_cl_means_transpose_dense(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians_transpose_dense(mat, cl))
+          result=rcpp_get_cl_medians_transpose_dense(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_transpose_dense(mat, cl,...))
+          result=rcpp_get_cl_present_transpose_dense(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means_transpose_dense(mat, cl))
+          result=rcpp_get_cl_sqr_means_transpose_dense(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums_transpose_dense(mat, cl))
+          result=rcpp_get_cl_sqr_sums_transpose_dense(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
@@ -835,40 +839,41 @@ get_cl_stats <- function(mat,
       if (parallel) { #dense non-transpose parallel
         
         if (stats == "sums") {
-          return(rcpp_get_cl_sums_RcppParallel_dense(mat, cl))
+          result=rcpp_get_cl_sums_RcppParallel_dense(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means_RcppParallel_dense(mat, cl))
+          result=rcpp_get_cl_means_RcppParallel_dense(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians_RcppParallel_dense(mat, cl))
+          result=rcpp_get_cl_medians_RcppParallel_dense(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_RcppParallel_dense(mat, cl,...))
+          result=rcpp_get_cl_present_RcppParallel_dense(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means_RcppParallel_dense(mat, cl))
+          result=rcpp_get_cl_sqr_means_RcppParallel_dense(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums_RcppParallel_dense(mat, cl))
+          result=rcpp_get_cl_sqr_sums_RcppParallel_dense(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
       } else { #dense non-transpose non-parallel
         
         if (stats == "sums") {
-          return(rcpp_get_cl_sums_dense(mat, cl))
+          result=rcpp_get_cl_sums_dense(mat, cl)
         } else if (stats == "means") {
-          return(rcpp_get_cl_means_dense(mat, cl))
+          result=rcpp_get_cl_means_dense(mat, cl)
         } else if (stats == "medians") {
-          return(rcpp_get_cl_medians_dense(mat, cl))
+          result=rcpp_get_cl_medians_dense(mat, cl)
         } else if (stats == "present") {
-          return(rcpp_get_cl_present_dense(mat, cl,...))
+          result=rcpp_get_cl_present_dense(mat, cl,lowth=low.th)
         } else if (stats == "sqr_means") {
-          return(rcpp_get_cl_sqr_means_dense(mat, cl))
+          result=rcpp_get_cl_sqr_means_dense(mat, cl)
         } else if (stats == "sqr_sums") {
-          return(rcpp_get_cl_sqr_sums_dense(mat, cl))
+          result=rcpp_get_cl_sqr_sums_dense(mat, cl)
         } else {
           stop("the stats value is not supported")
         }
       }
-    }
+    } 
   }
+  result = result[,levels(cl),drop=F]
 }
 
 

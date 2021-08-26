@@ -117,7 +117,7 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
       {
         print(x)
         tmp.cells= select.cells[comb.dat$meta.df[select.cells,"platform"]==x]
-        ref.cells = ref.list[[x]]
+        ref.cells = ref.list[[x]]        
         rd.result <- rd_PCA(comb.dat$dat.list[[x]], select.genes, select.cells=tmp.cells, sampled.cells = ref.cells, max.pca =max.dim, th=th, method=method,mc.cores=mc.cores,verbose=verbose)
         org.rd.dat.list[[x]] = rd.result
         rd.result = org.rd.dat.list[[x]]
@@ -125,8 +125,8 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
           rd.dat  = filter_RD(rd.result$rd.dat, rm.eigen, rm.th,verbose=verbose)
         }
         #print(ncol(rd.dat))        
-        knn = get_knn_batch(rd.dat, rd.dat[ref.cells], method="Annoy.Euclidean", mc.cores=mc.cores)        
-        dat = as.matrix(comb.dat$dat.list[[x]][select.genes,ref.cells])
+        knn = get_knn_batch(rd.dat, rd.dat[ref.cells,], method="Annoy.Euclidean", mc.cores=mc.cores, batch.size=50000,k=k,transposed=FALSE)
+        dat = as.matrix(comb.dat$dat.list[[x]][select.genes,ref.cells])        
         reference.id = 1:length(ref.cells)
         cell.id = match(row.names(rd.dat), select.cells)                
         gene.id = 1:length(select.genes)
@@ -138,7 +138,8 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
       }
     
     ###cross-modality Imputation based on nearest neighbors in each iteraction of clustering using anchoring genes or genes shown to be differentiall expressed. 
-    for(x in names(split.results)){      
+    for(x in names(split.results)){
+      print(x)
       result = split.results[[x]]
       if(x == names(split.results)[1]){
         impute.genes = select.genes
@@ -171,25 +172,4 @@ impute_knn_global <- function(comb.dat, split.results, select.genes, select.cell
     }
     return(list(knn.list =knn.list, org.rd.dat.list = org.rd.dat.list,impute.dat.list=impute.dat.list, ref.list=ref.list))
   }
-
-
-fast_knn <- function(query.dat, ref.dat=query.dat, distance="euclidean", k=15, M=16, ef=200,method="euclidean")
-  {
-    library("RcppHNSW")
-    if(method=="euclidean"){
-      p = new(HnswL2,ncol(ref.dat), nrow(ref.dat),M, ef)
-    }
-    else if(method=="cosine"){
-      p = new(HnswCosine,ncol(ref.dat), nrow(ref.dat),M, ef)
-    }
-    else if(method=="ip"){
-      p = new(HnswIP,ncol(ref.dat), nrow(ref.dat),M, ef)
-    }
-    p$addItems(ref.dat)
-    knn.result = p$getAllNNsList(query.dat, k=15, include_distance=TRUE)
-    row.names(knn.result[[1]]) = row.names(knn.result[[2]]) = row.names(query.dat)
-    return(knn.result)
-  }
-
-
 

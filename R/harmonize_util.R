@@ -363,7 +363,7 @@ get_de_result  <- function(dat.list, de.param.list,  cl, select.sets=names(de.pa
 #' @export
 #'
 #' @examples
-comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.num=10000, pairs=NULL, frac.th=0.7)
+comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.num=10000, pairs=NULL, frac.th=0.7, mc.cores=1)
 {
   sets = names(cl.means.list)
   if(is.null(common.genes)){
@@ -375,8 +375,12 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
   if(is.null(pairs)){
     pairs = unique(unlist(lapply(de.genes.list, names)))
   }
-  de.genes = list()
-  for(p in pairs){
+  
+  require(doMC)
+  require(foreach)
+  registerDoMC(cores=mc.cores)
+  
+  de.genes <- foreach(p = pairs, .combine="c") %dopar% {
     de.counts = table(unlist(lapply(names(de.genes.list), function(set){
       de = de.genes.list[[set]][[p]]
       c(names(de$up.genes),names(de$down.genes))})))      
@@ -396,11 +400,16 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
       next
     }
     lfc = as.matrix(lfc)
-
-    
+    sign = rowSums(lfc > 0)
+    sign1 = rowSums(lfc > 1)
+    sign2 = rowSums(lfc < -1)
+    frac = pmax(sign1, sign2)/ncol(lfc)
+    lfc = rowMeans(lfc)
+    g = names(frac)[frac > frac.th]
+    lfc = lfc[g,drop=F]
+    frac = frac[g,drop=F]
     rank =  do.call("cbind",lapply(names(de.genes.list), function(set){
-      de = de.genes.list[[set]][[p]]
-      
+      de = de.genes.list[[set]][[p]]        
       tmp1=match(g, names(de$up.genes))
       tmp2=match(g, names(de$down.genes))
       tmp1[is.na(tmp1)] = max.num
@@ -410,22 +419,15 @@ comb_de_result <- function(de.genes.list, cl.means.list, common.genes=NULL, max.
     rank[rank > max.num] = max.num
     row.names(rank)=g
     rank.mean = rowMeans(rank)
-    sign = rowSums(lfc > 0)
-    sign1 = rowSums(lfc > 1)
-    sign2 = rowSums(lfc < -1)
-    frac = pmax(sign1, sign2)/ncol(lfc)
-    lfc = rowMeans(lfc)
-    select.g = names(frac)[frac > frac.th]
     df = data.frame(lfc =lfc, frac=frac, counts = as.vector(de.counts[g]), rank.mean=rank.mean)
-    
-    df = df[select.g,,drop=FALSE]
     ord = order(with(df, rank.mean))
-    df = df[ord,]
-    
+    df = df[ord,]    
     up = row.names(df)[which(df$lfc > 0)]
     down = row.names(df)[which(df$lfc < 0)]
     select = c(up,down)
-    de.genes[[p]] = list(up.genes =setNames(df[up,"counts"], up), down.genes=setNames(df[down,"counts"], down), up.num = length(up),down.num=length(down),num=length(select),genes=select, de.df = df)    
+    tmp= list(list(up.genes =setNames(df[up,"counts"], up), down.genes=setNames(df[down,"counts"], down), up.num = length(up),down.num=length(down),num=length(select),genes=select,pair=p))
+    names(tmp) = p
+    return(tmp)
   }
   return(de.genes)
 }

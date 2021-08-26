@@ -818,7 +818,8 @@ combine_cl <- function(all.results)
     markers=all.results[[1]]$markers
     n.cl = max(cl)
     for(i in 2:length(all.results)){
-      if(is.null(all.results[[i]]$cl) | length(unique(all.results[[i]]$cl)) < 2) next
+      #if(is.null(all.results[[i]]$cl) | length(unique(all.results[[i]]$cl)) < 2) next
+      if(is.null(all.results[[i]]$cl)) next
       new.cl = all.results[[i]]$cl
       new.cl = setNames(as.integer(new.cl)+ n.cl,names(new.cl))
       cl[names(new.cl)] = new.cl
