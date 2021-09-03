@@ -24,6 +24,7 @@ prepare_harmonize<- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = 
       dat = dat.list[[p]]
       setNames(rep(p, ncol(dat)), colnames(dat))
     }))
+    platform = factor(platform, names(dat.list))
     gene.counts <- do.call("c",lapply(names(dat.list), function(p){
       dat = dat.list[[p]]
       setNames(Matrix::colSums(dat > 0), colnames(dat))

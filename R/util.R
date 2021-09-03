@@ -714,6 +714,7 @@ get_cl_stats <- function(mat,
   if(!is.factor(cl)){
     cl = as.factor(cl)
   }
+  library(RcppParallel)
   mc.cores = mc.cores
   setThreadOptions(numThreads = mc.cores)
   transpose=FALSE

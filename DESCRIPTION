@@ -1,6 +1,6 @@
 Package: scrattch.hicat
 Title: Hierarchical Iterative Clustering Analysis for Transcriptomic data
-Version: 1.0.7
+Version: 1.0.8
 Authors@R: c(person("Zizhen", "Yao", email = "zizheny@alleninstitute.org", role = c("aut")),
   person("Lucas", "Graybuck", email = "lucasg@alleninstitute.org", role = c("aut", "cre")),
   person("Cindy", "van Velthoven", email = "cindy.vanvelthoven@alleninstitute.org", role = c("aut")),
@@ -18,7 +18,7 @@ Encoding: UTF-8
 LazyData: TRUE
 VignetteBuilder: knitr
 RoxygenNote: 7.0.2
-Requires: Matrix,Rphenograph,
+Requires: Matrix,Rphenograph,RcppParallel
 Imports: 
   Rcpp,
   BiocNeighbors,	
