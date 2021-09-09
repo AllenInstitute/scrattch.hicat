@@ -268,8 +268,7 @@ de_pair_limma <- function(pair,
                           cl.present,
                           cl.means,
                           design,
-                          fit,
-                          genes) {
+                          fit) {
   
   x <- as.character(pair[1])
   y <- as.character(pair[2])
@@ -302,8 +301,8 @@ de_pair_limma <- function(pair,
                         meanB = cl.means[[y]],
                         q1 = cl.present[[x]],
                         q2 = cl.present[[y]])
-  
-  row.names(results) <- genes
+
+  row.names(results) <- row.names(cl.means)
   
   return(results)
 }
@@ -333,8 +332,8 @@ de_pair_limma <- function(pair,
 de_pair_chisq <- function(pair,
                           cl.present,
                           cl.means,
-                          cl.size,
-                          genes) {
+                          cl.size)
+{
   
   x <- as.character(pair[1])
   y <- as.character(pair[2])
@@ -363,8 +362,7 @@ de_pair_chisq <- function(pair,
                         meanB = cl.means[,y],
                         q1 = cl.present[,x], 
                         q2 = cl.present[,y])
-  
-  row.names(results) <- genes
+  row.names(results) <- row.names(cl.means)
   
   return(results)
   
@@ -396,10 +394,8 @@ de_pair_t.test <- function(pair,
                           cl.means,
                           cl.present,
                           cl.vars,
-                          cl.size,
-                          genes) {
-
-  
+                          cl.size)
+{  
   x <- as.character(pair[1])
   y <- as.character(pair[2])
   m1 = cl.means[[x]]
@@ -428,9 +424,7 @@ de_pair_t.test <- function(pair,
                         meanB = m2,
                         q1 = cl.present[,x], 
                         q2 = cl.present[,y])
-  
-  row.names(results) <- genes
-  
+  row.names(results) <- row.names(cl.means)  
   return(results)
   
 }
@@ -513,8 +507,7 @@ simple_ebayes <- function(fit,proportion=0.01,stdev.coef.lim=c(0.1,4),trend=FALS
 de_pair_fast_limma <- function(pair,
                                fit,
                                cl.means,
-                               cl.present,
-                               genes)
+                               cl.present)
 {
   x <- as.character(pair[1])
   y <- as.character(pair[2])
@@ -547,7 +540,7 @@ de_pair_fast_limma <- function(pair,
                          q1 = cl.present[[x]],
                          q2 = cl.present[[y]])
 
-  row.names(results) <- genes
+  row.names(results) <- row.names(cl.means)
 
   return(results)
 
@@ -662,31 +655,26 @@ de_pair_fast_limma <- function(pair,
           cl.present = cl.present,
           cl.means = cl.means,
           design = design,
-          fit = fit,
-          genes = row.names(norm.dat))
+          fit = fit)
       }
       else if(method == "fast_limma") {
         df= de_pair_fast_limma(pair = pairs[i,],
           cl.present = cl.present,
           cl.means = cl.means,
-          fit = fit,
-          genes = row.names(norm.dat))
+          fit = fit)
       }
       else if(method =="t.test"){
         df = de_pair_t.test(pair = pairs[i,],
                        cl.present = cl.present,
                        cl.means = cl.means,
                        cl.vars = cl.vars,
-                       cl.size = cl.size,
-                       genes = row.names(norm.dat))
-        
+                       cl.size = cl.size)                    
       }
       else if (method == "chisq"){
         df = de_pair_chisq(pair = pairs[i,],
           cl.present = cl.present,
           cl.means = cl.means,
-          cl.size = cl.size,
-          genes = row.names(norm.dat))
+          cl.size = cl.size)
       }
       
       if(!is.null(de.param$min.cells)) {
