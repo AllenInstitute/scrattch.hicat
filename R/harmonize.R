@@ -37,7 +37,7 @@ prepare_harmonize<- function(dat.list, meta.df=NULL, cl.list=NULL, cl.df.list = 
       meta.df = df
     }
     all.cells = unlist(lapply(dat.list, colnames))
-    comb.dat = list(dat.list=dat.list, meta.df = meta.df, cl.list=cl.list, cl.df.list = cl.df.list, de.genes.list = de.genes.list, de.param.list= de.param.list, common.genes=common.genes, all.cells= all.cells)
+    comb.dat = list(dat.list=dat.list, meta.df = meta.df, cl.list=cl.list, cl.df.list = cl.df.list, de.genes.list = de.genes.list, de.param.list= de.param.list, common.genes=common.genes, all.cells= all.cells,type="mem")
   }
 
 
@@ -342,7 +342,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
         cl.size = table(cl)
         cl = droplevels(cl[cl %in% names(cl.size)[cl.size > comb.dat$de.param.list[[ref.set]]$min.cells]])
         if(length(levels(cl)) <= 1){
-          return(NULL)
+          next
         }
         de.genes = comb.dat$de.genes.list[[ref.set]]
         #print(length(de.genes.list[[ref.set]]))
@@ -359,12 +359,12 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
         select.genes = intersect(row.names(vg)[which(vg$loess.padj < vg.padj.th | vg$dispersion >3)],comb.dat$common.genes)
         
         if(length(select.genes) < 5){
-          return(NULL)
+          next
         }
         select.genes = head(select.genes[order(vg[select.genes, "padj"],-vg[select.genes, "z"])],maxGenes)
         rd = rd_PCA(norm.dat=ref.dat,select.genes, ref.cells, max.pca = max.dim)
         if(is.null(rd)){
-          return(NULL)
+          next
         }
         rd.dat = rd$rd.dat
         rot = t(rd$pca$rotation[,1:ncol(rd$rd.dat)])
@@ -374,7 +374,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
           select = t(t(rm.cor) < rm.th)
           select = apply(select, 1, all)          
           if(sum(select)==0){
-            return(NULL)
+            next
           }
           #print(rm.cor)
           #if(sum(!select)>0){
@@ -383,7 +383,7 @@ select_joint_genes  <-  function(comb.dat, ref.list, select.cells = comb.dat$all
           rot = rot[,select,drop=FALSE]
         }
         if(is.null(rot)){
-          return(NULL)
+          next
         }
         rot.scaled = (rot  - rowMeans(rot))/rowSds(rot)
         gene.rank = t(apply(-abs(rot), 1, rank))
