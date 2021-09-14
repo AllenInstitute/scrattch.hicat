@@ -606,7 +606,7 @@ plot_markers <- function(dat.list, cl,  de.param.list,prefix, common.genes, comb
       if(!is.null(col.list) & !is.null(col.list[[set]])){
         tmp.col = rbind(tmp.col,col.list[[set]][,tmp.cells])
       }
-      cells = plot_cl_heatmap(dat, cl=tmp.cl, markers= select.genes, gene.hc=gene.hc, prefix=paste(prefix, set, "markers.pdf", sep="."),ColSideColors=tmp.col,...)
+      cells = plot_cl_heatmap(dat, cl=tmp.cl, markers= select.genes, gene.hc=gene.hc, prefix=paste(prefix, set, "markers", sep="."),ColSideColors=tmp.col,...)
       if(save.matrix){
         dat.matrix[[set]] = dat[gene.hc$labels[gene.hc$order], cells]
       }

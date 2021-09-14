@@ -352,7 +352,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
       query.cells =cl.small.cells.byplatform[[set]]
       if(length(query.cells)==0){next}
       ref.cells =intersect(cl.big.cells.byplatform[[set]], colnames(merge.dat.list[[set]]))
-      ref.cells = sample_cells(cl[ref.cells],300)
+      ref.cells = sample_cells(cl[ref.cells],200)
       if(is.null(ref.cells)){
         unresolved.cells = c(unresolved.cells, query.cells)
         next
