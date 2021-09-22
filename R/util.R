@@ -346,6 +346,15 @@ get_cl_means <- function(mat,cl)
   result[,levels(cl),drop=F]
 }
 
+get_cl_sums <- function(mat,cl)
+{
+  if(!is.factor(cl)){
+    cl = setNames(factor(cl),names(cl))
+  }
+  result = get_cl_stats(mat, cl, stats="sums")
+  result[,levels(cl),drop=F]
+}
+
 get_cl_sqr_means <- function(mat,cl)
 {
   if(!is.factor(cl)){
