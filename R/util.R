@@ -287,7 +287,7 @@ get_row_sums <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
     }
     cl = setNames(rep(1, length(select.col)), colnames(mat)[select.col])
     sums = get_cl_sums(mat, cl)
-    sums[select.rows,]
+    sums[select.row,]
   }
 
 get_row_means <- function(mat, select.row=1:nrow(mat), select.col=1:ncol(mat))
