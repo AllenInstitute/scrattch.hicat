@@ -620,7 +620,10 @@ sim_knn <- function(sim, k=15)
   require(matrixStats)
   th =  rowOrderStats(as.matrix(sim), which=ncol(sim)-k+1)
   select = sim >= th
-  knn.index = t(apply(select, 1, function(x)head(which(x),k)))  
+  knn.index = t(apply(select, 1, function(x)head(which(x),k)))
+  if(k==1){
+    knn.index= matrix(knn.index, ncol=1)
+  }
   knn.distance = do.call("rbind",lapply(1:nrow(sim), function(i) (1- sim[i,,drop=F])[knn.index[i,,drop=F]]))
   return(list(knn.index, knn.distance))
 }

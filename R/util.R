@@ -685,7 +685,8 @@ l2norm <- function(X, by="column")
       X= X/l2norm
     }
     else{
-      warning("L2 norms of zero detected for distance='Cosine, no transformation")
+      warning("L2 norms of zero detected for distance='Cosine'")
+      X = X/ pmax(l2norm,1)
     }
   }
 }

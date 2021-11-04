@@ -57,14 +57,16 @@ get_gene_score <- function(de.genes,cl.means=NULL, all.genes=NULL, top.n=50, max
           pair = strsplit(p, "_")[[1]]
           x = pair[[1]]
           y = pair[[2]]
-          lfc = cl.means[,x] - cl.means[,y]
           up.genes = names(de$up.genes)
           down.genes = names(de$down.genes)
                                         #Deal with pairs with too many DEX genes, include all binary markers
-          up.binary.genes = up.genes[lfc[up.genes] > bin.th]
-          up.genes=up.genes[up.genes %in% c(head(up.genes, top.n), up.binary.genes)]
-          
-          down.binary.genes = down.genes[lfc[down.genes] < -bin.th]
+          up.binary.genes = down.binary.genes=NULL
+          if(!is.null(cl.means)){
+            lfc = cl.means[,x] - cl.means[,y]
+            up.binary.genes = up.genes[lfc[up.genes] > bin.th]
+            down.binary.genes = down.genes[lfc[down.genes] < -bin.th]            
+          }
+          up.genes=up.genes[up.genes %in% c(head(up.genes, top.n), up.binary.genes)]            
           down.genes=down.genes[down.genes %in% c(head(down.genes, top.n), down.binary.genes)]
           list(up=up.genes, down=down.genes)
         })
@@ -362,7 +364,7 @@ select_N_markers <- function(de.genes, cl.means, up.gene.score=NULL, down.gene.s
 #' @export
 #'
 #' @examples
-select_pos_markers <- function(de.genes, cl, cl.means=NULL, n.markers=3, default.markers=NULL, rm.genes=NULL, up.gene.score=NULL, down.gene.score=NULL,mc.cores=1)
+select_pos_markers <- function(de.genes, cl, select.cl=unique(cl), cl.means=NULL, n.markers=3, default.markers=NULL, rm.genes=NULL, up.gene.score=NULL, down.gene.score=NULL,mc.cores=1)
   {
     library(parallel)
     if(!is.null(de.genes)){
@@ -373,15 +375,21 @@ select_pos_markers <- function(de.genes, cl, cl.means=NULL, n.markers=3, default
     }else{
       stop("both de.genes and up.gene.score are null")
     }
-    if(is.null(up.gene.score) | is.null(down.gene.score)){
-      tmp=get_gene_score(de.genes, cl.means=cl.means)
-      up.gene.score=tmp$up.gene.score
-      down.gene.score=tmp$down.gene.score
-    }
+
+    require(doMC)
+    require(foreach)
+    registerDoMC(cores=mc.cores)
+    
     ###for each cluster, find markers that discriminate it from other types
-    cl.markers <- parallel::mclapply(levels(cl), function(x){
+    cl.markers <- foreach(x=select.cl, .combine="c") %dopar% {
+      print(x)
       up.pairs = row.names(pairs.df)[pairs.df[,1] == x]
       down.pairs = row.names(pairs.df)[pairs.df[,2] == x]
+      if(is.null(up.gene.score) | is.null(down.gene.score)){
+        tmp=get_gene_score(de.genes[c(up.pairs,down.pairs)], cl.means=cl.means)
+        up.gene.score=tmp$up.gene.score
+        down.gene.score=tmp$down.gene.score
+      }
       add.up = setNames(rep(n.markers, length(up.pairs)), up.pairs)
       add.down = setNames(rep(n.markers, length(down.pairs)), down.pairs)
       
@@ -394,9 +402,10 @@ select_pos_markers <- function(de.genes, cl, cl.means=NULL, n.markers=3, default
         add.down = pmax(add.down -  sapply(down.default, length),0)
       }
       tmp.result = select_markers_pair_direction(add.up=add.up, add.down=add.down,de.genes=de.genes, cl.means=cl.means, up.gene.score=up.gene.score,down.gene.score=down.gene.score,rm.genes=c(rm.genes,default.markers))
-      unique(c(tmp.result$markers, unlist(up.default), unlist(down.default)))
-    }, mc.cores=mc.cores)
-    names(cl.markers) = levels(cl)
+      result=list(unique(c(tmp.result$markers, unlist(up.default), unlist(down.default))))
+      names(result)=x
+      result
+    }
     return(cl.markers)
   }
 
