@@ -572,6 +572,8 @@ de_pair_fast_limma <- function(pair,
                                use.voom = FALSE, 
                                counts = NULL,
                                mc.cores = 1,
+                               blocksize = 10000,
+                               out.dir = NULL,
                                return.df = FALSE) {
    
   method <- match.arg(method,
@@ -616,7 +618,6 @@ de_pair_fast_limma <- function(pair,
     cl.means <- as.data.frame(cl.means)
   }
   
-  
   # Compute fraction of cells in each cluster with expression >= low.th
   if(is.null(cl.present)){
     cl.present <- as.data.frame(get_cl_present(norm.dat, cl, de.param$low.th))
@@ -647,7 +648,19 @@ de_pair_fast_limma <- function(pair,
   else if (method == "t.test"){
     cl.vars <- as.data.frame(get_cl_vars(norm.dat, cl, cl.means = cl.means))
   }
-  de_list = parallel::pvec(1:nrow(pairs), function(x){
+  bins = split(row.names(pairs), floor(1:nrow(pairs)/blocksize))
+  require(doMC)
+  require(foreach)
+  mc.cores = min(mc.cores, length(bins))
+  registerDoMC(cores=mc.cores)
+  de_combine <- function(result.1, result.2)
+    {
+      library(data.table)
+      de.summary = rbindlist(result.1$de.summary, result.2$de.summary)
+      de.genes = c(result.1$de.genes, result.2$de.genes)
+    }
+  de_list = foreach::foreach(i=1:length(bins),.combine="de_combine")%dopar% {
+    x = bins[[i]]
     tmp=sapply(x, function(i){
       if(method == "limma") {
         require("limma")
@@ -675,30 +688,30 @@ de_pair_fast_limma <- function(pair,
           cl.present = cl.present,
           cl.means = cl.means,
           cl.size = cl.size)
-      }
-      
+      }      
       if(!is.null(de.param$min.cells)) {
         cl.size1 <- cl.size[as.character(pairs[i, 1])]
         cl.size2 <- cl.size[as.character(pairs[i, 2])]
       } else {
         cl.size1 <- NULL
         cl.size2 <- NULL
-      }
-      
+      }      
       stats= de_stats_pair(df, 
         de.param = de.param, 
         cl.size1, 
         cl.size2,
         return.df = return.df)    
     },simplify=F)
-    #cat(length(tmp), length(x),"\n")
-    if(length(tmp)!=length(x)){
-      save(x, file="Error.pairs.rda")
-      stop('length of de_list does not match pairs')      
+    if(is.null(out.dir)){      
+      de.summary = de_pair_summary(tmp)
+      list(de.genes=tmp, de.summary=de.summ)
     }
-    names(tmp) = row.names(pairs)[x]
-    tmp
-  },mc.cores=mc.cores)
+    else{
+      tmp1=export_de_genes(tmp, cl.means, out.dir="de_parquet", blocksize = blocksize,blockstart=i-1, mc.cores=1, top.n = 1000)
+      de.summary = de_pair_summary(tmp)
+      list(de.genes=NULL, de.summary=de.summ)
+    }
+  }
   return(de_list)
 }
 
@@ -714,16 +727,24 @@ de_pair_fast_limma <- function(pair,
 #' @export
 #'
 #' @examples
-create_pairs <- function(cn, direction="nondirectional", include.self = FALSE)
+create_pairs <- function(cn1, cn2=cn1,direction="nondirectional", include.self = FALSE)
   {
-    cl.n = length(cn)	
-    pairs = cbind(rep(cn, rep(cl.n,cl.n)), rep(cn, cl.n))
+    cn1=as.character(cn1)
+    cn2=as.character(cn2)
+    cl.n1 = length(cn1)
+    cl.n2 = length(cn2)	
+    pairs = cbind(rep(cn1, rep(cl.n2,cl.n1)), rep(cn2, cl.n1))
+    if(!identical(cn1,cn2)){
+      down.pairs = cbind(rep(cn2, rep(cl.n1,cl.n2)), rep(cn1, cl.n2))
+      pairs = rbind(pairs, down.pairs)
+    }
     if(direction=="nondirectional"){
       pairs = pairs[pairs[,1]<=pairs[,2],,drop=F]
     }
     if(!include.self){
       pairs = pairs[pairs[,1]!=pairs[,2],,drop=F]
     }
+    colnames(pairs)=c("P1","P2")
     row.names(pairs) = paste0(pairs[,1],"_",pairs[,2])
     return(pairs)
   }
@@ -939,75 +960,6 @@ get_de_matrix <- function(de.genes,
 
 
 
-#' Title
-#'
-#' @param norm.dat 
-#' @param cl 
-#' @param binary.cat 
-#' @param ... 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-DE_genes_cat_by_cl <- function(norm.dat, 
-                               cl, 
-                               binary.cat, 
-                               ...) {
-  
-  cl <- droplevels(as.factor(cl))
-  cl.cat <- setNames(paste0(cl, binary.cat[names(cl)]), 
-                     names(cl))
-  
-  tmp <- levels(cl)
-  cl.cat.pairs <- data.frame(cat1 = paste0(tmp, binary.cat[1]), 
-                             cat2 = paste0(tmp, binary.cat[2]), 
-                             stringsAsFactors = FALSE)
-  
-  cl.cat.de.genes <- deScore.pairs(norm.dat[,names(cl.cat)], 
-                                   cl = cl.cat, 
-                                   pairs = cl.cat.pairs, 
-                                   ...)
-  
-  cat1.de.num <- sapply(cl.cat.de.genes,
-                        function(x) {
-                          if(length(x) == 0) { return(0) }
-                          length(x$up.genes)
-                        })
-  
-  cat2.de.num <- sapply(cl.cat.de.genes,
-                        function(x) {
-                          if(length(x) == 0) { return(0) }
-                          length(x$down.genes)
-                        })
-  
-  cat1.de.genes <- sapply(cl.cat.de.genes,
-                          function(x) {
-                            if(is.null(x)) { return("") }
-                            
-                            return(paste(head(x$up.genes, 8),
-                                         collapse = " "))
-                          })
-  
-  cat2.de.genes <- sapply(cl.cat.de.genes,
-                          function(x) {
-                            if(is.null(x)) { return("") }
-                            
-                            return(paste(head(x$down.genes, 8),
-                                         collapse = " "))
-                          })
-  
-  cl.cat.de.df <- data.frame(cat1.de.num, 
-                             cat2.de.num, 
-                             cat1.de.genes, 
-                             cat2.de.genes)
-  
-  return(list(cl.cat.de.df = cl.cat.de.df,
-              cl.cat.de.genes = cl.cat.de.genes))
-}
-
-
-
 
 
 
@@ -1203,4 +1155,104 @@ plot_pair_matrix <- function(pair.num, file, directed=FALSE, dend=NULL, col=jet.
               cexRow = 0.3, cexCol = 0.3)
     dev.off()     
   }
+
+
+
+
+export_de_genes<- function(de.genes, cl.means, out.dir="de_parquet", blocksize = 10000,blockstart=0, mc.cores=5, top.n = 1000, overwrite=FALSE)
+  {
+    library(data.table)
+    library(arrow)
+    if(!dir.exists(out.dir)){
+      dir.create(out.dir)      
+    }
+    print(out.dir)
+    bins = split(names(de.genes), ceiling(1:length(de.genes)/blocksize))
+    print(length(bins))
+    require(doMC)
+    require(foreach)
+    registerDoMC(cores=mc.cores)
+    tmp=foreach::foreach(i=1:length(bins),.combine="c")%dopar% {
+    #foreach::foreach(i=missing)%dopar% {
+      library(dplyr)    
+      library(arrow)
+      library(data.table)      
+      print(i)
+      tmp.dir = file.path(out.dir,i+blockstart)
+      if(!dir.exists(tmp.dir)){
+        dir.create(tmp.dir)      
+      }
+      fn = file.path(tmp.dir,"data.parquet")
+      print(fn)
+      if(!overwrite){
+        if(file.exists(fn)){
+          return(NULL)
+        }
+      }
+      pairs=bins[[i]]      
+      tmp = lapply(pairs, function(p){
+        if(is.null(de.genes[[p]])|de.genes[[p]]$num==0){
+          return(NULL)
+        }
+        up = de.genes[[p]]$up.genes
+        down = de.genes[[p]]$down.genes
+        up = head(up, top.n)
+        down = head(down, top.n)
+        pair = strsplit(p, "_")[[1]]
+        p1 = pair[1]
+        p2 = pair[2]
+        gene = c(names(up),names(down))
+        logPval = c(up, down)
+        rank = c(seq_len(length(up)),seq_len(length(down)))        
+        lfc =  abs(cl.means[gene, p1] - cl.means[gene, p2])
+        sign = rep(c("up","down"),c(length(up),length(down)))
+        df = data.frame(gene=gene, logPval=logPval,sign=factor(sign,c("up","down")), rank=rank)
+        df$pair = p
+        df$pair_bin=i + blockstart
+        df$lfc = lfc       
+        df       
+      })
+      df = data.table::rbindlist(tmp)
+      write_parquet(df, sink=fn)
+      return(NULL)
+    }
+  }
+
+de_pair_summary <- function(de.genes, pairs=names(de.genes), mc.cores=1, blocksize=10000, out.dir="de_summary")
+  {
+    library(data.table)
+    library(arrow)
+    if(!dir.exists(out.dir)){
+      dir.create(out.dir)      
+    }
+    cols = c("num","up.num","down.num","score", "up.score","down.score")    
+    bins = split(pairs, floor(1:length(pairs)/blocksize))
+    require(doMC)
+    require(foreach)
+    mc.cores = min(mc.cores, length(bins))
+    registerDoMC(cores=mc.cores)
+    
+    de.df = foreach::foreach(i=1:length(bins),.combine="c")%dopar% {
+      print(i)
+      tmp = sapply(cols, function(col){
+        sapply(bins[[i]], function(p){
+          de.genes[[p]][col]
+        })      
+      },simplify=F)
+      df = as.data.frame(do.call("cbind",tmp))
+      row.names(df)=bins[[i]]
+      tmp.dir = file.path(out.dir,i)
+      if(!dir.exists(tmp.dir)){
+        dir.create(tmp.dir)      
+      }
+      fn = file.path(tmp.dir,"data.parquet")
+      print(fn)
+      write_parquet(df, sink=fn)
+    }
+    ds = open_dataset(out.dir, partition=c("pair_bin"),format="parquet")
+    de.df = ds %>% collect()
+    return(de.df)    
+  }
+
+
 

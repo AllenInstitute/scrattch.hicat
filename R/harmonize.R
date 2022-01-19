@@ -196,10 +196,10 @@ pvec_no_combine <- function (v, FUN, ..., mc.set.seed = TRUE, mc.silent = FALSE,
     return(res)
   }
 
-knn_combine <- function(results)
+knn_combine <- function(result.1, result.2)
 {
-  knn.index = do.call("rbind", lapply(results, function(x)x[[1]]))
-  knn.distance = do.call("rbind", lapply(results, function(x)x[[2]]))
+  knn.index = rbind(result.1[[1]], result.2[[1]])
+  knn.distance = rbind(result.1[[2]], result.2[[2]])
   return(list(knn.index, knn.distance))
 }
 
@@ -217,7 +217,7 @@ knn_combine <- function(results)
 #' @export
 #'
 #' @examples
-get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,return.distance=FALSE,...)
+get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,return.distance=FALSE,transposed=TRUE, ...)
   {
     if(return.distance){
       fun = "knn_combine"
@@ -225,9 +225,16 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
     else{
       fun = "rbind"
     }
-    results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine=fun, FUN=function(bin){
-      get_knn(dat=dat[,bin,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, ...)
-    })
+    if(transposed){
+      results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine=fun, FUN=function(bin){
+        get_knn(dat=dat[row.names(ref.dat),bin,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, transposed=transposed,...)
+      })
+    }
+    else{
+      results <- batch_process(x=1:nrow(dat), batch.size=batch.size, mc.cores=mc.cores, .combine=fun, FUN=function(bin){
+        get_knn(dat=dat[bin,colnames(ref.dat),drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, transposed=transposed,...)
+      })
+    }
     return(results)
   }
     
@@ -255,50 +262,46 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.i
       cell.id= row.names(dat)
     }
     
-    if(method=="cor"){
-      if(transposed){
-        knn.result = knn_cor(ref.dat, dat,k=k)
-      }
-      else{
+    if(transposed){
+      if(is.null(index)){
         ref.dat = Matrix::t(ref.dat)
-        dat = Matrix::t(dat)
-        knn.result = knn_cor(ref.dat, dat,k=k)
       }
+      dat = Matrix::t(dat)
+    }
+    if(method=="RANN"){
+      knn.result = RANN::nn2(ref.dat, dat, k=k)
+    }
+    else if(method %in% c("Annoy.Euclidean", "Annoy.Cosine","cor")){
+      library(BiocNeighbors)      
+      if(is.null(index)){
+        if(method=="cor"){
+          ref.dat = ref.dat - rowMeans(ref.dat)
+          ref.dat = l2norm(ref.dat,by = "row")
+        }
+        if (method=="Annoy.Cosine"){
+          ref.dat = l2norm(ref.dat,by = "row")
+        }
+        if(build.index){
+          index= buildAnnoy(ref.dat)
+        }
+      }
+      if (method=="Annoy.Cosine"){
+        dat = l2norm(dat,by="row")
+      }
+      if (method=="cor"){
+        dat = dat - rowMeans(dat)
+        dat = l2norm(dat,by = "row")
+      }
+      knn.result = queryAnnoy(X= ref.dat, query=dat, k=k, precomputed = index)
+    }
+    else if(method == "CCA"){
+      mat3 = crossprod(ref.dat, dat)
+      cca.svd <- irlba(mat3, dim=dim)
+      knn.result = knn_cor(cca.svd$u, cca.svd$v,  k=k)
     }
     else{
-      if(transposed){
-        if(is.null(index)){
-          ref.dat = Matrix::t(ref.dat)
-        }
-        dat = Matrix::t(dat)
-      }                  
-      if(method=="RANN"){
-        knn.result = RANN::nn2(ref.dat, dat, k=k)
-      }
-      else if(method %in% c("Annoy.Euclidean", "Annoy.Cosine")){
-        library(BiocNeighbors)      
-        if(is.null(index)){
-          if (method=="Annoy.Cosine"){
-            ref.dat = l2norm(ref.dat,by = "row")
-          }
-          if(build.index){
-            index= buildAnnoy(ref.dat)
-          }
-        }
-        if (method=="Annoy.Cosine"){       
-          dat = l2norm(dat,by="row")
-        }
-        knn.result = queryAnnoy(X= ref.dat, query=dat, k=k, precomputed = index)
-      }
-      else if(method == "CCA"){
-        mat3 = crossprod(ref.dat, dat)
-        cca.svd <- irlba(mat3, dim=dim)
-        knn.result = knn_cor(cca.svd$u, cca.svd$v,  k=k)
-      }
-      else{
-        stop(paste(method, "method unknown"))
-      }
-    }
+      stop(paste(method, "method unknown"))
+    }    
     knn.index= knn.result[[1]]
     knn.distance = knn.result[[2]]
     row.names(knn.index) = row.names(knn.distance)=cell.id
@@ -406,7 +409,6 @@ cleanAnnoyIndex <- function(index)
   {
     unlink(index@path)
     rm(index)
-    gc()
   }
 
 

@@ -281,6 +281,62 @@ plot_low_qc <- function(norm.dat,
 
 
 
+check_triplet <- function(de.genes, cl1,cl2,cl3)
+  {
+    de = get_de_pair(de.genes, cl1, cl2)
+    up.genes.score = head(de$up.genes, 50)
+    down.genes.score = head(de$down.genes,50)
+    up.genes.score[up.genes.score > 20] = 20
+    down.genes.score[down.genes.score > 20] = 20
+    up.genes = names(up.genes.score)
+    down.genes = names(down.genes.score)
+    up.genes.score=sum(up.genes.score)
+    down.genes.score = sum(down.genes.score)
+    
+    tmp1.de = get_de_pair(de.genes, cl1, cl3)
+    tmp2.de = get_de_pair(de.genes, cl3, cl2)
+    if(tmp1.de$num < 20 | tmp2.de$num < 20 ){
+      return(NULL)
+    }
+    olap.up.genes1 = intersect(names(tmp2.de$up.genes), up.genes)
+    olap.up.num1 = length(olap.up.genes1)
+    olap.up.score1 = get_de_truncate_score_sum(de$up.genes[olap.up.genes1])
+    
+    olap.up.ratio1 = olap.up.score1 / up.genes.score
+    
+    olap.down.genes1 = intersect(names(tmp1.de$down.genes), down.genes)
+    olap.down.num1 = length(olap.down.genes1)
+    
+    olap.down.score1 = get_de_truncate_score_sum(de$down.genes[olap.down.genes1])
+    olap.down.ratio1 = olap.down.score1 / down.genes.score
+    
+    up.genes2 = head(names(tmp1.de$up.genes), 50)
+    up.genes.score2 = get_de_truncate_score_sum(tmp1.de$up.genes[up.genes2])          
+    olap.up.genes2 = intersect(names(up.genes2),de$up.genes)
+    olap.up.num2 = length(olap.up.genes2)
+    olap.up.score2 = get_de_truncate_score_sum(tmp1.de$up.genes[olap.up.genes2])
+    olap.up.ratio2 = olap.up.score2 /up.genes.score2
+    
+    
+    down.genes2 = head(names(tmp2.de$down.genes), 50)
+    down.genes.score2 = get_de_truncate_score_sum(tmp2.de$down.genes[down.genes2])
+    olap.down.genes2 = intersect(down.genes2,names(de$down.genes))
+    olap.down.num2 = length(olap.down.genes2)
+    olap.down.score2 = get_de_truncate_score_sum(tmp2.de$down.genes[olap.down.genes2])
+    olap.down.ratio2 = olap.down.score2 /down.genes.score2
+    
+    result = list(
+      cl1=cl1,
+      cl2=cl2,
+      up.num = length(up.genes),
+      down.num = length(down.genes),
+      olap.num=c(olap.up.num1, olap.down.num1, olap.up.num2, olap.down.num2),
+      olap.ratio = c(olap.up.ratio1, olap.down.ratio1, olap.up.ratio2, olap.down.ratio2),
+      olap.score = c(olap.up.score1, olap.down.score1, olap.up.score2, olap.down.score2)
+      )
+    result$score = sum(result$olap.score) / sum(c(up.genes.score, down.genes.score, up.genes.score2, down.genes.score2))
+    return(result)
+  }
 
 
 find_doublet_all <- function(de.genes, mc.cores=5, min.genes=100)
