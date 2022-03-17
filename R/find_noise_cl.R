@@ -412,21 +412,6 @@ find_low_quality_all <- function(de.genes=NULL, de.score.mat=NULL,low.th = 2)
   }
 
 
-find_low_quality_ds <- function(ds, low.th=2)
-  {
-    library(dplyr)
-    df = ds %>% filter(up.num < low.th | down.num < low.th) %>% collect
-    pairs = get_pairs(df$pair)
-    pairs$pair = row.names(pairs)
-    df = df %>% left_join(pairs)
-    df = df %>% mutate(cl=ifelse(up.num < low.th,P2, P1))
-    df = df %>% mutate(cl.low=ifelse(up.num < low.th,P1, P2))
-    return(df)
-  }
-
-
-
-
 find_doublet_by_marker <- function(cl.means,markers=list(Neuron=c("Slc32a1","Slc17a7","Slc17a6"),Olig=c("Sox10","Opalin"),Astro="Aqp4",Endo="Ly6c1",VLMC="Slc6a13",Peri="Kcnj8",SMC="Acta2",Micro="C1qc"),th=3.5)
   {
     library(matrixStats)

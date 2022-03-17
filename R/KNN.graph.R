@@ -10,50 +10,42 @@
 #' @export
 #'
 #' @examples
-get_knn_graph <- function(rd.dat, cl, k=15, knn.outlier.th=2, outlier.frac.th=0.5,clean.cells=row.names(rd.dat), knn.result=NULL)
+get_knn_graph <- function(rd.dat, cl, ref.cells=row.names(rd.dat), k=15, knn.outlier.th=2, outlier.frac.th=0.5,clean.cells=row.names(rd.dat), knn.result=NULL)
 {
   if(is.null(knn.result)){
-    knn.result = RANN::nn2(rd.dat,k=k)
-    row.names(knn.result[[1]]) = row.names(knn.result[[2]])=row.names(rd.dat)
+    ref.rd.dat = rd.dat[ref.cells,]
+    index = buildAnnoy(ref.rd.dat, distance ="Euclidean", transposed = FALSE)
+    knn.result = get_knn_batch(rd.dat, ref.rd.dat, k, method="Annoy.Euclidean", batch.size=10000, mc.cores=10, index=index, transposed=FALSE, return.distance=TRUE)
   }
   knn  = knn.result[[1]]
   knn.dist = knn.result[[2]]
-  knn.cl = matrix(cl[row.names(knn)[knn]],ncol=ncol(knn))
-  row.names(knn.cl)= row.names(knn)  
-  cl.knn.dist.med = tapply(clean.cells,cl[clean.cells], function(x) median(knn.dist[x,-1]))
-  cl.knn.dist.mad = tapply(clean.cells, cl[clean.cells], function(x) mad(knn.dist[x,-1]))
-  cl.knn.dist.th = cl.knn.dist.med + knn.outlier.th * cl.knn.dist.mad
-  cl.knn.dist.th = pmax(cl.knn.dist.th, median(cl.knn.dist.th))
+  colnames(knn) = colnames(knn.dist)=1:ncol(knn)
+  knn.dist = as.data.frame(as.table(knn.dist),stringsAsFactors=FALSE)
+  knn.id = as.data.frame(as.table(knn),stringsAsFactors=FALSE)
+  knn.df = cbind(knn.id, knn.dist[,3])
+  colnames(knn.df)=c("sample_id","k","ref_id","dist")
+  knn.df$cl = cl[knn.df$sample_id]  
+  knn.df$knn.cl = cl[ref.cells[knn.df$ref_id]]
+  knn.df = knn.df %>% filter(k!=1)
   
-  knn.dist.th=cl.knn.dist.th[as.character(cl[row.names(knn)])]
-  outlier = apply(knn.dist, 2, function(x) x>  knn.dist.th)
-  outlier[!row.names(knn)[knn] %in% clean.cells]=TRUE
-  row.names(outlier)  = row.names(knn.dist)
-  outlier.frac= rowMeans(outlier)
+  cl.knn.dist.stats = knn.df %>%  group_by(cl) %>% summarize(med=median(dist),mad=mad(dist))
+  cl.knn.dist.stats =   cl.knn.dist.stats %>% mutate(th=med + knn.outlier.th * mad)
+  th.med = median(cl.knn.dist.stats$th)
+  cl.knn.dist.stats =   cl.knn.dist.stats %>% mutate(th=pmax(th, th.med))
+  
+  outlier.df=knn.df %>% left_join(cl.knn.dist.stats[,c("cl","th")]) %>% group_by(sample_id) %>% summarize(outlier = sum(dist > th))
 
-  knn[outlier] = NA
-  knn.cl[outlier] = NA
-
-  select.cells = intersect(clean.cells, names(outlier.frac)[outlier.frac < outlier.frac.th])
-  tmp.df = data.frame(sample_name =rep(select.cells, ncol(knn)), cl.to=as.vector(knn.cl[select.cells,]))
-  tmp.df$cl.from = cl[as.character(tmp.df$sample_name)]
-  knn.cl.df = tmp.df %>% filter(!is.na(cl.to)) %>% group_by(cl.from, cl.to) %>% summarise(Freq=n())
-    
-  from.size = tapply(knn.cl.df$Freq, knn.cl.df$cl.from, sum)
-  to.size = tapply(knn.cl.df$Freq, knn.cl.df$cl.to, sum)
+  outlier = outlier.df %>% filter(outlier/(k-1)>outlier.frac.th) %>% pull(sample_id)
+  knn.df = knn.df %>% filter(!sample_id %in% outlier)
+  knn.cl.df = knn.df %>% group_by(cl, knn.cl) %>% summarise(Freq=n())
+  colnames(knn.cl.df)[1:2]=c("cl.from","cl.to")  
+  from.size = knn.cl.df %>% group_by(cl.from) %>% summarize(from.total=sum(Freq))
+  to.size = knn.cl.df %>% group_by(cl.to) %>% summarize(to.total=sum(Freq))
   total = sum(knn.cl.df$Freq)
-  knn.cl.df$cl.from.total= from.size[as.character(knn.cl.df$cl.from)]
-  knn.cl.df$cl.to.total = to.size[as.character(knn.cl.df$cl.to)]
-  knn.cl.df$pval.log = knn.cl.df$odds  = 0
-  for(i in 1:nrow(knn.cl.df)){
-    q = knn.cl.df$Freq[i] - 1
-    k = knn.cl.df$cl.from.total[i]
-    m = knn.cl.df$cl.to.total[i]
-    n = total - m
-    knn.cl.df$pval.log[i]=phyper(q, m=m, n=n, k=k, lower.tail = FALSE, log.p=TRUE)
-    knn.cl.df$odds[i] = (q + 1) / (k /total * m)
-  }
-  knn.cl.df$frac = knn.cl.df$Freq/knn.cl.df$cl.from.total
+  knn.cl.df = knn.cl.df %>% left_join(from.size) %>% left_join(to.size)
+  knn.cl.df = knn.cl.df %>% mutate(odds = Freq/(from.total*as.numeric(to.total)/total))
+  knn.cl.df = knn.cl.df %>% mutate(pval.log = phyper(q=Freq-1, m=to.total, n=total - to.total, k=from.total, lower.tail=FALSE, log.p=TRUE))
+  knn.cl.df$frac = knn.cl.df$Freq/knn.cl.df$from.total
   return(list(knn.result=knn.result, knn.cl.df=knn.cl.df,outlier=outlier))
 }
 

@@ -344,3 +344,14 @@ plot_cl_cells <- function(anno)
     return(g)
   }
 
+
+
+varibow <-function (n_colors)
+  {
+    sats <- rep_len(c(0.4, 0.55, 0.7, 0.85, 1), length.out = n_colors)
+    vals <- rep_len(c(1, 0.8, 0.6, 0.4), length.out = n_colors)
+    col <- grDevices::rainbow(n_colors, s = sats, v = vals)
+  }
+
+
+

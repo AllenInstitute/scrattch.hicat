@@ -65,8 +65,8 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
     }
     g = g+ scale_color_manual(values=col,labels=cl.label[levels(rd.dat$cl)])
     if(label.center){
-      g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y,alpha=0.5), size=cex*1.2)
-      g = g +  annotate("text", label=cl.label[row.names(cl.center)], x=cl.center[,1]+shift.x, y=cl.center[,2] + shift.y,size=fn.size,color=fn.color)    
+      g = g + geom_point(data=as.data.frame(cl.center), aes(x=x, y=y,alpha=0.5), size=cex)
+      g = g +  annotate("text", label=cl.label[row.names(cl.center)], x=cl.center[,1]+shift.x, y=cl.center[,2] + shift.y,size=fn.size,color=fn.color,hjust=0)    
     }    
     if(bg=="blank"){
       g = g + theme_void()

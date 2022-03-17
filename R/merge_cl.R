@@ -39,7 +39,7 @@ get_knn_pairs <- function(cl.rd, cl.rd.ref=cl.rd, k=5, method="Annoy.Euclidean")
     knn.result= get_knn(cl.rd, cl.rd.ref, k=min(k, ncol(cl.rd)),method=method, return.distance=TRUE)
     knn.matrix = knn.result[[1]]
     knn.dist = knn.result[[2]]
-    merge.pairs = data.frame(c1= rep(colnames(cl.rd),ncol(knn.matrix)), c2= colnames(cl.rd.ref)[as.vector(knn.matrix)])        
+    merge.pairs = data.frame(P1= rep(colnames(cl.rd),ncol(knn.matrix)), P2= colnames(cl.rd.ref)[as.vector(knn.matrix)])        
     merge.pairs$dist = as.vector(knn.dist)
     merge.pairs$sim = 1 - merge.pairs$dist/max(merge.pairs$dist)
     merge.pairs = merge.pairs[merge.pairs[,1]!=merge.pairs[,2],]        
@@ -145,7 +145,7 @@ merge_cl<- function(norm.dat,
       if(verbose > 0){
         cat("Compute DE genes\n")
       }
-      tmp.de.genes =de_selected_pairs(norm.dat, cl=cl, pairs=merge.pairs[new.pairs,], de.param= de.param, method=de.method, cl.means=cl.means, cl.present=cl.present, cl.sqr.means=cl.sqr.means)      
+      tmp.de.genes =de_selected_pairs(norm.dat, cl=cl, pairs=merge.pairs[new.pairs,], de.param= de.param, method=de.method, cl.means=cl.means, cl.present=cl.present, cl.sqr.means=cl.sqr.means)$de.genes
       de.genes[names(tmp.de.genes)] = tmp.de.genes
       pairs = get_pairs(names(de.genes))
       

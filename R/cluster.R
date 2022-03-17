@@ -91,6 +91,7 @@ jaccard_louvain <- function(dat, k = 10)
 
 filter_RD <- function(rd.dat, rm.eigen, rm.th, verbose=FALSE)
 {
+  library(matrixStats)
   rm.cor=cor(rd.dat, rm.eigen[row.names(rd.dat),])
   rm.cor[is.na(rm.cor)]=0
   rm.score = rowMaxs(abs(rm.cor))
@@ -188,7 +189,7 @@ jaccard_leiden <- function(dat, k = 10, weight = NULL,
 #'         markers: top markers that seperate clusters     
 #'         
 onestep_clust <- function(norm.dat, 
-                          select.cells = colnames(norm.dat), 
+                          select.cells = colnames(norm.dat),
                           counts = NULL, 
                           method = c("louvain","ward.D", "leiden","kmeans"), 
                           vg.padj.th = 0.5, 
@@ -197,7 +198,8 @@ onestep_clust <- function(norm.dat,
                           rm.eigen = NULL, 
                           rm.th = 0.7, 
                           de.param = de_param(),
-                          merge.type = c("undirectional", "directional"), 
+                          merge.type = c("undirectional", "directional"),
+                          genes.allowed = row.names(norm.dat),
                           maxGenes = 3000,
                           sampleSize = 4000,
                           max.cl.size = 300,
@@ -209,7 +211,7 @@ onestep_clust <- function(norm.dat,
 
 {
   library(matrixStats)
-  
+
   method <- match.arg(method)
   dim.method <- match.arg(dim.method)
   merge.type <- match.arg(merge.type)
@@ -229,6 +231,7 @@ onestep_clust <- function(norm.dat,
   ###Find high variance genes
   tmp = get_cl_present(norm.dat, setNames(rep(1, length(select.cells)),select.cells), de.param$low.th)
   select.genes = row.names(norm.dat)[which(tmp * length(select.cells) >= de.param$min.cells)]
+  
   ###Find high variance genes.
   if(is.null(counts)){
     if(is.matrix(norm.dat)){
@@ -262,6 +265,7 @@ onestep_clust <- function(norm.dat,
   else{
     ###If most genes are differentially expressed, then use absolute dispersion value
     select.genes = as.character(vg[which(vg$loess.padj < vg.padj.th | vg$dispersion >3),"gene"])
+    select.genes = intersect(select.genes, genes.allowed)
     select.genes = head(select.genes[order(vg[select.genes, "loess.padj"],-vg[select.genes, "z"])],maxGenes)
     if(verbose){
       cat("Num high variance genes:",length(select.genes),"\n")
@@ -342,26 +346,22 @@ onestep_clust <- function(norm.dat,
   sc = merge.result$sc
   #print(sc)
   cl = merge.result$cl
-  if(length(unique(cl))>1){
-    if(verbose){
-      cat("Expand",prefix, "\n")
-      cl.size=table(cl)
-      print(cl.size)
-      #save(cl, file=paste0(prefix, ".cl.rda"))
-    }
-    de.genes = merge.result$de.genes
-    markers= merge.result$markers
-    cl.dat = get_cl_means(norm.dat[markers,], cl[sample_cells(cl, max.cl.size)])
-    cl.hc = hclust(dist(t(cl.dat)),method="average")
-    cl = setNames(factor(as.character(cl), levels= colnames(cl.dat)[cl.hc$order]), names(cl))
-    if(verbose & !is.null(prefix)){
-      tmp=display_cl(cl, norm.dat, prefix=prefix, markers=markers, max.cl.size=max.cl.size)
-    }
-    levels(cl) = 1:length(levels(cl))
-    result=list(cl=cl, markers=markers)
-    return(result)
+  if(length(unique(cl))<=1){
+    return(NULL)
   }
-  return(NULL)
+  de.genes = merge.result$de.genes
+  markers= merge.result$markers
+  cl.dat = get_cl_means(norm.dat[markers,], cl[sample_cells(cl, max.cl.size)])
+  cl.hc = hclust(dist(t(cl.dat)),method="average")
+  cl = setNames(factor(as.character(cl), levels= colnames(cl.dat)[cl.hc$order]), names(cl))
+  levels(cl) = 1:length(levels(cl))
+  result=list(cl=cl, markers=markers)
+  if(verbose){
+    cat("Expand",prefix, "\n")
+    cl.size=table(cl)
+    print(cl.size)
+  }
+  return(result)
 }
 
 
@@ -385,9 +385,14 @@ iter_clust <- function(norm.dat,
                        split.size = 10, 
                        result = NULL,
                        method = "auto",
+                       overwrite=TRUE,
+                       verbose=verbose,
                        ...)
 {
-  if(!is.null(prefix)) { print(prefix) }
+  if(!is.null(prefix)) {
+    cat(prefix, length(select.cells),"\n")
+  }
+
   if(method == "auto"){
     if(length(select.cells) > 3000){
       select.method="louvain"
@@ -399,55 +404,64 @@ iter_clust <- function(norm.dat,
   else{
     select.method=method
   }
-  if(length(select.cells) <= 3000){
-    if(!is.matrix(norm.dat)){
-      norm.dat = as.matrix(norm.dat[,select.cells])
+  if(is.null(result)){
+    outfile=paste0(prefix, ".rda")
+    if(file.exists(outfile) & !overwrite){
+      load(outfile)       
+    }
+    else{
+      if(length(select.cells) <= 3000){
+        if(!is.matrix(norm.dat)){
+          norm.dat = as.matrix(norm.dat[,select.cells])
+        }
+      }
+      result=onestep_clust(norm.dat, select.cells=select.cells, prefix=prefix,method=select.method,verbose=verbose,...)
+      if(verbose){
+        save(result, file=outfile)
+      }
+      gc()
+    }
+    if(is.null(result)){
+      return(NULL)
     }
   }
-  if(is.null(result)){        
-    result=onestep_clust(norm.dat, select.cells=select.cells, prefix=prefix,method=select.method,...)
-    gc()
-  }
-  if(!is.null(result)){
-    select.cells= intersect(select.cells, names(result$cl))
-    #save(result, file=paste0(prefix,".rda"))
-    cl = result$cl[select.cells]
-    gene.mod = result$gene.mod
-    markers=result$markers
-    cl = setNames(as.integer(cl),names(cl))
-    new.cl =cl
-    cl.size = table(cl)
-    to.split = names(cl.size)[cl.size >=split.size]
-    if(length(to.split)>0){
-      n.cl = 1
-      for(x in sort(unique(cl))){
-        tmp.cells = names(cl)[cl==x]
-        if(!x %in% to.split){
+  
+  select.cells= intersect(select.cells, names(result$cl))
+  cl = result$cl[select.cells]
+  gene.mod = result$gene.mod
+  markers=result$markers
+  cl = setNames(as.integer(cl),names(cl))
+  new.cl =cl
+  cl.size = table(cl)
+  to.split = names(cl.size)[cl.size >=split.size]
+  if(length(to.split)>0){
+    n.cl = 1
+    for(x in sort(unique(cl))){
+      tmp.cells = names(cl)[cl==x]
+      if(!x %in% to.split){
+        new.cl[tmp.cells]=n.cl
+      }
+      else{
+        tmp.prefix = paste(prefix, x, sep=".")
+        tmp.result=iter_clust(norm.dat=norm.dat, select.cells=tmp.cells, prefix=tmp.prefix,split.size=split.size,method= method,overwrite=overwrite,verbose=verbose,...)
+        gc()
+        if(is.null(tmp.result)){
           new.cl[tmp.cells]=n.cl
         }
         else{
-          tmp.prefix = paste(prefix, x, sep=".")
-          tmp.result=iter_clust(norm.dat=norm.dat, select.cells=tmp.cells, prefix=tmp.prefix,split.size=split.size,method= method,...)
-          gc()
-          if(is.null(tmp.result)){
-            new.cl[tmp.cells]=n.cl
-          }
-          else{
-            tmp.cl = tmp.result$cl
-            if(length(unique(tmp.cl)>1)){
-              new.cl[names(tmp.cl)] = n.cl + as.integer(tmp.cl)
-              markers=union(markers, tmp.result$markers)
-            }
+          tmp.cl = tmp.result$cl
+          if(length(unique(tmp.cl)>1)){
+            new.cl[names(tmp.cl)] = n.cl + as.integer(tmp.cl)
+            markers=union(markers, tmp.result$markers)
           }
         }
-        n.cl = max(new.cl)+1
       }
-      cl = new.cl
+      n.cl = max(new.cl)+1
     }
-    result=list(cl=cl, markers=markers)
-    return(result)
+    cl = new.cl
   }
-  return(NULL)
+  result=list(cl=cl, markers=markers)
+  return(result)
 }
 
 

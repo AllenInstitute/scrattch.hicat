@@ -1,4 +1,4 @@
-###comb.dat include the following elements
+
 ###dat.list a list of data matrix
 ###ref.de.param.list the DE gene criteria for each reference dataset (optional)
 ###meta.df merged meta data for all datasets. 
@@ -144,19 +144,18 @@ sample_sets_list <- function(cells.list, cl.list, cl.sample.size=100, sample.siz
 #' @export
 #'
 #' @examples
-batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",...)
+batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",bins=NULL,...)
   {
     require(foreach)
     require(doMC)
-    if (mc.cores == 1) {
-      registerDoSEQ()
+    registerDoMC(cores=mc.cores)
+    if(is.null(bins)){
+      bins = split(x, floor((1:length(x))/batch.size))
     }
-    else {
-      registerDoMC(cores=mc.cores)
-      #on.exit(parallel::stopCluster(), add = TRUE)
+    cat("Batch process mc.cores=",mc.cores,"bins=",length(bins),"\n" )
+    results= foreach(i=1:length(bins), .combine=.combine) %dopar% {
+      FUN(bins[[i]],...)
     }
-    bins = split(x, floor((1:length(x))/batch.size))
-    results= foreach(i=1:length(bins), .combine=.combine) %dopar% FUN(bins[[i]],...)
     return(results)
   }
  
@@ -253,7 +252,7 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
 #' @export
 #'
 #' @examples
-get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.index=FALSE, transposed=TRUE, return.distance=FALSE)
+get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.index=FALSE, transposed=TRUE, return.distance=FALSE, ntrees=100)
   {
     if(transposed){
       cell.id = colnames(dat)
@@ -282,7 +281,7 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.i
           ref.dat = l2norm(ref.dat,by = "row")
         }
         if(build.index){
-          index= buildAnnoy(ref.dat)
+          index= buildAnnoy(ref.dat, ntrees=ntrees)
         }
       }
       if (method=="Annoy.Cosine"){
@@ -297,7 +296,9 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.i
     else if(method == "CCA"){
       mat3 = crossprod(ref.dat, dat)
       cca.svd <- irlba(mat3, dim=dim)
-      knn.result = knn_cor(cca.svd$u, cca.svd$v,  k=k)
+      ref.dat = cca.svd$u
+      dat = cca.svd$v      
+      knn.result =get_knn(dat, ref.dat, method="cor")
     }
     else{
       stop(paste(method, "method unknown"))
@@ -705,6 +706,7 @@ knn_jaccard_clust <- function(knn.index, method=c("louvain","leiden"),prune=0.05
       result <- leiden.community(gr,...)      
     }
     result$cl=membership(result)
+    rm(gr)
     rm(sim)
     gc()
     return(result)
