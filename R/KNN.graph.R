@@ -1,11 +1,11 @@
 #' get knn graph
 #'
-#' @param rd.dat 
-#' @param cl 
-#' @param cl.df 
-#' @param k 
-#' @param knn.outlier.th 
-#' @param outlier.frac.th 
+#' @param rd.dat Reduced dimension, with rows as cells, columns as dimensions. Cell ID corresponds to the row names.
+#' @param cl  cluster membership, names as cell ID and values as clusters. 
+#' @param cl.df cluster annotation. row.names are cluster ID that "cl", and contain "cluster_label" for display. 
+#' @param k K for KNN algorithm. 
+#' @param knn.outlier.th  Threshold to determine if a nearest neighbor is too far
+#' @param outlier.frac.th Threshold to determine if a cell is a outlier if it is too far away from most of its neighbors. 
 #'
 #' @return
 #' @export
