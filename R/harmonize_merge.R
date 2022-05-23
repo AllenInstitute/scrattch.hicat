@@ -395,7 +395,7 @@ merge_cl_multiple <- function(comb.dat, merge.dat.list,  cl, anchor.genes, verbo
     k.tmp = pmin(4,ncol(cl.sim))
     nn=colnames(cl.sim)[sim_knn(cl.sim, k= k.tmp)[[1]]]
     
-    merge.pairs = data.frame(cl=rep(row.names(cl.sim), length(k.tmp)), nn=nn,stringsAsFactors=FALSE)
+    merge.pairs = data.frame(P1=rep(row.names(cl.sim), length(k.tmp)), P2=nn,stringsAsFactors=FALSE)
     merge.pairs = merge.pairs[merge.pairs[,1]!=merge.pairs[,2],]
     merge.pairs$sim = get_pair_matrix(cl.sim, merge.pairs$cl, merge.pairs$nn)
     

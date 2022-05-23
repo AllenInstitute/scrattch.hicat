@@ -49,13 +49,26 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
     if(label.center){
       cl.center = get_RD_cl_center(rd.dat, cl)
     }
+    g=ggplot(rd.dat, aes(Dim1, Dim2))
     if(!no.shape){
       shape = setNames(1:length(levels(rd.dat$cl)) %% 20 + 1,levels(rd.dat$cl))
-      g=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=cl,shape=cl),size=cex)
+      if(length(cex)==1){
+        g=g + geom_point(aes(color=cl,shape=cl),size=cex)
+      }
+      else{
+        g= g + geom_point(aes(color=cl,shape=cl, size=cl))
+        g= g + scale_size_manual(values=cex[levels(rd.dat$cl)])
+      }
       g = g+ scale_shape_manual(values=as.vector(shape[levels(rd.dat$cl)]))      
     }
     else{
-      g=ggplot(rd.dat, aes(Dim1, Dim2)) + geom_point(aes(color=cl),size=cex)
+      if(length(cex)==1){
+        g= g + geom_point(aes(color=cl),size=cex)
+      }
+      else{
+        g= g + geom_point(aes(color=cl, size=cl))
+        g= g + scale_size_manual(values=cex[levels(rd.dat$cl)])
+      }
     }
     if(!is.null(alpha.val)){
       col = alpha(as.vector(cl.color[levels(rd.dat$cl)]),alpha.val)
@@ -110,7 +123,7 @@ plot_RD_cl <- function(rd.dat, cl, cl.color, cl.label,cex=0.15, fn.size =2, alph
 #' @export
 #'
 #' @examples
-plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5,alpha.val=1)
+plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15, legend.size=5,alpha.val=1,low="blue",high="red")
   {
     rd.dat = as.data.frame(rd.dat)
     colnames(rd.dat)[1:2] = c("Dim1","Dim2")
@@ -130,7 +143,7 @@ plot_RD_meta <- function(rd.dat, meta, meta.col=NULL,show.legend=TRUE, cex=0.15,
       p = p+ scale_color_manual(values=alpha(as.vector(meta.col[levels(rd.dat$meta)]),alpha.val))
     }
     else{
-      p = p+ scale_color_gradient(low="blue",high="red")
+      p = p+ scale_color_gradient(low=low,high=high)
     }
     p = p+ theme(panel.background=element_blank(),axis.line.x = element_line(colour = "black"),axis.line.y = element_line(colour = "black"))
     if(!show.legend){
@@ -493,8 +506,25 @@ plot_3d_select <- function(rd.dat, select.cells, fg.col=  "red", bg.col="gray", 
     }
   }
   
-
-plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missing.color="gray85",min.size=10,fg.alpha=1,bg.alpha=0.5,...)
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param rd.dat 
+##' @param cl 
+##' @param cl.color 
+##' @param cl.label 
+##' @param select.samples 
+##' @param missing.color 
+##' @param min.size 
+##' @param fg.alpha 
+##' @param bg.alpha 
+##' @param fg.size 
+##' @param bg.size 
+##' @param ... 
+##' @return 
+##' @author Zizhen Yao
+plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missing.color="gray85",min.size=10,fg.alpha=1,bg.alpha=0.5,fg.size=1, bg.size=0.15,...)
   {
     cl= setNames(as.character(cl), names(cl))
     cl = cl[names(cl)%in% select.samples]
@@ -507,8 +537,10 @@ plot_RD_cl_subset<- function(rd.dat, cl, cl.color,cl.label,select.samples,missin
     alpha.val = setNames(rep(fg.alpha, length(cl.color)),names(cl.color))
     alpha.val["0"] = bg.alpha    
     cl.color = alpha(cl.color, alpha.val)
+    cl.cex = setNames(rep(fg.size, length(cl.label)),names(cl.label))
+    cl.cex["0"]=bg.size    
     rd.rd = rd.dat[order(row.names(rd.dat) %in% select.samples),]
-    plot_RD_cl(rd.dat, cl, cl.color, cl.label,...)    
+    plot_RD_cl(rd.dat, cl, cl.color, cl.label,cex=cl.cex, ...)    
   }
   
 

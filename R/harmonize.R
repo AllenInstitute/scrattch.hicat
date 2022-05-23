@@ -148,11 +148,11 @@ batch_process <- function(x, batch.size, FUN, mc.cores=1, .combine="c",bins=NULL
   {
     require(foreach)
     require(doMC)
-    registerDoMC(cores=mc.cores)
     if(is.null(bins)){
       bins = split(x, floor((1:length(x))/batch.size))
     }
-    cat("Batch process mc.cores=",mc.cores,"bins=",length(bins),"\n" )
+    mc.cores=min(mc.cores, length(bins))
+    registerDoMC(cores=mc.cores)
     results= foreach(i=1:length(bins), .combine=.combine) %dopar% {
       FUN(bins[[i]],...)
     }
@@ -216,7 +216,7 @@ knn_combine <- function(result.1, result.2)
 #' @export
 #'
 #' @examples
-get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,return.distance=FALSE,transposed=TRUE, ...)
+get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, mc.cores=1,return.distance=FALSE,transposed=TRUE, index=NULL,clear.index=FALSE, ntrees=50) 
   {
     if(return.distance){
       fun = "knn_combine"
@@ -224,19 +224,45 @@ get_knn_batch <- function(dat, ref.dat, k, method="cor", dim=NULL, batch.size, m
     else{
       fun = "rbind"
     }
-    if(transposed){
+    if(is.null(index) & method %in% c("Annoy.Euclidean", "Annoy.Cosine", "cor")) {
+      if(transposed){
+        map.ref.dat = Matrix::t(ref.dat)
+      }
+      else{
+        map.ref.dat = ref.dat
+      }
+      if (method == "cor") {
+        map.ref.dat = map.ref.dat - rowMeans(map.ref.dat)
+        map.ref.dat = l2norm(map.ref.dat, by = "row")
+      }
+      if (method == "Annoy.Cosine") {
+        map.ref.dat = l2norm(map.ref.dat, by = "row")
+      }
+      index = buildAnnoy(map.ref.dat, ntrees = ntrees)
+      rm(map.ref.dat)
+      gc()
+    }    
+    if(transposed){      
       results <- batch_process(x=1:ncol(dat), batch.size=batch.size, mc.cores=mc.cores, .combine=fun, FUN=function(bin){
-        get_knn(dat=dat[row.names(ref.dat),bin,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, transposed=transposed,...)
+        get_knn(dat=dat[row.names(ref.dat),bin,drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, transposed=transposed,index=index,ntrees=ntrees)
       })
     }
     else{
       results <- batch_process(x=1:nrow(dat), batch.size=batch.size, mc.cores=mc.cores, .combine=fun, FUN=function(bin){
-        get_knn(dat=dat[bin,colnames(ref.dat),drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, transposed=transposed,...)
+        get_knn(dat=dat[bin,colnames(ref.dat),drop=F], ref.dat=ref.dat, k=k, method=method, dim=dim,return.distance=return.distance, transposed=transposed,index,ntrees=ntrees)
       })
+    }
+    if(clear.index){
+      cleanAnnoyIndex(index)
+    }
+    else{
+      if(!is.list(results)){
+        results = list(results)
+      }
+      results$index=index
     }
     return(results)
   }
-    
 
 
 
@@ -274,7 +300,7 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.i
       library(BiocNeighbors)      
       if(is.null(index)){
         if(method=="cor"){
-          ref.dat = ref.dat - rowMeans(ref.dat)
+          ref.dat = ref.dat - Matrix::rowMeans(ref.dat)
           ref.dat = l2norm(ref.dat,by = "row")
         }
         if (method=="Annoy.Cosine"){
@@ -306,6 +332,8 @@ get_knn <- function(dat, ref.dat, k, method ="cor", dim=NULL,index=NULL, build.i
     knn.index= knn.result[[1]]
     knn.distance = knn.result[[2]]
     row.names(knn.index) = row.names(knn.distance)=cell.id
+    rm(dat)
+    gc()
     if(!return.distance){
       return(knn.index)
     }
@@ -461,7 +489,7 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
       if(length(map.cells)< batch.size){
         tmp.cores = 1
       }                
-      rd.dat = rd_PCA(dat,select.genes=select.genes, select.cells=map.cells, max.pca = 50, sampled.cells=ref.cells, th=1, mc.cores=tmp.cores)$rd.dat
+      rd.dat = rd_PCA(dat,select.genes=select.genes, select.cells=map.cells, max.pca = 50, sampled.cells=ref.cells, th=1, mc.cores=tmp.cores,method="elbow")$rd.dat
       ref.rd.dat = rd.dat[ref.cells,,drop=F]
       idx = match(ref.cells, comb.dat$all.cells)
       index = NULL
@@ -517,6 +545,20 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
     return(knn.comb)
   }
 
+rm_genes <- function(dat.list, rm.genes)
+  {
+    for(x in names(dat.list)){
+      dat = dat.list[[x]]
+      rm = row.names(dat) %in% rm.genes
+      if(any(rm)){
+        dat = dat[!rm,]
+        dat.list[[x]] = dat
+      }
+    }
+    return(dat.list)
+  }
+
+
 #' knn joint
 #'
 #' @param comb.dat 
@@ -542,12 +584,11 @@ compute_knn <- function(comb.dat, select.genes, ref.list, select.sets=names(comb
 knn_joint <- function(comb.dat, ref.sets=names(comb.dat$dat.list), select.sets= names(comb.dat$dat.list),merge.sets=ref.sets, select.cells=comb.dat$all.cells, select.genes=NULL, cross.knn.method="Annoy.Cosine", self.knn.method = "Annoy.Euclidean", method = "louvain", k=15,  sample.size = 5000, cl.sample.size = 100, batch.size = 10000, verbose=TRUE,mc.cores=1,...)
 {
   #attach(comb.dat)
-  with(comb.dat,{
+  with(comb.dat,{    
   cat("Number of select cells", length(select.cells), "\n")
   cells.list = split(select.cells, meta.df[select.cells, "platform"])[select.sets]
   cells.list =  sample_sets_list(cells.list, cl.list[names(cl.list) %in% select.sets], sample.size=sample.size, cl.sample.size = cl.sample.size)
   ref.list = cells.list[ref.sets]
-  
 ###Select genes for joint analysis
   if(is.null(select.genes)){
     select.genes = select_joint_genes(comb.dat, ref.list = ref.list,select.cells=select.cells, ...)
@@ -687,7 +728,7 @@ knn_cosine <- function(ref.dat, query.dat, k = 15)
 ##' @param prune 
 ##' @return 
 ##' @author Zizhen Yao
-knn_jaccard_clust <- function(knn.index, method=c("louvain","leiden"),prune=0.05,...)
+knn_jaccard_clust <- function(knn.index, method=c("leiden","louvain"),prune=0.05,return.graph=FALSE,...)
   {
     require(igraph)
     cat("Get jaccard\n")
@@ -706,8 +747,13 @@ knn_jaccard_clust <- function(knn.index, method=c("louvain","leiden"),prune=0.05
       result <- leiden.community(gr,...)      
     }
     result$cl=membership(result)
-    rm(gr)
     rm(sim)
+    if(return.graph){
+      result$gr = gr
+    }
+    else{
+      rm(gr)
+    }
     gc()
     return(result)
   }
