@@ -5,6 +5,7 @@
 #' @param out.dir location to write plotting files to
 #' @param node.label Label to identify plotted nodes.
 #' @param exxageration exxageration of edge width. Default is 1 (no exxageration)
+#' @param edge.param what column to use for edge width
 #' @param curved Wheter edges should be curved or not. Default is TRUE.
 #' @param plot.parts output of intermediate files. default is FALSE.
 #' @param plot.hull plot convex around cell type neighbourhood. Provide neighbourhood_id's that need to be plotted
@@ -16,36 +17,11 @@
 #' @param label_repel
 #' 
 #' @example_data:
-#'  
-#' knn.cl.df <- read.csv("data/Constellation_example/knn.cl.df.csv")
-#' cl.center.df <- read.csv("data/Constellation_example/cl.center.df.csv", row.names=1)
+#' load("~/scrattch.hicat/data/trajectory_plot.rda")
+#'  knn.cl.df = tmp.knn.cl.df.3
+#'  cl.center.df = tmp.cl.center.df.3[!is.na(tmp.cl.center.df.3$x),]
 #' 
-#' 
-#' @usage plotting.MGE.constellation <- plot_constellation(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Constellation_example/plot", node.dodge=TRUE, plot.hull=c(1,2), label_repel=TRUE) 
-
-yg.dir <-  "//allen/programs/celltypes/workgroups/rnaseqanalysis/yuangao/dev_mouse_VIS"
-load(file.path(yg.dir,"tmp.knn.cl.df.3.rda" ))
-load(file.path(yg.dir,"tmp.cl.center.df.3.rda" ))
-
-
-knn.cl.df = tmp.knn.cl.df.3
-cl.center.df = tmp.cl.center.df.3
-out.dir = "test_plot"
-node.label="cluster_id" 
-color.label = "cluster_color"
-exxageration=2 
-curved = TRUE 
-plot.parts=FALSE 
-plot.hull = NULL 
-plot.height=25 
-plot.width=25 
-node.dodge=FALSE 
-label.size=5 
-max_size=10 
-label_repel=FALSE
-size.breaks = c(100,1000,10000,100000)
-
-knn.cl.df$frac = knn.cl.df$Freq/knn.cl.df$from.total
+#' @usage plotting.trajectory <- plot_trajectory(knn.cl.df = knn.cl.df, cl.center.df = cl.center.df, out.dir = "data/Trajectory_example/plot", node.label="cluster_id" , color.label = "cluster_color", edge.param = "to.frac",node.dodge=TRUE,  label_repel=TRUE) 
 
 
 
@@ -55,6 +31,7 @@ plot_trajectory <- function(knn.cl.df,
                                out.dir, 
                                node.label="cluster_id", 
                                color.label = "cluster_color",
+                               edge.param = "to.frac",
                                exxageration=2, 
                                curved = TRUE, 
                                plot.parts=FALSE, 
@@ -68,12 +45,13 @@ plot_trajectory <- function(knn.cl.df,
                                size.breaks = c(100,1000,10000,100000)) { 
   
   library(gridExtra)
-  library(sna)
+  #library(sna)
   library(Hmisc)
   library(reshape2)
   #library(ggalt)
   library(ggforce)
   library(dplyr)
+  #library(ggrepel)
   
   st=format(Sys.time(), "%Y%m%d_%H%M%S_")
   
@@ -226,24 +204,12 @@ plot_trajectory <- function(knn.cl.df,
   ##from knn.cl data frame remove all entries within cluster edges.
   knn.cl.d <- knn.cl[!(knn.cl$cl.from == knn.cl$cl.to),] 
   
-  ##################
-  # are numeric id's needed?
-  # if( anyNA(as.numeric(as.character(nodes$cl)))==TRUE){
-  #   
-  # } else{
-  #   nodes$cl=as.numeric(as.character(nodes$cl))
-  # knn.cl.d$cl.from <- as.numeric(as.character(knn.cl.d$cl.from))
-  # knn.cl.d$cl.to <- as.numeric(as.character(knn.cl.d$cl.to))
-  # }
-  
-  ##################
-  
   
   knn.cl.d <- left_join(knn.cl.d, select(nodes, cl, node.width), by=c("cl.from"="cl"))
   colnames(knn.cl.d)[colnames(knn.cl.d)=="node.width"]<- "node.pt.from"
   knn.cl.d$node.pt.to <- ""
-  knn.cl.d$Freq.to <- ""
-  knn.cl.d$frac.to <- ""
+  #knn.cl.d$Freq.to <- ""
+  #knn.cl.d$frac.to <- ""
   
   knn.cl.bid <- NULL
   
@@ -264,7 +230,7 @@ plot_trajectory <- function(knn.cl.df,
   #unidirectional
   knn.cl.uni <- NULL
   for (i in 1:nrow(knn.cl.d)) {
-    
+    print(i)
     line <- subset(knn.cl.d[i,])
     r <- knn.cl.d[(line$cl.from == knn.cl.d$cl.to & line$cl.to == knn.cl.d$cl.from ),] 
     
@@ -277,8 +243,8 @@ plot_trajectory <- function(knn.cl.df,
   
   #min frac value = 0.01
   knn.cl.uni$node.pt.to <- nodes$node.width[match(knn.cl.uni$cl.to, nodes$cl)]
-  knn.cl.uni$Freq.to <- 1
-  knn.cl.uni$frac.to <- 0.01
+  #knn.cl.uni$Freq.to <- 1
+  #knn.cl.uni$frac.to <- 0.01
   knn.cl.lines <- rbind(knn.cl.bid, knn.cl.uni)
   
   
@@ -292,105 +258,67 @@ plot_trajectory <- function(knn.cl.df,
   
   line.segments <- data.frame(line.segments,
                               freq.from = knn.cl.lines$Freq,
-                              freq.to = knn.cl.lines$Freq.to,
-                              frac.from = knn.cl.lines$frac,
-                              frac.to =  knn.cl.lines$frac.to,
+                              #freq.to = knn.cl.lines$Freq.to,
+                              frac.from = knn.cl.lines[[edge.param]],
+                              #frac.to =  knn.cl.lines$frac.to,
                               node.pt.from =  knn.cl.lines$node.pt.from,
                               node.pt.to = knn.cl.lines$node.pt.to)
   
   
-  ##from points to native coords
+    ##from points to native coords
   line.segments$node.size.from <- line.segments$node.pt.from/10
   line.segments$node.size.to <- line.segments$node.pt.to/10
   
   
   line.segments$line.width.from <- line.segments$node.size.from*line.segments$frac.from
-  line.segments$line.width.to <- line.segments$node.size.to*line.segments$frac.to
+  
+  line.segments$line.width.from <- line.segments$node.pt.from*line.segments$frac.from
+  #line.segments$line.width.to <- line.segments$node.size.to*line.segments$frac.to
   
   ##max fraction to max point size 
-  line.segments$line.width.from<- (line.segments$frac.from/max(line.segments$frac.from, line.segments$frac.to))*line.segments$node.size.from
+  line.segments$line.width.from<- (line.segments$frac.from/max(line.segments$frac.from, line.segments$frac.to))*line.segments$node.pt.from
   
-  line.segments$line.width.to<- (line.segments$frac.to/max(line.segments$frac.from, line.segments$frac.to))*line.segments$node.size.to
+  #line.segments$line.width.to<- (line.segments$frac.to/max(line.segments$frac.from, line.segments$frac.to))*line.segments$node.size.to
   
   
   ###=== create edges, exaggerated width
   
   line.segments$ex.line.from <-line.segments$line.width.from #true to frac
-  line.segments$ex.line.to <-line.segments$line.width.to #true to frac
+  #line.segments$ex.line.to <-line.segments$line.width.to #true to frac
+  
   
   line.segments$ex.line.from <- pmin((line.segments$line.width.from*exxageration),line.segments$node.size.from) #exxagerated width
-  line.segments$ex.line.to <- pmin((line.segments$line.width.to*exxageration),line.segments$node.size.to) #exxagerated width
+  #line.segments$ex.line.to <- pmin((line.segments$line.width.to*exxageration),line.segments$node.size.to) #exxagerated width
   
   
   line.segments <- na.omit(line.segments)
   
-  print("calculating edges")
+###### calculate new xend/yend -1r on trajectory 
+  # calculate coordinates for radius +15% 
+line.segments$rto <- (line.segments$node.size.to/2) + (line.segments$node.size.to)*0.25
+line.segments$AC = sqrt((line.segments$x.from-line.segments$x.to)^2 + (line.segments$y.from- line.segments$y.to)^2)  
   
-  allEdges <- lapply(1:nrow(line.segments), edgeMaker, len = 500, curved = curved, line.segments=line.segments)
-  allEdges <- do.call(rbind, allEdges)  # a fine-grained path with bend
+line.segments$x.ah = line.segments$x.to + line.segments$rto*(line.segments$x.from-line.segments$x.to)/line.segments$AC
+line.segments$y.ah = line.segments$y.to + line.segments$rto*(line.segments$y.from-line.segments$y.to)/line.segments$AC
+#  Xah = Xto + R*(Xfrom-Xto)/|AC|
+#  Yah = Yto + R*(Yfrom-Yto)/|AC|
+#  |AC| = sqrt((Xfrom-Xto)^2 + (Yfrom-Yto)^2)    
+###############
   
+
+  p.edges <- ggplot(line.segments) +
+    geom_curve(aes(x=x.from ,y=y.from, xend=x.ah, yend=y.ah ), 
+               cex= line.segments$line.width.from,
+               curvature=0.35, 
+               lineend = "round", #c('round', 'butt', 'square')
+               linejoin = "mitre",#c('round', 'mitre', 'bevel')
+               arrow=arrow(type="open",
+                 length=(unit(scales::rescale(line.segments$line.width.from, 
+                                              to=c(0.15, 0.5)), "cm"))),
+                colour="grey60",
+               alpha=0.8)
   
-  groups <- unique(allEdges$Group)
-  
-  poly.Edges <- data.frame(x=numeric(), y=numeric(), Group=character(),stringsAsFactors=FALSE)
-  imax <- as.numeric(length(groups))
-  
-  for(i in 1:imax) { 
-    #svMisc::progress(i)
-    #svMisc::progress(i, progress.bar=TRUE)
-    select.group <- groups[i]
-    #print(select.group)
-    select.edge <- allEdges[allEdges$Group %in% select.group,]
-    
-    x <- select.edge$x
-    y <- select.edge$y
-    w <- select.edge$fraction
-    
-    N <- length(x)
-    leftx <- numeric(N)
-    lefty <- numeric(N)
-    rightx <- numeric(N)
-    righty <- numeric(N)
-    
-    ## Start point
-    perps <- perpStart(x[1:2], y[1:2], w[1]/2)
-    leftx[1] <- perps[1, 1]
-    lefty[1] <- perps[1, 2]
-    rightx[1] <- perps[2, 1]
-    righty[1] <- perps[2, 2]
-    
-    ### mid points
-    for (ii in 2:(N - 1)) {
-      seq <- (ii - 1):(ii + 1)
-      perps <- perpMid(as.numeric(x[seq]), as.numeric(y[seq]), w[ii]/2)
-      leftx[ii] <- perps[1, 1]
-      lefty[ii] <- perps[1, 2]
-      rightx[ii] <- perps[2, 1]
-      righty[ii] <- perps[2, 2]
-    }
-    ## Last control point
-    perps <- perpEnd(x[(N-1):N], y[(N-1):N], w[N]/2)
-    leftx[N] <- perps[1, 1]
-    lefty[N] <- perps[1, 2]
-    rightx[N] <- perps[2, 1]
-    righty[N] <- perps[2, 2]
-    
-    lineleft <- data.frame(x=leftx, y=lefty)
-    lineright <- data.frame(x=rightx, y=righty)
-    lineright <- lineright[nrow(lineright):1, ]
-    lines.lr <- rbind(lineleft, lineright)
-    lines.lr$Group <- select.group
-    
-    poly.Edges <- rbind(poly.Edges,lines.lr)
-    
-    Sys.sleep(0.01)
-    cat("\r", i, "of", imax)
-    
-  }
-  
-  if (plot.parts == TRUE) {
-    write.csv(poly.Edges, file=file.path(out.dir,paste0(st,"poly.edges.csv"))) }
-  
+  #p.edges
   
   #############################
   ##                         ##
@@ -402,16 +330,27 @@ plot_trajectory <- function(knn.cl.df,
   
   
   ####plot edges
-  p.edges <- ggplot(poly.Edges, aes(group=Group))
-  p.edges <- p.edges +geom_polygon(aes(x=x, y=y), alpha=0.2) + theme_void()
-  #p.edges
+  #p.edges <- ggplot(poly.Edges, aes(group=Group))
+  #p.edges <- p.edges +geom_polygon(aes(x=x, y=y), alpha=0.2) + theme_void()
   
+  
+ 
+
   if (!is.null(plot.hull)) {
     #### plot all layers
     plot.all <-  ggplot()+
-      geom_polygon(data=poly.Edges, 
-                   alpha=0.2, 
-                   aes(x=x, y=y, group=Group))+ 
+      geom_curve( data= line.segments,
+                  aes(x=x.from ,
+                      y=y.from, 
+                      xend=x.ah, 
+                      yend=y.ah ),
+                  cex= line.segments$line.width.from,
+                  curvature=0.35, 
+                  arrow=arrow(type="open",
+                              length=(unit(scales::rescale(line.segments$line.width.from, 
+                                                           to=c(0.15, 0.5)), "cm"))),
+                  colour="grey60",
+                  alpha=0.8) +
       geom_point(data=nodes,
                  alpha=0.8, 
                  shape=19,
@@ -453,9 +392,18 @@ plot_trajectory <- function(knn.cl.df,
   } else {
     #### plot all layers
     plot.all <-  ggplot()+
-      geom_polygon(data=poly.Edges, 
-                   alpha=0.2, 
-                   aes(x=x, y=y, group=Group))+ 
+      geom_curve( data= line.segments,
+                  aes(x=x.from ,
+                      y=y.from, 
+                      xend=x.ah, 
+                      yend=y.ah ),
+                  cex= line.segments$line.width.from,
+                  curvature=0.35, 
+                  arrow=arrow(type="open",
+                              length=(unit(scales::rescale(line.segments$line.width.from, 
+                                                           to=c(0.15, 0.5)), "cm"))),
+                  colour="grey60",
+                  alpha=0.8) +
       geom_point(data=nodes,
                  alpha=0.8, 
                  shape=19,
@@ -466,11 +414,11 @@ plot_trajectory <- function(knn.cl.df,
       scale_size_area(trans="sqrt",
                       max_size=max_size,
                       breaks = c(100,1000,10000,100000)) +
-                      #breaks = size.breaks)
+      #breaks = size.breaks)
       scale_color_identity() 
     if(label_repel ==TRUE){
       plot.all <- plot.all +
-        geom_text_repel(data=nodes,
+        ggrepel::geom_text_repel(data=nodes,
                         aes(x=x, 
                             y=y, 
                             label=labels),
@@ -496,7 +444,7 @@ plot_trajectory <- function(knn.cl.df,
   segment.color = NA
   
   if (plot.parts == TRUE) {
-    ggsave(file.path(out.dir,paste0(st,"comb.constellation.pdf")), plot.all, width = plot.width, height = plot.height, units="cm",useDingbats=FALSE) }
+    ggsave(file.path(out.dir,paste0(st,"comb.trajectory.pdf")), plot.all, width = plot.width, height = plot.height, units="cm",useDingbats=FALSE) }
   
   
   
@@ -509,9 +457,18 @@ plot_trajectory <- function(knn.cl.df,
   
   ### plot node size legend (1)
   plot.dot.legend <- ggplot()+
-    geom_polygon(data=poly.Edges, 
-                 alpha=0.2, 
-                 aes(x=x, y=y, group=Group))+ 
+    geom_curve( data= line.segments,
+                aes(x=x.from ,
+                    y=y.from, 
+                    xend=x.ah, 
+                    yend=y.ah ),
+                cex= line.segments$line.width.from,
+                curvature=0.35, 
+                arrow=arrow(type="open",
+                            length=(unit(scales::rescale(line.segments$line.width.from, 
+                                                         to=c(0.15, 0.5)), "cm"))),
+                colour="grey60",
+                alpha=0.8)+
     geom_point(data=nodes,
                alpha=0.8, 
                shape=19,
@@ -594,7 +551,7 @@ plot_trajectory <- function(knn.cl.df,
   g2 <- gridExtra::arrangeGrob(grobs=list(dot.size.legend,edge.width.legend,cl.center.legend), layout_matrix=layout_legend)
   
   
-  ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = plot.width, height = plot.height, units="cm",useDingbats=FALSE)
+  ggsave(file.path(out.dir,paste0(st,"trajectory.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = plot.width, height = plot.height, units="cm",useDingbats=FALSE)
   
   
 }
@@ -604,143 +561,4 @@ plot_trajectory <- function(knn.cl.df,
 
 
 
-
-
-
-
-## function to draw (curved) line between to points
-#' function to draw (curved) line between two points
-#'
-#' @param whichRow 
-#' @param len 
-#' @param line.segments 
-#' @param curved 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-edgeMaker <- function(whichRow, len=100, line.segments, curved=FALSE){
-  
-  fromC <- unlist(line.segments[whichRow,c(3,4)])# Origin
-  toC <- unlist(line.segments[whichRow,c(5,6)])# Terminus
-  # Add curve:
-  
-  graphCenter <- colMeans(line.segments[,c(3,4)])  # Center of the overall graph
-  bezierMid <- c(fromC[1], toC[2])  # A midpoint, for bended edges
-  distance1 <- sum((graphCenter - bezierMid)^2)
-  if(distance1 < sum((graphCenter - c(toC[1], fromC[2]))^2)){
-    bezierMid <- c(toC[1], fromC[2])
-  }  # To select the best Bezier midpoint
-  bezierMid <- (fromC + toC + bezierMid) / 3  # Moderate the Bezier midpoint
-  if(curved == FALSE){bezierMid <- (fromC + toC) / 2}  # Remove the curve
-  
-  edge <- data.frame(bezier(c(fromC[1], bezierMid[1], toC[1]),  # Generate
-                            c(fromC[2], bezierMid[2], toC[2]),  # X & y
-                            evaluation = len))  # Bezier path coordinates
-  
-  #line.width.from in 100 steps to linewidth.to
-  edge$fraction <- seq(line.segments$ex.line.from[whichRow], line.segments$ex.line.to[whichRow], length.out = len)
-  
-  
-  #edge$Sequence <- 1:len  # For size and colour weighting in plot
-  edge$Group <- paste(line.segments[whichRow, 1:2], collapse = ">")
-  return(edge)
-}
-
-
-
-#utils from vwline (https://github.com/pmur002/vwline) to draw variable width lines. 
-#' Title
-#'
-#' @param x 
-#' @param y 
-#' @param len 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-perpStart <- function(x, y, len) {
-  perp(x, y, len, angle(x, y), 1)
-}
-
-#' Title
-#'
-#' @param x 
-#' @param y 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-avgangle <- function(x, y) {
-  a1 <- angle(x[1:2], y[1:2])
-  a2 <- angle(x[2:3], y[2:3])
-  atan2(sin(a1) + sin(a2), cos(a1) + cos(a2))
-}
-
-#' Title
-#'
-#' @param x 
-#' @param y 
-#' @param len 
-#' @param a 
-#' @param mid 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-perp <- function(x, y, len, a, mid) {
-  dx <- len*cos(a + pi/2)
-  dy <- len*sin(a + pi/2)
-  upper <- c(x[mid] + dx, y[mid] + dy)
-  lower <- c(x[mid] - dx, y[mid] - dy)
-  rbind(upper, lower)    
-}
-
-#' Title
-#'
-#' @param x 
-#' @param y 
-#' @param len 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-perpMid <- function(x, y, len) {
-  ## Now determine angle at midpoint
-  perp(x, y, len, avgangle(x, y), 2)
-}
-
-#' Title
-#'
-#' @param x 
-#' @param y 
-#' @param len 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-perpEnd <- function(x, y, len) {
-  perp(x, y, len, angle(x, y), 2)
-}
-
-
-## x and y are vectors of length 2
-#' Title
-#'
-#' @param x vector
-#' @param y vector
-#'
-#' @return
-#' @export
-#'
-#' @examples
-angle <- function(x, y) {
-  atan2(y[2] - y[1], x[2] - x[1])
-}
 
