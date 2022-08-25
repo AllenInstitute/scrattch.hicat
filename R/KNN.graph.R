@@ -96,7 +96,8 @@ plot_constellation <- function(knn.cl.df,
                                node.dodge=FALSE, 
                                label.size=5, 
                                max_size=10, 
-                               label_repel=FALSE) { 
+                               label_repel=FALSE,
+                               return.list = FALSE) { 
   
   library(gridExtra)
   library(sna)
@@ -614,7 +615,8 @@ if (exxageration !=1) {
   
   ggsave(file.path(out.dir,paste0(st,"constellation.pdf")),marrangeGrob(list(plot.all,g2),nrow = 1, ncol=1),width = plot.width, height = plot.height, units="cm",useDingbats=FALSE)
   
-  
+  if(return.list==TRUE){
+  return(list(constellation = plot.all, edges.df = poly.Edges, nodes.df = nodes))}
 }
 
 
