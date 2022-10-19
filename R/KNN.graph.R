@@ -153,7 +153,7 @@ plot_constellation <- function(knn.cl.df,
   g <- ggplot_build(p.nodes)
   dots <-g[["data"]][[1]] #dataframe with geom_point size, color, coords
   
-  nodes <- left_join(cl.center.df, dots, by=c("x","y"))
+  nodes <- left_join(cl.center.df, dots, by=c("x","y")) %>% ungroup()
 
   
   ###==== if node.dodge==TRUE new xy coords are calculated for overlapping nodes.
