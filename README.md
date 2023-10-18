@@ -12,8 +12,9 @@ Dev: [![Travis build status](https://travis-ci.org/AllenInstitute/scrattch.hicat
 
 `scrattch.hicat` has several dependencies, including two from BioConductor and one from Github:
 ```
-source("https://bioconductor.org/biocLite.R")
-biocLite("limma")
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("limma")
 
 devtools::install_github("JinmiaoChenLab/Rphenograph")
 ```
