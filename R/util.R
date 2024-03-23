@@ -718,7 +718,7 @@ get_cl_stats <- function(mat,
                          cl, 
                          stats = c("sums","means","medians","present","sqr_sums","sqr_means"),
                          low.th=1,
-                         parallel = c(FALSE,TRUE),
+                         parallel = FALSE,
                          mc.cores = 1,...)
 {
   if(!is.factor(cl)){
