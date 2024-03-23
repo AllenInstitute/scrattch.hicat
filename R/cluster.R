@@ -386,7 +386,7 @@ iter_clust <- function(norm.dat,
                        result = NULL,
                        method = "auto",
                        overwrite=TRUE,
-                       verbose=verbose,
+                       verbose=FALSE,
                        ...)
 {
   if(!is.null(prefix)) {
