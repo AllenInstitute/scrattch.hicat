@@ -6,9 +6,7 @@
 #
 # vec_chisq_test()
 #
-# score_pair_limma() Tests for one pair of clusters
 #
-# score_pair_chisq() Tests for one pair of clusters
 #   vec_chisq_test() de.genes.R
 #
 # de_selected_pairs() Tests for multiple pairs of clusters. Was DE_genes_pairs().
@@ -16,16 +14,11 @@
 #   score_pair_limma() de.genes.R
 #   score_pair_chisq() de.genes.R
 #
-# de_all_pairs() Tests for every pair of clusters. Was DE_genes_pw().
-#   DE_genes_pairs() de.genes.R
 #
 # compute_pair_deScore() Compute deScores based on score_pair_X() results and de_param(). Was de_pairs().
 # 
-# de_score()
-#   de_score_pairs() de.genes.R
 #
-# de_score_pairs()
-#   DE_genes_pairs de.genes.R
+
 #
 # get_de_matrix()
 #   get_pairs() de.genes.R
@@ -275,14 +268,13 @@ de_pair_limma <- function(pair,
                           cl.present,
                           cl.means,
                           design,
-                          fit,
-                          genes) {
+                          fit) {
   
   x <- as.character(pair[1])
   y <- as.character(pair[2])
   
   ctr <- paste(paste0("cl", x), "-", paste0("cl", y))
-  
+   
   contrasts.matrix <- limma::makeContrasts(contrasts = ctr, 
                                            levels = design)
   
@@ -305,12 +297,12 @@ de_pair_limma <- function(pair,
   results <- data.frame(padj = padj,
                         pval = pval,
                         lfc = lfc,
-                        meanA = cl.means[,x], 
-                        meanB = cl.means[,y],
-                        q1 = cl.present[,x], 
-                        q2 = cl.present[,y])
-  
-  row.names(results) <- genes
+                        meanA = cl.means[[x]],
+                        meanB = cl.means[[y]],
+                        q1 = cl.present[[x]],
+                        q2 = cl.present[[y]])
+
+  row.names(results) <- row.names(cl.means)
   
   return(results)
 }
@@ -340,8 +332,8 @@ de_pair_limma <- function(pair,
 de_pair_chisq <- function(pair,
                           cl.present,
                           cl.means,
-                          cl.size,
-                          genes) {
+                          cl.size)
+{
   
   x <- as.character(pair[1])
   y <- as.character(pair[2])
@@ -370,56 +362,266 @@ de_pair_chisq <- function(pair,
                         meanB = cl.means[,y],
                         q1 = cl.present[,x], 
                         q2 = cl.present[,y])
-  
-  row.names(results) <- genes
+  row.names(results) <- row.names(cl.means)
   
   return(results)
   
 }
 
-#' Perform pairwise differential gene expression tests between main pairs of clusters in parallel
+
+#' Perform pairwise differential detection tests using t.test for a single pair of clusters
+#'
+#' @param pair a numeric vector of length 2 specifying which clusters to compare
+#' @param cl.means a data.frame of normalized mean gene expression values (genes x clusters)
+#' @param cl.vars a data.frame of normalized variance gene expression values (genes x clusters)
+#' @param cl.size a named numeric vector of cluster sizes
+#' @param genes the genes to use for pairwise comparisons
+#'
+#' @return a data.frame with DE statistics:
+#' \itemize{
+#' \item{padj} P-values adjusted using the Holm (1979) method (\code{p.adjust()} default).
+#' \item{pval} P-values reported by the \code{vec_chisq_test()} function.
+#' \item{lfc} Log fold change of mean expression values between the pair of clusters.
+#' \item{meanA} Mean expression value for the first cluster in the pair.
+#' \item{meanB} Mean expression value for the second cluster in the pair.
+#' \item{q1} Proportion of cells expressing each gene for the first cluster in the pair.
+#' \item{q2} Proportion of cells expressing each gene for the second cluster in the pair.
+#' }
 #' 
-#' @param norm.dat a normalized data matrix for data.
-#' @param cl a cluster factor object.
-#' @param pairs A 2-column matrix of cluster pairs.
-#' @param method Either "limma" or "chisq".
-#' @param low.th The minimum expression value used to filter for expressed genes.
-#' @param cl.present A matrix of proportions of cells in each cluster with gene detection. Can be generated with \code{get_cl_props()}. Default is NULL (will be generated).
-#' @param use.voom Logical, whether or not to use \code{voom()} for \code{limma} calculations. Default is FALSE.
-#' @param counts A matrix of raw count data for each cell. Required if \code{use.voom} is TRUE. Default is NULL.
-#' @param mc.cores A number indicating how many processor cores to use for parallelization.
-#' 
-#' @return 
 #' @export
-de_selected_pairs <- function(norm.dat, 
-                              cl,
-                              pairs, 
-                              method = "limma", 
-                              low.th = 1,
-                              min.cells = 4,
-                              cl.means = NULL,
-                              cl.present = NULL,
-                              use.voom = FALSE, 
-                              counts = NULL,
-                              mc.cores = 1) {
+#'
+de_pair_t.test <- function(pair,
+                          cl.means,
+                          cl.present,
+                          cl.vars,
+                          cl.size)
+{  
+  x <- as.character(pair[1])
+  y <- as.character(pair[2])
+  m1 = cl.means[[x]]
+  m2 = cl.means[[y]]
+  v1 = cl.vars[[x]]
+  v2 = cl.vars[[y]]
+  n1 = cl.size[[x]]
+  n2 = cl.size[[y]]
+  sd = sqrt( v1/n1 + v2/n2) 
+  t.stats = (m1 - m2) / sd
+  df = sd^4 / ((v1/n1)^2/(n1-1) + (v2/n2)^2/(n2-1))
+  pval = pt(abs(t.stats), df, lower.tail=FALSE)  * 2
+  padj <- p.adjust(pval)
   
-  method <- match.arg(method,
-                      choices = c("limma", "chisq"))
+  lfc <- m1 - m2
+  # Note: Above depends on the data being log2 scaled already.
+  # If we change this expectation, we may need a more generalized calculation.
+  # fc <- cl.means[, x] / cl.means[, y]
+  # lfc <- log2(fc)
+  # lfc[is.na(lfc)] <- 0
   
-  if(use.voom & is.null(counts)) {
-    stop("The use.voom = TRUE parameter requires a raw count matrix via the counts parameter.")
+  results <- data.frame(padj = padj,
+                        pval = pval,
+                        lfc = lfc,
+                        meanA = m1,
+                        meanB = m2,
+                        q1 = cl.present[,x], 
+                        q2 = cl.present[,y])
+  row.names(results) <- row.names(cl.means)  
+  return(results)
+  
+}
+
+
+get_cl_sigma <- function(mat,cl, cl.means=NULL, cl.sqr.means = NULL)
+  {
+    cl.size = table(cl)
+    cl.size = setNames(as.vector(cl.size),names(cl.size))
+    if(is.null(cl.means)){
+      cl.means = get_cl_means(mat,cl)
+    }
+    if(is.null(cl.sqr.means)){
+      cl.sqr.means =  get_cl_sqr_means(mat,cl)
+    }
+    df = sum(cl.size) - length(cl.size)
+    sigma = sqrt(colSums( t(cl.sqr.means - cl.means^2) * cl.size[colnames(cl.sqr.means)]) / df)
+  }
+
+
+
+simple_lmFit <- function(norm.dat, cl, cl.means = NULL, cl.sqr.means = NULL)
+  {
+    if(is.null(cl.means)){
+      cl.means = get_cl_means(norm.dat, cl)
+    }
+    if(is.null(cl.sqr.means)){
+      cl.sqr.means = get_cl_sqr_means(norm.dat, cl)
+    }
+    cl.size = table(cl)
+    cl.means = cl.means[,names(cl.size)]
+    cl.sqr.means = cl.sqr.means[,names(cl.size)]
+    fit = list()
+    fit$coefficients = cl.means
+    fit$rank = ncol(cl.means)
+    fit$df.residual = length(cl) - fit$rank       
+    fit$sigma = get_cl_sigma(norm.dat, cl, cl.means = cl.means, cl.sqr.means= cl.sqr.means)
+    fit$stdev.unscaled = 1/sqrt(cl.size)
+    return(fit)
+  }
+ 
+
+
+simple_ebayes <- function(fit,proportion=0.01,stdev.coef.lim=c(0.1,4),trend=FALSE,robust=FALSE,winsor.tail.p=c(0.05,0.1))
+#	Empirical Bayes statistics to select differentially expressed genes
+#	Gordon Smyth
+#	8 Sept 2002.  Last revised 1 May 2013.
+#	Made a non-exported function 18 Feb 2018.
+{
+  require(limma)
+  coefficients <- fit$coefficients
+  stdev.unscaled <- fit$stdev.unscaled
+  sigma <- fit$sigma
+  df.residual <- fit$df.residual
+  if(is.null(coefficients) || is.null(stdev.unscaled) || is.null(sigma) || is.null(df.residual)) stop("No data, or argument is not a valid lmFit object")
+  if(all(df.residual==0)) stop("No residual degrees of freedom in linear model fits")
+  if(all(!is.finite(sigma))) stop("No finite residual standard deviations")
+  if(trend) {
+    covariate <- fit$Amean
+    if(is.null(covariate)) stop("Need Amean component in fit to estimate trend")
+  } else {
+    covariate <- NULL
   }
   
-  # Sample filtering based on selected clusters
-  select.cl <- unique(c(pairs[,1], pairs[,2]))
-  
-  cl.size <- table(cl)
-  select.cl <- intersect(select.cl, names(cl.size)[cl.size >= min.cells])
-  
-  cl <- cl[cl %in% select.cl]
+                                        #	Moderated t-statistic
+  out <- squeezeVar(sigma^2, df.residual, covariate=covariate, robust=robust, winsor.tail.p=winsor.tail.p)
+  out$s2.prior <- out$var.prior
+  out$s2.post <- out$var.post
+  out$var.prior <- out$var.post <- NULL
+  out$t <- coefficients / stdev.unscaled / sqrt(out$s2.post)
+  df.total <- df.residual + out$df.prior
+  df.pooled <- sum(df.residual,na.rm=TRUE)
+  df.total <- pmin(df.total,df.pooled)
+  out$df.total <- df.total
+  out$p.value <- 2*pt(-abs(out$t),df=df.total)
+  return(out)
+}
 
-  norm.dat <- norm.dat[, names(cl)]
 
+de_pair_fast_limma <- function(pair,
+                               fit,
+                               cl.means,
+                               cl.present)
+{
+  x <- as.character(pair[1])
+  y <- as.character(pair[2])
+  fit2 = fit
+  coef = fit$coefficients
+  fit2$coefficients = coef[[x]] - coef[[y]]
+  stdev.unscaled = fit$stdev.unscaled
+  fit2$stdev.unscaled = sqrt(sum(stdev.unscaled[c(x,y)]^2))
+    
+  fit2 <- simple_ebayes(fit = fit2)
+  m1 = cl.means[[x]]
+  m2 = cl.means[[y]]  
+
+
+  lfc <- m1 - m2
+  pval <- fit2$p.value
+  padj <- p.adjust(pval) 
+  
+   # Note: Above depends on the data being log2 scaled already.
+   # If we change this expectation, we may need a more generalized calculation.
+   # fc <- cl.means[, x] / cl.means[, y]
+   # lfc <- log2(fc)
+   # lfc[is.na(lfc)] <- 0
+
+  results <- data.frame(padj = padj,
+                         pval = pval,
+                         lfc = lfc,
+                         meanA = m1,
+                         meanB = m2,
+                         q1 = cl.present[[x]],
+                         q2 = cl.present[[y]])
+
+  row.names(results) <- row.names(cl.means)
+
+  return(results)
+
+ }
+
+
+ #' Perform pairwise differential gene expression tests between main pairs of clusters in parallel
+ #' 
+ #' @param norm.dat a normalized data matrix for data.
+ #' @param cl a cluster factor object.
+ #' @param pairs A 2-column matrix of cluster pairs.
+ #' @param method Either "limma" or "chisq".
+ #' @param low.th The minimum expression value used to filter for expressed genes.
+ #' @param cl.present A matrix of proportions of cells in each cluster with gene detection. Can be generated with \code{get_cl_props()}. Default is NULL (will be generated).
+ #' @param use.voom Logical, whether or not to use \code{voom()} for \code{limma} calculations. Default is FALSE.
+ #' @param counts A matrix of raw count data for each cell. Required if \code{use.voom} is TRUE. Default is NULL.
+ #' @param mc.cores A number indicating how many processor cores to use for parallelization.
+ #' 
+ #' @return 
+ #' @export
+ de_selected_pairs <- function(norm.dat, 
+                               cl,
+                               pairs,
+                               cl.size=NULL,
+                               de.param = de_parm(),
+                               method = "fast_limma", 
+                               cl.means = NULL,
+                               cl.present = NULL,
+                               cl.sqr.means = NULL,
+                               use.voom = FALSE, 
+                               counts = NULL,
+                               mc.cores = 1,
+                               block.size = 10000,
+                               out.dir = NULL,
+                               summary.dir = NULL,
+                               top.n=500,
+                               overwrite=FALSE,                               
+                               return.df = FALSE,
+                               return.summary=FALSE) {
+   
+   library(arrow)
+   method <- match.arg(method,
+                       choices = c("fast_limma", "limma","chisq", "t.test"))
+   require(parallel)                                      
+   if(use.voom & is.null(counts)) {
+     stop("The use.voom = TRUE parameter requires a raw count matrix via the counts parameter.")
+   }
+
+   # Sample filtering based on selected clusters
+   if(is.null(cl.size)){
+     cl.size <- table(cl)
+     cl.size = setNames(as.integer(cl.size), names(cl.size))
+   }
+   pairs.fn=NULL
+   if(length(pairs)==1){
+     pairs.fn = pairs
+     pairs = open_dataset(pairs.fn)
+   }
+   else{     
+     pairs =as.data.frame(pairs)
+     if(is.null(pairs$pair)){
+       pairs$pair = row.names(pairs)
+     }
+     if(is.null(pairs$pair_id)){
+       pairs$pair_id = 1:nrow(pairs)
+     }
+   }
+
+   select.cl <- unique(c(pairs %>% pull(P1), pairs %>% pull(P2)))
+   select.cl <- intersect(select.cl, names(cl.size)[cl.size >= de.param$min.cells])
+   cl <- cl[cl %in% select.cl]
+   if(is.factor(cl)){
+     cl = droplevels(cl)
+   }
+   pairs = pairs %>% filter(P1 %in% select.cl & P2 %in% select.cl)
+   if(is.null(pairs$pair_bin)){
+     pairs$pair_bin = ceiling(pairs$pair_id/block.size)
+   }
+   cl.size = cl.size[select.cl]   
+   nbin = max(pairs$pair_bin)
+   
   # Gene filtering based on low.th and min.cells thresholds
   # This was removed recently by Zizhen, as this can be computationally expensive
   # and can cause some inconsistent results based on which pairs are selected.
@@ -436,129 +638,156 @@ de_selected_pairs <- function(norm.dat,
   # norm.dat <- as.matrix(norm.dat[genes_above_min.cells, ])
   
   # Mean computation
-  if(is.null(cl.means)) {
-    cl.means <- as.data.frame(get_cl_means(norm.dat, cl))
-  } else {
-    cl.means <- as.data.frame(cl.means)
-  }
-  
-  # Set thresholds per gene
-  if(length(low.th) == 1) {
-    low.th <- setNames(rep(low.th, nrow(norm.dat)), row.names(norm.dat))      
-  }
-  
-  # Compute fraction of cells in each cluster with expression >= low.th
-  if(is.null(cl.present)){
-    cl.present <- as.data.frame(get_cl_means(norm.dat >= low.th[row.names(norm.dat)],
-                                           cl))
-  } else {
-    cl.present <- as.data.frame(cl.present)
-  }
+   if(is.null(cl.means)) {
+     cl.means <- as.data.frame(get_cl_means(norm.dat, cl))
+   } else {
+     cl.means <- as.data.frame(cl.means)     
+   }
+   
+   # Compute fraction of cells in each cluster with expression >= low.th
+   if(is.null(cl.present)){
+     cl.present <- as.data.frame(get_cl_present(norm.dat, cl, de.param$low.th))
+   } else{
+     cl.present <- as.data.frame(cl.present)   
+   }
+   
+   if(is.null(cl.sqr.means)){
+     cl.sqr.means <- as.data.frame(get_cl_sqr_means(norm.dat, cl))
+   } else{
+     cl.sqr.means <- as.data.frame(cl.sqr.means)
+   }
+   
+   if(method == "limma"){
+     require("limma")    
+     norm.dat <- as.matrix(norm.dat[, names(cl)])
+     cl <- setNames(as.factor(paste0("cl",cl)),names(cl))
+     design <- model.matrix(~0 + cl)
+     colnames(design) <- levels(as.factor(cl))
+     if(use.voom & !is.null(counts)){
+       v <- limma::voom(counts = as.matrix(counts[row.names(norm.dat), names(cl)]), 
+                        design = design)
+       
+       fit <- limma::lmFit(object = v, 
+                           design = design)		
+     } else {
+       fit <- limma::lmFit(object = norm.dat[, names(cl)], 
+                           design = design)
+     }
+   }
+   else if (method == "fast_limma"){
+     fit = simple_lmFit(norm.dat, cl=cl, cl.means= cl.means, cl.sqr.means= cl.sqr.means)
+   }
+   else if (method == "t.test"){
+     cl.vars <- as.data.frame(get_cl_vars(norm.dat, cl, cl.means = cl.means))
+   }
+ 
+   require(doMC)
+   require(foreach)
+   mc.cores = min(mc.cores, nbin)
+   registerDoMC(cores=mc.cores)
 
-  if(method=="limma"){
-    cl <- setNames(as.factor(paste0("cl",cl)),names(cl))
-    design <- model.matrix(~0 + cl)
-    colnames(design) <- levels(as.factor(cl))
-    
-    if(use.voom & !is.null(counts)){
-      v <- limma::voom(counts = as.matrix(counts[row.names(norm.dat), names(cl)]), 
-                       design = design)
-      
-      fit <- limma::lmFit(object = v, 
-                          design = design)		
-    } else {
-      fit <- limma::lmFit(object = norm.dat[, names(cl)], 
-                          design = design)
-    }
-  }
-  
-  if(mc.cores == 1) {
-    de_list <- list()
-    
-    for(i in 1:nrow(pairs)) {
-      
-      pair <- paste(pairs[i, 1], pairs[i, 2], sep = "_")
-      if(method == "limma") {
-        de_list[[pair]] <- de_pair_limma(pair = pairs[i,],
-                                         cl.present = cl.present,
-                                         cl.means = cl.means,
-                                         design = design,
-                                         fit = fit,
-                                         genes = row.names(norm.dat))
-        
-      } else if(method == "chisq") {
-        de_list[[pair]] <- de_pair_chisq(pair = pairs[i,],
-                                         cl.present = cl.present,
-                                         cl.means = cl.means,
-                                         cl.size = cl.size,
-                                         genes = row.names(norm.dat))
+   de_combine <- function(result.1, result.2)
+     {
+      library(data.table)
+      de.genes = c(result.1$de.genes, result.2$de.genes)
+      if(!is.null(result.1$de.summary)){
+        de.summary = rbindlist(result.1$de.summary, result.2$de.summary)
+        return(list(de.genes=de.genes, de.summary=de.summary))
       }
-      
+      else{
+        return(list(de.genes=de.genes))
+      }         
     }
-  } else {
-    # This needs to be moved to NAMESPACE
-    library(foreach)
-    
-    cluster <- parallel::makeCluster(mc.cores)
-    doParallel::registerDoParallel(cluster)
-    
-    if(method == "limma") {
-      de_list <- foreach::foreach(i = 1:nrow(pairs), 
-                                  .combine='c') %dopar% 
-        list(de_pair_limma(pair = pairs[i,],
-                           cl.present = cl.present,
-                           cl.means = cl.means,
-                           design = design,
-                           fit = fit,
-                           genes = row.names(norm.dat)))
-    } else if(method == "chisq") {
-      de_list <- foreach::foreach(i = 1:nrow(pairs), 
-                                  .combine='c') %dopar% 
-        list(de_pair_chisq(pair = pairs[i,],
-                           cl.present = cl.present,
-                           cl.means = cl.means,
-                           cl.size = cl.size,
-                           genes = row.names(norm.dat)))
 
-    }
-    
-    parallel::stopCluster(cluster)
-    
-    names(de_list) <- paste(pairs[,1],pairs[,2],sep="_")
-  }
-  
-  return(de_list)
-}
+   if(!is.null(out.dir)){
+     if(!dir.exists(out.dir)){
+       dir.create(out.dir)
+     }
+   }
 
-####Make sure dat and cl has the same dimension, and cells are in the same order
-
-#' Perform all pairwise differential expression comparison between clusters
-#' 
-#' @param norm.dat a normalized data matrix for data.
-#' @param cl a cluster factor object.
-#' @param ... Additional parameters passed to DE_genes_pairs()
-#' 
-#' @seealso \link{DE_genes_pairs}
-#' 
-#' @return a list containing DE results for every pair of clusters
-#' 
-#' @export
-de_all_pairs <- function(norm.dat,
-                         cl, 
-                         ...) {
-  
-  if(sum(names(cl) %in% colnames(norm.dat)) != length(cl)) {
-    stop("Missing data for some cells in cl.")
-  }
-
-  cn <- as.character(sort(unique(cl)))
-  pairs = create_pairs(cn)
-  de_selected_pairs(norm.dat = norm.dat,
-                    cl = cl,
-                    pairs = pairs, 
-                    ...)
-  
-}
+   if(!is.null(summary.dir)){
+     if(!dir.exists(summary.dir)){
+       dir.create(summary.dir)
+     }
+   }
+   mcoptions <- list(preschedule = FALSE)   
+   de_list = foreach::foreach(bin=1:nbin,.combine="de_combine",.errorhandling="pass",.options.multicore=mcoptions) %dopar% {
+     library(dplyr)
+     library(arrow)     
+     library(data.table)     
+     if(!is.null(out.dir)){
+       tmp.dir = file.path(out.dir,bin)     
+       if(!dir.exists(tmp.dir)){
+         dir.create(tmp.dir)
+       }
+       fn = file.path(tmp.dir,"data.parquet")     
+       if(!overwrite){
+         if(file.exists(fn)){
+           return(NULL)
+         }
+       }
+     }
+     tmp.pair = pairs %>% filter(pair_bin==bin) %>% collect()
+     x = tmp.pair %>% pull(pair_id)
+     de.genes=sapply(x, function(i){
+       pair = tmp.pair %>% filter(pair_id==i) 
+       pair = unlist(pair[,1:2])
+       if(method == "limma") {
+         require("limma")
+         df= de_pair_limma(pair = pair,
+           cl.present = cl.present,
+           cl.means = cl.means,
+           design = design,
+           fit = fit)
+       }
+       else if(method == "fast_limma") {
+         df= de_pair_fast_limma(pair = pair,
+           cl.present = cl.present,
+           cl.means = cl.means,
+           fit = fit)
+       }
+       else if(method =="t.test"){
+         df = de_pair_t.test(pair = pair,
+           cl.present = cl.present,
+           cl.means = cl.means,
+           cl.vars = cl.vars,
+           cl.size = cl.size)                    
+       }
+       else if (method == "chisq"){
+         df = de_pair_chisq(pair = pair,
+           cl.present = cl.present,
+           cl.means = cl.means,
+           cl.size = cl.size)
+       }      
+       if(!is.null(de.param$min.cells)) {
+         cl.size1 <- cl.size[as.character(pair[1])]
+         cl.size2 <- cl.size[as.character(pair[2])]
+       } else {
+         cl.size1 <- NULL
+         cl.size2 <- NULL
+       }
+       stats= de_stats_pair(df, 
+         de.param = de.param, 
+         cl.size1, 
+         cl.size2,
+         return.df = return.df)
+     },simplify=F)
+     pair = tmp.pair %>% pull(pair)
+     names(de.genes) = pair
+     de.summary = NULL
+     if(return.summary){
+       cat(bin,"compute summary\n")
+       de.summary = de_pair_summary(de.genes, out.dir= summary.dir,block.size = block.size,blockstart= bin - 1, return.df = is.null(summary.dir))
+     }     
+     if(!is.null(out.dir)){
+       cat(bin, "export de\n")
+       result=export_de_genes(de.genes, cl.means, out.dir=out.dir, block.size = block.size,blockstart=bin - 1, mc.cores=1, top.n = top.n)
+       de.genes= NULL
+     }
+     list(de.genes=de.genes, de.summary=de.summary)     
+   }
+   return(de_list)
+ }
 
 # Add docs and implement within functions
 
@@ -572,20 +801,42 @@ de_all_pairs <- function(norm.dat,
 #' @export
 #'
 #' @examples
-create_pairs <- function(cn, direction="nondirectional", include.self = FALSE)
+create_pairs <- function(cn1, cn2=cn1,direction="nondirectional", include.self = FALSE)
   {
-    cl.n = length(cn)	
-    pairs = cbind(rep(cn, rep(cl.n,cl.n)), rep(cn, cl.n))
+    cn1=as.character(cn1)
+    cn2=as.character(cn2)
+    cl.n1 = length(cn1)
+    cl.n2 = length(cn2)	
+    pairs = cbind(rep(cn1, rep(cl.n2,cl.n1)), rep(cn2, cl.n1))
+    if(!identical(cn1,cn2)){
+      down.pairs = cbind(rep(cn2, rep(cl.n1,cl.n2)), rep(cn1, cl.n2))
+      pairs = rbind(pairs, down.pairs)
+    }
     if(direction=="nondirectional"){
       pairs = pairs[pairs[,1]<=pairs[,2],,drop=F]
     }
     if(!include.self){
       pairs = pairs[pairs[,1]!=pairs[,2],,drop=F]
     }
+    colnames(pairs)=c("P1","P2")
     row.names(pairs) = paste0(pairs[,1],"_",pairs[,2])
     return(pairs)
   }
 
+
+null_de <- function()
+  {
+    tmp=sapply(c("score","up.score","down.score","num","up.num","down.num"), function(x)0)
+    tmp = c(tmp, list(up.genes=NULL, down.genes=NULL))
+  }
+
+
+get_de_truncate_score_sum <- function(gene.score, th=20)
+  {
+    tmp = gene.score
+    tmp[tmp > 20] = 20
+    return(sum(tmp))
+  }
 
 #' Compute differential expression summary statistics based on a differential results data.frame and de_param().
 #' 
@@ -612,19 +863,19 @@ de_stats_pair <- function(df,
                           de.param = de_param(), 
                           cl.size1 = NULL, 
                           cl.size2 = NULL,
-                          select.genes = NULL) {
-  
+                          select.genes = NULL,
+                          return.df = FALSE) {  
   df <- df[order(df$pval, -abs(df$lfc)), ]
   
   select <- with(df, which(padj < de.param$padj.th & abs(lfc) > de.param$lfc.th))
   select <- row.names(df)[select]
   
-   if(!is.null(select.genes)){
-     select <- select[select %in% select.genes]
-   }
+  if(!is.null(select.genes)){
+    select <- select[select %in% select.genes]
+  }
   
   if(is.null(select) | length(select) == 0){
-    return(list())
+    return(null_de())
   }
   
   up <- select[df[select, "lfc"] > 0]
@@ -640,14 +891,11 @@ de_stats_pair <- function(df,
   
   if(!is.null(de.param$q1.th)) {
     up <- with(df[up, , drop = FALSE], up[q1 > de.param$q1.th])
-    
     if(!is.null(cl.size1)){
       up <- with(df[up, , drop = FALSE], up[q1 * cl.size1 >= de.param$min.cells])
-
     }
     
     down <- with(df[down, , drop = FALSE], down[q2 > de.param$q1.th])
-    
     if(!is.null(cl.size2)) {
       down <- with(df[down, , drop = FALSE], down[q2 * cl.size2 >= de.param$min.cells])
     }
@@ -666,132 +914,36 @@ de_stats_pair <- function(df,
   select <- c(up, down)
   
   if(length(select) == 0){
-    return(list())
+    return(null_de())
   } else {
-    
-    df$padj[df$padj < 1e-20] <- 1e-20
-    up.score <- sum(-log10(df[up,"padj"]))
-    down.score <- sum(-log10(df[down,"padj"]))
-    
-    if(length(up) == 0) { up.score <- 0 }
-    if(length(down) == 0) { down.score <- 0 }
-    
-    list(score = up.score + down.score,
-         up.score = up.score,
-         down.score = down.score,
-         num = length(select),
-         up.num = length(up),
-         down.num = length(down),
-         genes = select,
-         up.genes = up,
-         down.genes = down, 
-         de.df = df[select, ])
-  }
-  
-}
 
-
-#' Compute differential expression summary statistics for selected pairs of clusters based on de_param().
-#'
-#' @param norm.dat a normalized data matrix for data.
-#' @param cl a cluster factor object.
-#' @param pairs A 2-column matrix of cluster pairs.
-#' @param de.df Optional. Pre-computed results from \code{de_selected_pairs()} using the same pairs. Default = NULL.
-#' @param de.param A list of differential gene expression parameters from \code{de_param()}
-#' @param method If de.df is NULL, use "limma" or "chisq" to compute differentially expressed genes.
-#' @param mc.cores If de.df is NULL, number of cores to use for parallel computation.
-#'
-#' @return A list with two objects:
-#' \itemize{
-#' \item{de.df} A list of results from \code{de_selected_pairs()} for each pair.
-#' \item{de.genes} A list of results from \code{de_stats_pair()} for each pair.
-#' }
-#' @export
-#'
-de_stats_selected_pairs <- function(norm.dat, 
-                                    cl, 
-                                    pairs, 
-                                    de.df = NULL, 
-                                    de.param = de_param(), 
-                                    method = "limma", 
-                                    select.genes = NULL,
-                                    mc.cores = 1,
-                                   cl.means = NULL,
-                                   cl.present = NULL) {
-  
-  # Filter data for only the provided pairs
-  row.names(pairs) <- paste(pairs[, 1], pairs[, 2], sep = "_")
-  
-  select.cl <- unique(c(pairs[, 1],pairs[, 2]))
-  cl <- cl[cl %in% select.cl]
-  
-  norm.dat <- as.matrix(norm.dat[, names(cl)])
-
-  if(is.factor(cl)) { cl <- droplevels(cl) }
-  
-  # Filter pairs for clusters larger than min.cells
-  cl.size <- table(cl)
-  cl.n <- names(cl.size)
-  
-  cl.small <- cl.n[cl.size < de.param$min.cells]
-  cl.big <- setdiff(cl.n,cl.small)
-  
-  select.pair <- pairs[, 1] %in% cl.big & pairs[, 2] %in% cl.big
-  
-  de.genes <- list()
-  
-  if(sum(select.pair) > 0) {
+    up.genes = setNames(-log10(df[up,"padj"]), up)
+    down.genes = setNames(-log10(df[down,"padj"]), down)
     
-    cl <- cl[cl %in% c(pairs[select.pair, 1], pairs[select.pair, 2])]
-    select.cells <- names(cl)
-    low.th <- de.param$low.th
+    tmp = up.genes
+    tmp[tmp > 20] = 20
+    up.score <- sum(tmp)
+    tmp = down.genes
+    tmp[tmp > 20] = 20
+    down.score <- sum(tmp)    
+   
+    result=list(
+      up.genes=up.genes,
+      down.genes=down.genes,
+      up.score = up.score,
+      down.score = down.score,
+      score = up.score + down.score,
+      up.num = length(up.genes),
+      down.num = length(down.genes),
+      num = length(up.genes) + length(down.genes)
+      )
     
-    if(length(low.th) == 1){
-      low.th <- setNames(rep(low.th, nrow(norm.dat)),
-                         row.names(norm.dat))
+
+    if(return.df){
+      result$de.df = df[select,]
     }
-    
-    if(is.null(de.df)) {
-      de.df <- de_selected_pairs(norm.dat, 
-                                 cl[select.cells], 
-                                 pairs[select.pair, , drop = FALSE], 
-                                 low.th = low.th,
-                                 min.cells = de.param$min.cells,
-                                 method = method, 
-                                 mc.cores = mc.cores,
-                                cl.means = cl.means,
-                                cl.present = cl.present)
-    }
-    
-    de.genes <- sapply(names(de.df), 
-                       function(x) {
-                         if(is.null(de.df[[x]])){
-                           return(list())
-                         }
-                         
-                         df = de.df[[x]]
-                         if(!is.null(de.param$min.cells)) {
-                           cl.size1 <- cl.size[as.character(pairs[x, 1])]
-                           cl.size2 <- cl.size[as.character(pairs[x, 2])]
-                         } else {
-                           cl.size1 <- NULL
-                           cl.size2 <- NULL
-                         }
-                         de_stats_pair(df, 
-                                       de.param = de.param, 
-                                       cl.size1, 
-                                       cl.size2,
-                                      select.genes = select.genes)
-                       },
-                       simplify = FALSE)
-  }
-    
-  for(i in which(!select.pair)) {
-    pair <- paste(pairs[i, 1], pairs[i, 2], sep = "_")
-    de.genes[[pair]] <- list()
-  }
-  ###Not returning de.df anymore to save memory
-  return(de.genes)
+    return(result)
+  } 
 }
 
 
@@ -807,34 +959,32 @@ de_stats_selected_pairs <- function(norm.dat,
 #' @return a character vector of all differentially expressed genes. 
 #' @export
 #'
-de_stats_all_pairs <- function(norm.dat, 
-                               cl,
-                               de.param = de_param(), 
-                               method = "limma", 
-                               de.genes = NULL,
-                               ...) {
-  
-  if(is.factor(cl)){
-    cl <- droplevels(cl)
-  }
-  
+de_all_pairs <- function(norm.dat, 
+                         cl,
+                         de.param = de_param(), 
+                         method = "fast_limma", 
+                         mc.cores=1,
+                         pairs.fn = "pairs.parquet",
+                         ...) {
+
   cn <- as.character(sort(unique(cl)))
   pairs= create_pairs(cn)
-  
-  if(!is.null(de.genes)){
-    missing_pairs <- pairs[!row.names(pairs) %in% names(de.genes), , drop = FALSE]
-  } else {
-    missing_pairs <- pairs
-  }  
-
-  de.genes <- c(de.genes, de_stats_selected_pairs(norm.dat,
-                                      cl = cl,
-                                      pairs = missing_pairs,
-                                      de.param = de.param,
-                                      method = method,
-                                      ...))
-  
-  return(de.genes)
+  if(nrow(pairs)>1000000){
+    pairs = as.data.frame(pairs)
+    pairs$pair = row.names(pairs)
+    pairs$pair_id = 1:nrow(pairs)
+    library(arrow)
+    write_parquet(pairs, sink=pairs.fn)
+    pairs = pairs.fn
+  }
+  de.result=de_selected_pairs(norm.dat,
+    cl = cl,
+    pairs = pairs,
+    de.param = de.param,
+    method = method,
+    mc.cores=mc.cores,
+    ...)  
+  return(de.result$de.genes)
 }
 
 
@@ -881,75 +1031,6 @@ get_de_matrix <- function(de.genes,
 }
 
 
-
-
-
-#' Title
-#'
-#' @param norm.dat 
-#' @param cl 
-#' @param binary.cat 
-#' @param ... 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-DE_genes_cat_by_cl <- function(norm.dat, 
-                               cl, 
-                               binary.cat, 
-                               ...) {
-  
-  cl <- droplevels(as.factor(cl))
-  cl.cat <- setNames(paste0(cl, binary.cat[names(cl)]), 
-                     names(cl))
-  
-  tmp <- levels(cl)
-  cl.cat.pairs <- data.frame(cat1 = paste0(tmp, binary.cat[1]), 
-                             cat2 = paste0(tmp, binary.cat[2]), 
-                             stringsAsFactors = FALSE)
-  
-  cl.cat.de.genes <- deScore.pairs(norm.dat[,names(cl.cat)], 
-                                   cl = cl.cat, 
-                                   pairs = cl.cat.pairs, 
-                                   ...)
-  
-  cat1.de.num <- sapply(cl.cat.de.genes,
-                        function(x) {
-                          if(length(x) == 0) { return(0) }
-                          length(x$up.genes)
-                        })
-  
-  cat2.de.num <- sapply(cl.cat.de.genes,
-                        function(x) {
-                          if(length(x) == 0) { return(0) }
-                          length(x$down.genes)
-                        })
-  
-  cat1.de.genes <- sapply(cl.cat.de.genes,
-                          function(x) {
-                            if(is.null(x)) { return("") }
-                            
-                            return(paste(head(x$up.genes, 8),
-                                         collapse = " "))
-                          })
-  
-  cat2.de.genes <- sapply(cl.cat.de.genes,
-                          function(x) {
-                            if(is.null(x)) { return("") }
-                            
-                            return(paste(head(x$down.genes, 8),
-                                         collapse = " "))
-                          })
-  
-  cl.cat.de.df <- data.frame(cat1.de.num, 
-                             cat2.de.num, 
-                             cat1.de.genes, 
-                             cat2.de.genes)
-  
-  return(list(cl.cat.de.df = cl.cat.de.df,
-              cl.cat.de.genes = cl.cat.de.genes))
-}
 
 
 
@@ -1149,3 +1230,106 @@ plot_pair_matrix <- function(pair.num, file, directed=FALSE, dend=NULL, col=jet.
     dev.off()     
   }
 
+
+
+
+export_de_genes<- function(de.genes, cl.means, out.dir="de_parquet", block.size = 10000,blockstart=0, mc.cores=5, top.n = 1000, overwrite=FALSE)
+  {
+    library(data.table)
+    library(arrow)
+    if(!dir.exists(out.dir)){
+      dir.create(out.dir)      
+    }
+    bins = split(names(de.genes), ceiling(1:length(de.genes)/block.size))
+    require(doMC)
+    require(foreach)
+    registerDoMC(cores=mc.cores)
+    tmp=foreach::foreach(i=1:length(bins),.combine="c")%dopar% {
+    #foreach::foreach(i=missing)%dopar% {
+      library(dplyr)    
+      library(arrow)
+      library(data.table)      
+      tmp.dir = file.path(out.dir,i+blockstart)
+      if(!dir.exists(tmp.dir)){
+        dir.create(tmp.dir)      
+      }
+      fn = file.path(tmp.dir,"data.parquet")
+      if(!overwrite){
+        if(file.exists(fn)){
+          return(NULL)
+        }
+      }
+      pairs=bins[[i]]      
+      tmp = lapply(pairs, function(p){
+        if(is.null(de.genes[[p]])|de.genes[[p]]$num==0){
+          return(NULL)
+        }
+        up = de.genes[[p]]$up.genes
+        down = de.genes[[p]]$down.genes
+        up = head(up, top.n)
+        down = head(down, top.n)
+        pair = strsplit(p, "_")[[1]]
+        p1 = pair[1]
+        p2 = pair[2]
+        gene = c(names(up),names(down))
+        logPval = c(up, down)
+        rank = c(seq_len(length(up)),seq_len(length(down)))        
+        lfc =  abs(cl.means[gene, p1] - cl.means[gene, p2])
+        sign = rep(c("up","down"),c(length(up),length(down)))
+        df = data.frame(gene=gene, logPval=logPval,sign=factor(sign,c("up","down")), rank=rank)
+        df$pair = p
+        df$lfc = lfc       
+        df       
+      })
+      df = data.table::rbindlist(tmp)
+      write_parquet(df, sink=fn)
+      return(NULL)
+    }
+  }
+
+
+de_pair_summary <- function(de.genes, pairs=names(de.genes), mc.cores=1, blockstart = 0, block.size=10000, out.dir="de_summary",return.df = FALSE)
+  {
+    library(data.table)
+    library(arrow)
+    if(!is.null(out.dir) & !dir.exists(out.dir)){
+      dir.create(out.dir)
+    }
+    cols = c("num","up.num","down.num","score", "up.score","down.score")
+    bin = ceiling(1:length(pairs)/block.size)
+    nbin = max(bin)
+    require(doMC)
+    require(foreach)
+    mc.cores = min(mc.cores, nbin)
+    registerDoMC(cores=mc.cores)
+
+    de.df = foreach::foreach(i=1:nbin,.combine="c")%dopar% {
+      bins = pairs[bin==i]
+      tmp = sapply(cols, function(col){
+        df=unlist(sapply(bins, function(p){
+          de.genes[[p]][col]
+        }))
+      },simplify=F)
+      df = do.call("data.frame",tmp)
+      df$pair = bins
+      if(!is.null(out.dir)){
+        tmp.dir = file.path(out.dir,i + blockstart)
+        if(!dir.exists(tmp.dir)){
+          dir.create(tmp.dir)
+        }
+        fn = file.path(tmp.dir,"data.parquet")
+        write_parquet(df, sink=fn)
+      }
+      if(return.df){
+        list(df)
+      }
+      else{
+        NULL
+      }
+    }
+    if(return.df){
+      de.df = rbindlist(de.df)
+      return(de.df)
+    }
+    NULL
+  }
