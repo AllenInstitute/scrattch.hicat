@@ -13,9 +13,6 @@ create_pairs(cn, direction = "nondirectional", include.self = FALSE)
 
 \item{include.self}{}
 }
-\value{
-
-}
 \description{
 Title
 }

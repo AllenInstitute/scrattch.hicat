@@ -19,9 +19,6 @@ batch_process(x, batch.size, FUN, mc.cores = 1, .combine = "c", ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Batch process
 }

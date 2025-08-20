@@ -29,9 +29,6 @@ get_core_intermediate(
 
 \item{method}{}
 }
-\value{
-
-}
 \description{
 Get core intermediate
 }

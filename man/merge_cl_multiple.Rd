@@ -35,9 +35,6 @@ merge_cl_multiple(
 
 \item{merge.type}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -9,9 +9,6 @@ knn_jaccard_louvain(knn.index)
 \arguments{
 \item{knn.index}{}
 }
-\value{
-
-}
 \description{
 KNN Jaccard Louvain
 }

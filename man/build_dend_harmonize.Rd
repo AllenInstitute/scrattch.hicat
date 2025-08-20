@@ -15,9 +15,6 @@ build_dend_harmonize(impute.dat.list, cl, cl.df, ncores = 1)
 
 \item{ncores}{}
 }
-\value{
-
-}
 \description{
 Build dend harmonize
 }

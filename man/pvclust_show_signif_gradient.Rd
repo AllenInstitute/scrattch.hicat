@@ -23,9 +23,6 @@ pvclust_show_signif_gradient(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Pv clust show significant gradient
 }

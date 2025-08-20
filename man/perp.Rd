@@ -17,9 +17,6 @@ perp(x, y, len, a, mid)
 
 \item{mid}{}
 }
-\value{
-
-}
 \description{
 Title
 }

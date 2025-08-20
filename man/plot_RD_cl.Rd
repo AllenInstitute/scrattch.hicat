@@ -44,9 +44,6 @@ plot_RD_cl(
 
 \item{fn.color}{}
 }
-\value{
-
-}
 \description{
 Title
 }

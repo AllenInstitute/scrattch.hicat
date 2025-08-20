@@ -35,9 +35,6 @@ select_markers_pair_group(
 
 \item{down.gene.score}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -26,9 +26,6 @@ group_specific_markers(
 
 \item{cl.present.counts}{}
 }
-\value{
-
-}
 \description{
 Title
 }

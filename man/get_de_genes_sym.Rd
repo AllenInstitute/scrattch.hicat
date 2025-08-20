@@ -9,9 +9,6 @@ get_de_genes_sym(de.genes)
 \arguments{
 \item{de.genes}{}
 }
-\value{
-
-}
 \description{
 Get de genes sym
 }

@@ -50,9 +50,6 @@ display_cl4(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

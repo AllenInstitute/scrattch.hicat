@@ -15,9 +15,6 @@ gene_gene_cor_conservation(dat.list, select.genes, select.cells, pairs = NULL)
 
 \item{pairs}{}
 }
-\value{
-
-}
 \description{
 Title
 }

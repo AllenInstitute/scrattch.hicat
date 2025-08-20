@@ -13,9 +13,6 @@ knn_cor(ref.dat, query.dat, k = 15)
 
 \item{k}{}
 }
-\value{
-
-}
 \description{
 KNN cor
 }

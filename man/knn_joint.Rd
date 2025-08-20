@@ -53,9 +53,6 @@ knn_joint(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 knn joint
 }

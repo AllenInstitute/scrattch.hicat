@@ -19,9 +19,6 @@ plot_low_qc(norm.dat, cl, low.df, nn.df, de.genes, all.col)
 
 \item{norm.data}{normalized data matrix for clustered cells.}
 }
-\value{
-
-}
 \description{
 Plot low-quality clusters
 }

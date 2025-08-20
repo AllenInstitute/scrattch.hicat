@@ -35,9 +35,6 @@ plot_3d_select(
 
 \item{web.dir}{}
 }
-\value{
-
-}
 \description{
 Title
 }

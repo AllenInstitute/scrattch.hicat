@@ -9,9 +9,6 @@ get_de_lfc_list(cl.means.list)
 \arguments{
 \item{cl.means.list}{}
 }
-\value{
-
-}
 \description{
 Title
 }

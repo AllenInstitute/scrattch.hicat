@@ -15,9 +15,6 @@ plot_de_lfc_num(de.genes, top.n = 100, select.pair = NULL, cl.label = NULL)
 
 \item{cl.label}{}
 }
-\value{
-
-}
 \description{
 Title
 }

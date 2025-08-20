@@ -13,11 +13,6 @@ impute_val_cor(dat, impute.dat)
 
 \item{impute.dat}{}
 }
-\value{
-
-
-
-}
 \description{
 Impute val cor
 

@@ -13,9 +13,6 @@ predict_knn(knn.idx, reference, cl)
 
 \item{cl}{}
 }
-\value{
-
-}
 \description{
 Title
 }

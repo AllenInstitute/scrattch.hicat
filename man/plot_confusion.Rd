@@ -26,9 +26,6 @@ plot_confusion(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

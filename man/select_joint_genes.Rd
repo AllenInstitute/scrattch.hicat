@@ -38,9 +38,6 @@ select_joint_genes(
 
 \item{rm.th}{}
 }
-\value{
-
-}
 \description{
 Select joint genes
 }

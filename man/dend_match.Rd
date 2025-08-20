@@ -11,9 +11,6 @@ dend_match(dend.list, cl.group)
 
 \item{cl.group}{}
 }
-\value{
-
-}
 \description{
 Dendrogram match
 }

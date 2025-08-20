@@ -26,9 +26,6 @@ build_dend(
 
 \item{ncores}{}
 }
-\value{
-
-}
 \description{
 Build dend
 }

@@ -29,9 +29,6 @@ plot_pair_matrix(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

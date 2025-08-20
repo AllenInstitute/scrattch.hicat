@@ -11,9 +11,6 @@ unbranch_by_conf(dend, conf.th)
 
 \item{conf.th}{}
 }
-\value{
-
-}
 \description{
 Unbranch by conf
 }

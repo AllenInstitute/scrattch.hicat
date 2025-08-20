@@ -35,5 +35,3 @@ A list with two elements: module eigen genes, and if prefix is not NULL, dendrog
 \description{
 Compute module eigen genes
 }
-\details{
-}

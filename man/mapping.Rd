@@ -47,9 +47,6 @@ mapping(
 
 \item{min.genes.ratio}{}
 }
-\value{
-
-}
 \description{
 Title
 }

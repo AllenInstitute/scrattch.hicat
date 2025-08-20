@@ -32,9 +32,6 @@ refine_cl(
 
 \item{verbose}{If true, print out step-by-step improvement.}
 }
-\value{
-
-}
 \description{
 Refine clusters
 }

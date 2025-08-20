@@ -13,9 +13,6 @@ test_merge(de.pair, de.param, merge.type = "undirectional")
 
 \item{merge.type}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -15,9 +15,6 @@ edgeMaker(whichRow, len = 100, line.segments, curved = FALSE)
 
 \item{curved}{}
 }
-\value{
-
-}
 \description{
 function to draw (curved) line between two points
 }

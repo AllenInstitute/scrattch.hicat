@@ -35,9 +35,6 @@ display_cl_markers_co.ratio(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

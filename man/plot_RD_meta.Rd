@@ -29,9 +29,6 @@ plot_RD_meta(
 
 \item{alpha.val}{}
 }
-\value{
-
-}
 \description{
 Title
 }

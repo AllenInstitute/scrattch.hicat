@@ -29,9 +29,6 @@ plot_3d_val(
 
 \item{bg.col}{}
 }
-\value{
-
-}
 \description{
 Title
 }

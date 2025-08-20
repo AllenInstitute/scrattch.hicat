@@ -35,9 +35,6 @@ map_dend(
 
 \item{default.markers}{}
 }
-\value{
-
-}
 \description{
 Title
 }

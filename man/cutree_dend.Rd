@@ -11,9 +11,6 @@ cutree_dend(dend, h)
 
 \item{h}{}
 }
-\value{
-
-}
 \description{
 Cut tree dendrogram
 }

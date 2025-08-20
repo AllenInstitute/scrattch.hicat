@@ -11,9 +11,6 @@ sim_knn(sim, k = 15)
 
 \item{k}{}
 }
-\value{
-
-}
 \description{
 Sim knn
 }

@@ -29,9 +29,6 @@ i_harmonize(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 i harmonize
 }

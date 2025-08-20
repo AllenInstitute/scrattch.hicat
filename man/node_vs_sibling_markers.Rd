@@ -15,9 +15,6 @@ node_vs_sibling_markers(dend.list, norm.dat, cl, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Node vs sibling markers
 }

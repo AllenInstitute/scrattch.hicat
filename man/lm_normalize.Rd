@@ -17,9 +17,6 @@ lm_normalize(dat, x, R_2.th = 0.2, padj.th = 0.01, min.genes = 5)
 
 \item{min.genes}{}
 }
-\value{
-
-}
 \description{
 add batch substracted median
 }

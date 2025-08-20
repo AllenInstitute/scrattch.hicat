@@ -59,9 +59,6 @@ plot_cl_heatmap(
 
 \item{key}{}
 }
-\value{
-
-}
 \description{
 Title
 }

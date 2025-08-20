@@ -26,9 +26,6 @@ plot_de_num(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

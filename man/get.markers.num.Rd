@@ -11,9 +11,6 @@ get.markers.num(markers.cl.list, map.dat)
 
 \item{map.dat}{}
 }
-\value{
-
-}
 \description{
 Title
 }

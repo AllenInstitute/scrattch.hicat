@@ -17,9 +17,6 @@ plot_cl_low(norm.dat, cl, low.df, de.genes, all.col)
 
 \item{all.col}{}
 }
-\value{
-
-}
 \description{
 Plot cl low
 }

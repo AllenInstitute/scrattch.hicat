@@ -35,9 +35,6 @@ de_genes_pairs_multiple(
 
 \item{max.cl.size}{}
 }
-\value{
-
-}
 \description{
 Title
 }

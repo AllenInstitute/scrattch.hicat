@@ -37,9 +37,6 @@ de_selected_pairs(
 
 \item{mc.cores}{A number indicating how many processor cores to use for parallelization.}
 }
-\value{
-
-}
 \description{
 Perform pairwise differential gene expression tests between main pairs of clusters in parallel
 }

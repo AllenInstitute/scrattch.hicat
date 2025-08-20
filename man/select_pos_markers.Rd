@@ -29,9 +29,6 @@ select_pos_markers(
 
 \item{down.gene.score}{}
 }
-\value{
-
-}
 \description{
 Title
 }

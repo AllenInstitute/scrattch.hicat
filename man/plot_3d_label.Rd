@@ -32,9 +32,6 @@ plot_3d_label(
 
 \item{bg.col}{}
 }
-\value{
-
-}
 \description{
 Title
 }

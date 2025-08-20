@@ -35,9 +35,6 @@ select_N_markers(
 
 \item{pairs}{}
 }
-\value{
-
-}
 \description{
 Title
 }

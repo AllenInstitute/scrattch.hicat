@@ -26,9 +26,6 @@ comb_de_result(
 
 \item{frac.th}{}
 }
-\value{
-
-}
 \description{
 Title
 }

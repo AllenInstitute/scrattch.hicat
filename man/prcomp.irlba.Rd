@@ -19,9 +19,6 @@
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 prcomp irlba
 }

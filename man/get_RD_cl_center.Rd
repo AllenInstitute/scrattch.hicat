@@ -11,9 +11,6 @@ get_RD_cl_center(rd.dat, cl)
 
 \item{cl}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -26,9 +26,6 @@ get_knn_graph(
 
 \item{outlier.frac.th}{}
 }
-\value{
-
-}
 \description{
 get knn graph
 }

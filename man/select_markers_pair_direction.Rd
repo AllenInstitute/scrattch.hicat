@@ -32,9 +32,6 @@ select_markers_pair_direction(
 
 \item{max.num}{}
 }
-\value{
-
-}
 \description{
 Title
 }

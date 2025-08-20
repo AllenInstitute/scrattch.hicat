@@ -23,9 +23,6 @@ markers_tau_one_vs_other(
 
 \item{top.n}{}
 }
-\value{
-
-}
 \description{
 Title
 }

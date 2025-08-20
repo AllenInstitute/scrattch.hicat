@@ -19,9 +19,6 @@ iter_impute_knn(knn, ref, dat, tol = 10^-3, max.iter = 100, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -38,9 +38,6 @@ plot_3d_label_multiple(
 
 \item{dir}{}
 }
-\value{
-
-}
 \description{
 Title
 }

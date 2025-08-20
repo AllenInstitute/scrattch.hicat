@@ -15,9 +15,6 @@ within_group_specific_markers(cl.g, norm.dat, cl, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

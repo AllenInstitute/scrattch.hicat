@@ -9,9 +9,6 @@ build_dend_with_means(cl.means.list)
 \arguments{
 \item{cl.means.list}{}
 }
-\value{
-
-}
 \description{
 Title
 }

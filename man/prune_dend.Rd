@@ -13,9 +13,6 @@ prune_dend(dend, rm.labels, top.level = TRUE)
 
 \item{top.level}{}
 }
-\value{
-
-}
 \description{
 Prune dendrogram
 }

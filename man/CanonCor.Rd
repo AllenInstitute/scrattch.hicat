@@ -15,9 +15,6 @@ CanonCor(mat1, mat2, standardize = TRUE, k = 20)
 
 \item{k}{}
 }
-\value{
-
-}
 \description{
 Canon cor
 }

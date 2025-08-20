@@ -17,9 +17,6 @@ harmonize(comb.dat, prefix, overwrite = TRUE, dir = ".", ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Harmonize
 }

@@ -13,9 +13,6 @@ get_de_score(de.df, top.genes, upper = 20)
 
 \item{upper}{}
 }
-\value{
-
-}
 \description{
 Get de score
 }

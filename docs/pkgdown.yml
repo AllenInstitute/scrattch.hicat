@@ -1,0 +1,6 @@
+pandoc: 2.19.2
+pkgdown: 2.1.1
+pkgdown_sha: ~
+articles:
+  scrattch.hicat_release: scrattch.hicat_release.html
+last_built: 2025-08-19T22:14Z

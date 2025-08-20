@@ -15,9 +15,6 @@ node_specific_markers(dend.list, norm.dat, cl, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Node specific markers
 }

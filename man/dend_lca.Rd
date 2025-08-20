@@ -15,9 +15,6 @@ dend_lca(dend, l1, l2, l = rep(attr(dend, "label"), length(l1)))
 
 \item{l}{}
 }
-\value{
-
-}
 \description{
 Dend lca
 }

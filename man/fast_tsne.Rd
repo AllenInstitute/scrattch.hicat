@@ -26,9 +26,6 @@ fast_tsne(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

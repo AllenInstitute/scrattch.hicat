@@ -9,9 +9,6 @@ simple_dend(cl.means.list)
 \arguments{
 \item{cl.means.list}{}
 }
-\value{
-
-}
 \description{
 Simple dendrogram
 }

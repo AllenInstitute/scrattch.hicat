@@ -13,9 +13,6 @@ clean_outliers(rd.dat, k = 10, th = 6)
 
 \item{th}{}
 }
-\value{
-
-}
 \description{
 Title
 }

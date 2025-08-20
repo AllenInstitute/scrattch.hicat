@@ -13,9 +13,6 @@ get_beta_score(propExpr, spec.exp = 2, mcores = 1)
 
 \item{mcores}{}
 }
-\value{
-
-}
 \description{
 Title
 }

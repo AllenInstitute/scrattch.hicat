@@ -9,9 +9,6 @@ get_cl_sim(cl.rd)
 \arguments{
 \item{cl.rd}{}
 }
-\value{
-
-}
 \description{
 Title
 }

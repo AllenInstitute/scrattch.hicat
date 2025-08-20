@@ -11,11 +11,6 @@ combine_cl(all.results)
 \arguments{
 \item{all.results}{}
 }
-\value{
-
-
-
-}
 \description{
 combine cl
 

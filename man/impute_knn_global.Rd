@@ -38,9 +38,6 @@ impute_knn_global(
 
 \item{rm.th}{}
 }
-\value{
-
-}
 \description{
 Title
 }

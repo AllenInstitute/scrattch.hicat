@@ -26,9 +26,6 @@ select_markers_pair(
 
 \item{max.num}{}
 }
-\value{
-
-}
 \description{
 Title
 }

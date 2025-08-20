@@ -11,9 +11,6 @@ lm_matrix(dat, x)
 
 \item{x}{}
 }
-\value{
-
-}
 \description{
 Title
 }

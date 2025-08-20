@@ -13,9 +13,6 @@ get_knn_weight(knn.dist, scale = 0.2, exclude.th = 1e-04)
 
 \item{exclude.th}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -13,9 +13,6 @@ perpEnd(x, y, len)
 
 \item{len}{}
 }
-\value{
-
-}
 \description{
 Title
 }

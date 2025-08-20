@@ -15,9 +15,6 @@ DE_genes_cat_by_cl(norm.dat, cl, binary.cat, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

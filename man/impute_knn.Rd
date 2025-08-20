@@ -4,7 +4,7 @@
 \alias{impute_knn}
 \title{Title}
 \usage{
-impute_knn(knn.idx, reference, dat, knn.dist = NULL, w, ...)
+impute_knn(knn.idx, reference, dat, knn.dist = NULL, w = NULL, ...)
 }
 \arguments{
 \item{knn.idx}{}
@@ -18,9 +18,6 @@ impute_knn(knn.idx, reference, dat, knn.dist = NULL, w, ...)
 \item{w}{}
 
 \item{...}{}
-}
-\value{
-
 }
 \description{
 Title

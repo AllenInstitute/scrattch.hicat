@@ -4,21 +4,18 @@
 \alias{plot_doublet}
 \title{Plot doublet}
 \usage{
-plot_doublet(norm.dat, cl, nn.df, de.genes, all.col)
+plot_doublet(norm.dat, cl, doublet.df, de.genes, all.col)
 }
 \arguments{
 \item{norm.dat}{}
 
 \item{cl}{}
 
-\item{nn.df}{}
+\item{doublet.df}{}
 
 \item{de.genes}{}
 
 \item{all.col}{}
-}
-\value{
-
 }
 \description{
 Plot doublet

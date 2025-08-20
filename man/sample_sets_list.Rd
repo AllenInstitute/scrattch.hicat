@@ -15,9 +15,6 @@ sample_sets_list(cells.list, cl.list, cl.sample.size = 100, sample.size = 5000)
 
 \item{sample.size}{}
 }
-\value{
-
-}
 \description{
 Sample sets lists
 }

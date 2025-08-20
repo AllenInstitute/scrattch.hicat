@@ -35,9 +35,6 @@ map_dend_membership(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

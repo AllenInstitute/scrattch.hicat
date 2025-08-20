@@ -149,9 +149,6 @@ heatmap.4(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

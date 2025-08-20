@@ -15,9 +15,6 @@ get_gene_score(de.genes, top.n = 50, max.num = 1000, bin.th = 4)
 
 \item{bin.th}{}
 }
-\value{
-
-}
 \description{
 Title
 }

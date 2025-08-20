@@ -11,9 +11,6 @@ get_dend_markers_direction(dend, n = 20)
 
 \item{n}{}
 }
-\value{
-
-}
 \description{
 get dendrogram precomputed markers (direction)
 }

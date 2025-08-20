@@ -11,9 +11,6 @@ label_dend(dend, n = 1)
 
 \item{n}{}
 }
-\value{
-
-}
 \description{
 Label dendrogram
 }

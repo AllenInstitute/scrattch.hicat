@@ -15,9 +15,6 @@ find_doublet(cl.df, cl.sim, cl.good, de.genes = NULL)
 
 \item{de.genes}{}
 }
-\value{
-
-}
 \description{
 Find doublet
 }

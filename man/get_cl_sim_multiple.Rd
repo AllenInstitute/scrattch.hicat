@@ -11,9 +11,6 @@ get_cl_sim_multiple(cl.rd.list, FUN = pmax)
 
 \item{FUN}{}
 }
-\value{
-
-}
 \description{
 Title
 }

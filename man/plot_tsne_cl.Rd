@@ -38,9 +38,6 @@ plot_tsne_cl(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -11,9 +11,6 @@ angle(x, y)
 
 \item{y}{vector}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -29,9 +29,6 @@ summarize_cl(
 
 \item{min.genes}{}
 }
-\value{
-
-}
 \description{
 Title
 }

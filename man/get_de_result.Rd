@@ -23,9 +23,6 @@ get_de_result(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

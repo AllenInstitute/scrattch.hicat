@@ -32,9 +32,6 @@ resolve_cl(
 
 \item{low.th}{}
 }
-\value{
-
-}
 \description{
 Title
 }

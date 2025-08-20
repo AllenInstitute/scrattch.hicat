@@ -32,9 +32,6 @@ plot_markers_cl_means(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Plot markers cl means
 }

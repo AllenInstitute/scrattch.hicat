@@ -17,9 +17,6 @@ multiplot(..., plotlist = NULL, file, cols = 1, layout = NULL)
 
 \item{layout}{}
 }
-\value{
-
-}
 \description{
 Title
 }

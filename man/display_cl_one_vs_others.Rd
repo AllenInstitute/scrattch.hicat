@@ -44,9 +44,6 @@ display_cl_one_vs_others(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

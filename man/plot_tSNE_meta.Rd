@@ -11,9 +11,6 @@ plot_tSNE_meta(tsne.df, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

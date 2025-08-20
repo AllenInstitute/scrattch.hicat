@@ -29,9 +29,6 @@ plot_2d_select(
 
 \item{cex}{}
 }
-\value{
-
-}
 \description{
 Title
 }

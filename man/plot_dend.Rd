@@ -15,9 +15,6 @@ plot_dend(dend, dendro_data = NULL, node_size = 1, r = c(-0.1, 1))
 
 \item{r}{}
 }
-\value{
-
-}
 \description{
 Plot dendrogram
 }

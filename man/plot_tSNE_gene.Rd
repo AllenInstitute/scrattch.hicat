@@ -11,9 +11,6 @@ plot_tSNE_gene(tsne.df, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

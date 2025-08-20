@@ -38,9 +38,6 @@ compute_knn(
 
 \item{mc.cores}{}
 }
-\value{
-
-}
 \description{
 compute knn
 }

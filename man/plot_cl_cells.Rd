@@ -9,9 +9,6 @@ plot_cl_cells(anno)
 \arguments{
 \item{anno}{}
 }
-\value{
-
-}
 \description{
 Title
 }

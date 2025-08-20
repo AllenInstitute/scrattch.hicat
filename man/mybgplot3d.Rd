@@ -11,9 +11,6 @@ mybgplot3d(tt, bg.col = bg.col)
 
 \item{bg.col}{}
 }
-\value{
-
-}
 \description{
 Title
 }

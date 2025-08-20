@@ -29,9 +29,6 @@ get_knn_batch(
 
 \item{mc.cores}{}
 }
-\value{
-
-}
 \description{
 get knn batch
 }

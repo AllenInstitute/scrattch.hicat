@@ -23,9 +23,6 @@ get_cl_present_list(
 
 \item{sets}{}
 }
-\value{
-
-}
 \description{
 Title
 }

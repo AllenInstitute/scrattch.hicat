@@ -13,9 +13,6 @@ reorder_dend(dend, l.rank, top.level = TRUE)
 
 \item{top.level}{}
 }
-\value{
-
-}
 \description{
 Reorder dendrogram
 }

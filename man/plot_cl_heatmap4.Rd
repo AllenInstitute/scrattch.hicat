@@ -59,9 +59,6 @@ plot_cl_heatmap4(
 
 \item{legend.dat}{}
 }
-\value{
-
-}
 \description{
 Title
 }

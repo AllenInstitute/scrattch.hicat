@@ -17,9 +17,6 @@ select_markers(norm.dat, cl, n.markers = 20, de.genes = NULL, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

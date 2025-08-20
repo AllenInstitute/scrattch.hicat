@@ -13,9 +13,6 @@ get_de_pair(de.genes, cl1, cl2)
 
 \item{cl2}{}
 }
-\value{
-
-}
 \description{
 Get de pair
 }

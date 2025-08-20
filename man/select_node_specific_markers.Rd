@@ -35,9 +35,6 @@ select_node_specific_markers(
 
 \item{max.num}{}
 }
-\value{
-
-}
 \description{
 Select node specific markers
 }

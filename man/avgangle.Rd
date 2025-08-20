@@ -11,9 +11,6 @@ avgangle(x, y)
 
 \item{y}{}
 }
-\value{
-
-}
 \description{
 Title
 }

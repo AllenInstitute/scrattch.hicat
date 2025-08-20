@@ -15,9 +15,6 @@ select_joint_markers(comb.dat, cl, de.genes.list, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -15,9 +15,6 @@ plot_RD_gene(rd.dat, norm.dat, genes, cex = 0.15)
 
 \item{cex}{}
 }
-\value{
-
-}
 \description{
 Title
 }

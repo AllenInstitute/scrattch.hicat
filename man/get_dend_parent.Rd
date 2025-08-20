@@ -9,9 +9,6 @@ get_dend_parent(dend)
 \arguments{
 \item{dend}{}
 }
-\value{
-
-}
 \description{
 Get dendrogram parent
 }

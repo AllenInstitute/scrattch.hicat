@@ -9,9 +9,6 @@ dend_list(dend)
 \arguments{
 \item{dend}{}
 }
-\value{
-
-}
 \description{
 Dendrogram list
 }

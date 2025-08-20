@@ -15,9 +15,6 @@ map_dend_markers(dend.list, map.dat, select.cells, th = 0.5)
 
 \item{th}{}
 }
-\value{
-
-}
 \description{
 Map dend markers
 }

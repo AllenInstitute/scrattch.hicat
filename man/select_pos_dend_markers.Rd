@@ -13,9 +13,6 @@ select_pos_dend_markers(dend, cl, norm.dat)
 
 \item{norm.dat}{}
 }
-\value{
-
-}
 \description{
 Select pos dend markers
 }

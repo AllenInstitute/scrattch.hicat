@@ -9,9 +9,6 @@ merge_knn_result(split.results)
 \arguments{
 \item{split.results}{}
 }
-\value{
-
-}
 \description{
 merge knn result
 }

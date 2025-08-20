@@ -15,9 +15,6 @@ plot_cl_meta_barplot(cluster, meta, col = NULL, drop = FALSE)
 
 \item{drop}{}
 }
-\value{
-
-}
 \description{
 Title
 }

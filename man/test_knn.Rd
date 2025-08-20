@@ -15,9 +15,6 @@ test_knn(knn, cl, reference, ref.cl)
 
 \item{ref.cl}{}
 }
-\value{
-
-}
 \description{
 Test knn
 }

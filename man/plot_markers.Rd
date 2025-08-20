@@ -47,9 +47,6 @@ plot_markers(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }

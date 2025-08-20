@@ -15,9 +15,6 @@ markers_max_tau(cl.dat, th = 0.5, tau.th = 0.7, n.markers = 3)
 
 \item{n.markers}{}
 }
-\value{
-
-}
 \description{
 Title
 }

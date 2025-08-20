@@ -6,25 +6,21 @@
 \usage{
 get_cl_means_list(
   dat.list,
-  de.param.list = NULL,
-  select.genes = NULL,
   cl,
+  de.param.list = NULL,
+  min.cells = NULL,
+  select.genes = NULL,
   sets = names(dat.list)
 )
 }
 \arguments{
 \item{dat.list}{}
 
-\item{de.param.list}{}
+\item{cl}{}
 
 \item{select.genes}{}
 
-\item{cl}{}
-
 \item{sets}{}
-}
-\value{
-
 }
 \description{
 Title

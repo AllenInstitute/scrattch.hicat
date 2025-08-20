@@ -11,11 +11,6 @@ get_gene_cl_correlation(cl.means.list)
 \arguments{
 \item{cl.means.list}{}
 }
-\value{
-
-
-
-}
 \description{
 Get gene cl correlation
 

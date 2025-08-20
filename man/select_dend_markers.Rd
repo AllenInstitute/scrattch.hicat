@@ -29,9 +29,6 @@ select_dend_markers(
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Select dend markers
 }

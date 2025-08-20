@@ -47,11 +47,6 @@ plot_tsne(
 
 \item{width}{}
 }
-\value{
-
-
-
-}
 \description{
 Plot tsne
 

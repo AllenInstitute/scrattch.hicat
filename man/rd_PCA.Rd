@@ -26,9 +26,6 @@ rd_PCA(
 
 \item{th}{}
 }
-\value{
-
-}
 \description{
 Title
 }

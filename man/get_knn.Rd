@@ -17,9 +17,6 @@ get_knn(dat, ref.dat, k, method = "cor", dim = NULL)
 
 \item{dim}{}
 }
-\value{
-
-}
 \description{
 Get KNN
 }

@@ -11,9 +11,6 @@ unbranch_by_length(dend, length.th)
 
 \item{length.th}{}
 }
-\value{
-
-}
 \description{
 Unbranch by length
 }

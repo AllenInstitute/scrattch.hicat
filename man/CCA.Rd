@@ -15,9 +15,6 @@ CCA(mat1, mat2, k = 20, verbose = FALSE)
 
 \item{verbose}{}
 }
-\value{
-
-}
 \description{
 CCA
 }
